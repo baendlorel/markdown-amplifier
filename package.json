@@ -1,0 +1,14 @@
+{
+	"name": "apulldore",
+	"scripts": {
+		"encrypt": "tsx secret/scripts/index.ts -e",
+		"decrypt": "tsx secret/scripts/index.ts -d"
+	},
+	"devDependencies": {
+		"@types/node": "^22.13.10",
+		"tsx": "^4.19.3"
+	},
+	"dependencies": {
+		"chalk": "^5.4.1"
+	}
+}
