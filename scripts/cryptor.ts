@@ -10,7 +10,7 @@ function deriveKey(key: string): Buffer {
 /**
  * AES 加密（支持任意长度密钥）
  */
-function encrypt(text: string, key: string): string {
+const encrypt = (text: string, key: string): string => {
   const algorithm = 'aes-256-cbc';
   const derivedKey = deriveKey(key); // 生成 32 字节密钥
   const iv = crypto.randomBytes(16);
@@ -19,12 +19,12 @@ function encrypt(text: string, key: string): string {
   const encryptedBuffer = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
 
   return iv.toString('hex') + ':' + encryptedBuffer.toString('hex');
-}
+};
 
 /**
  * AES 解密
  */
-function decrypt(encryptedText: string, key: string): string {
+const decrypt = (encryptedText: string, key: string): string => {
   const algorithm = 'aes-256-cbc';
   const derivedKey = deriveKey(key); // 生成 32 字节密钥
   const parts = encryptedText.split(':');
@@ -35,6 +35,6 @@ function decrypt(encryptedText: string, key: string): string {
   const decryptedBuffer = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
 
   return decryptedBuffer.toString('utf8');
-}
+};
 
 export const cryptor = { encrypt, decrypt };
