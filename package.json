@@ -12,8 +12,10 @@
 		"chalk": "^5.4.1"
 	},
 	"encryptConfigs": {
-		"secretFolder": "secret",
 		"exclude": [],
-		"encryptedFolder": "encrypted"
+		"directory": {
+			"secret": "secret",
+			"encrypted": "encrypted"
+		}
 	}
 }

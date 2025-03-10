@@ -2,7 +2,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { encrypt } from './encrypt';
 import { decrypt } from './decrypt';
-import { configs } from './configs';
+import { config } from './configs';
 
 const invalidArgs = (key: string, action: string) => {
   let invalid = false;
@@ -22,10 +22,13 @@ const main = (argv: string[]) => {
   if (invalidArgs(key, action)) {
     return;
   }
-  console.log(chalk.bgBlue('Configuration'));
-  configs.key = key;
-  configs.action = action.replace('--', '');
-  configs.display();
+
+  // 读取配置
+  console.log(chalk.bgBlue('Load Configuration'));
+  config.set(key, action);
+  config.display();
+
+  console.log();
 
   action === '--encrypt' && encrypt();
   action === '--decrypt' && decrypt();
