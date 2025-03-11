@@ -6,7 +6,9 @@ import { aes, xor } from './cryptor';
 
 const encryptFile = (originPath: string) => {
   const parsed = path.parse(originPath);
-  const newName = xor.encrypt(parsed.name) + parsed.ext;
+  // TODO 这里应该是path里的所有在decrypted文件夹内的文件夹名字都需要加密
+  // TODO 考虑到反复加密相同的文件夹名，考虑使用memoize
+  const newName = (util.encryptFolderName ? xor.encrypt(parsed.name) : parsed.name) + parsed.ext;
 
   // 日志用变量
   const rela1 = path.relative(util.rootDir, originPath);

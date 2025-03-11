@@ -230,6 +230,7 @@ ${y(`}`)}`;
   },
 };
 
+// TODO util和config看能否分成两个对象导出？
 const createUtil = () => {
   privates.initLocale();
 
@@ -249,6 +250,9 @@ const createUtil = () => {
   const u = {
     get key() {
       return privates.key;
+    },
+    get encryptFolderName() {
+      return privates.encryptFolderName;
     },
     get rootDir() {
       return privates.rootDir;
