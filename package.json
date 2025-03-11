@@ -9,7 +9,8 @@
 		"tsx": "^4.19.3"
 	},
 	"dependencies": {
-		"chalk": "^5.4.1"
+		"chalk": "^5.4.1",
+		"string-width": "^7.2.0"
 	},
 	"encryptConfigs": {
 		"exclude": [],

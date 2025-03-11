@@ -2,16 +2,28 @@ import path from 'path';
 import chalk from 'chalk';
 import { encrypt } from './encrypt';
 import { decrypt } from './decrypt';
-import { config } from './configs';
+import { config, i } from './configs';
 
 const invalidArgs = (key: string, action: string) => {
   let invalid = false;
   if (!key) {
-    console.log(chalk.red('No key provided'));
+    console.log(
+      chalk.red(
+        i({
+          zh: '没有提供密钥',
+          en: 'No key provided',
+        })
+      )
+    );
     invalid = true;
   }
   if (!['--encrypt', '--decrypt'].includes(action)) {
-    console.log('No valid argument provided');
+    console.log(
+      i({
+        zh: '没有提供有效的操作，操作只能是--encrypt或--decrypt',
+        en: 'No valid action provided, action should be --encrypt or --decrypt',
+      })
+    );
     invalid = true;
   }
   return invalid;
@@ -24,7 +36,14 @@ const main = (argv: string[]) => {
   }
 
   // 读取配置
-  console.log(chalk.bgBlue('Load Configuration'));
+  console.log(
+    chalk.bgBlue(
+      i({
+        zh: '加载配置',
+        en: 'Load Configuration',
+      })
+    )
+  );
   config.set(key, action);
   config.display();
 

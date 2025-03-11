@@ -1,6 +1,29 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import stringWidth from 'string-width';
+
+export const actualWidth = (text: string) => {
+  return stringWidth(text);
+};
+
+/**
+ * 按实际宽度补空格
+ * @param text
+ * @param length
+ * @returns
+ */
+export const padAlign = (text: string, length: number, direction: 'left' | 'right' = 'right') => {
+  const width = stringWidth(text);
+  if (direction === 'left') {
+    return ' '.repeat(length - width) + text; // 按实际宽度补空格
+  }
+  if (direction === 'right') {
+    return text + ' '.repeat(length - width); // 按实际宽度补空格
+  }
+  throw new Error("direction should be 'left' or 'right'");
+};
+
 /**
  * 递归获取文件夹下的所有文件
  * @param dir 目标文件夹路径
