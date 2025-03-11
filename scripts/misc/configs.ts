@@ -362,17 +362,3 @@ const createConfigManager = () => {
 };
 
 export const configs = createConfigManager();
-
-// globalThis.configs = configs;
-
-// declare global {
-//   var configs: {
-//     readonly key: string;
-//     readonly locale: string;
-//     readonly encryptFolderName: boolean;
-//     readonly dir: { root: string; decrypted: string; encrypted: string };
-//     set(key: string, action: string): void;
-//     excludes(folder: string): boolean;
-//     display(): void;
-//   };
-// }

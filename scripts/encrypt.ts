@@ -5,6 +5,8 @@ import { aes } from './cryptor';
 const dir = configs.dir;
 
 const encryptFile = (originPath: string) => {
+  // TODO 记录、更新.history-keys文件，此文件必须加入.gitignore
+
   const encryptedPath = util.toEncryptedPath(originPath);
 
   // 日志用变量

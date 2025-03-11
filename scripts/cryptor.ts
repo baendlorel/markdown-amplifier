@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-import { configs } from './misc';
-import { memoize } from './memoize';
+import { configs, memoize } from './misc';
 
 const deriveKey = (): Buffer => {
   return crypto.createHash('sha256').update(configs.key).digest();
