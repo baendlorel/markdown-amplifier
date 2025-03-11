@@ -204,6 +204,11 @@ const privates = {
   locale: '',
 
   /**
+   * 语言，从执行参数或系统中获取
+   */
+  historyKeys: '.history-keys' as const,
+
+  /**
    * 根目录，递归向上查找package.json所在的文件夹
    */
   root: '',
@@ -247,35 +252,64 @@ const privates = {
       privates.locale = 'en';
     }
   },
-  checkDecryptedIgnored() {
+
+  /**
+   * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
+   */
+  ignore() {
     const gitigorePath = path.join(privates.root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
-      const content = fs.readFileSync(gitigorePath);
-      const lines = content
-        .toString()
-        .split('\n')
-        .map((line) => line.trim());
-      if (!lines.some((p) => p.match(new RegExp(`${privates.directory.decrypted}`)))) {
+      const content = fs.readFileSync(gitigorePath).toString();
+      const lines = content.split('\n').map((line) => line.trim());
+
+      // 确认是否忽略了加密前的文件夹，没有则加入
+      if (!lines.some((p) => p === privates.directory.decrypted)) {
         console.log(
-          chalk.bgRed(
-            `${i({
-              zh: '.gitignore文件可能并未包含要加密的文件夹',
+          chalk.gray(
+            i({
+              zh: '.gitignore文件并未包含要加密的文件夹，添加中',
               en: 'It seems .gitignore in root directory does not contain',
-            })} '${privates.directory.decrypted}'. ${chalk.underline(
-              i({
-                zh: '未加密的文件可能被推送到远程仓库！',
-                en: 'Unencrypted files may be pushed to remote repository!',
-              })
-            )}`
+            })
           )
         );
-        throw new Error(
-          i({
-            zh: '未在.gitignore中忽略加密文件夹',
-            en: 'Decrypted directory is not ignored in .gitignore',
-          })
+        fs.appendFileSync(gitigorePath, `\n${privates.directory.decrypted}`);
+        console.log(
+          chalk.gray(
+            i({
+              zh: `.gitignore已添加'${privates.directory.decrypted}'`,
+              en: `'${privates.directory.decrypted}' is added to .gitignore`,
+            })
+          )
         );
       }
+
+      // 确认是否忽略了.history-keys文件，没有则加入
+      if (!lines.some((p) => p === privates.historyKeys)) {
+        console.log(
+          chalk.gray(
+            i({
+              zh: `.gitignore文件并未包含'${privates.historyKeys}'，添加中...`,
+              en: `It seems .gitignore does not contain '${privates.historyKeys}'. Adding...`,
+            })
+          )
+        );
+        fs.appendFileSync(gitigorePath, `\n${privates.historyKeys}`);
+        console.log(
+          chalk.gray(
+            i({
+              zh: `.gitignore已添加'${privates.historyKeys}'`,
+              en: `'${privates.historyKeys}' is added to .gitignore`,
+            })
+          )
+        );
+      }
+    } else {
+      throw new Error(
+        i({
+          zh: `${privates.root}下未找到.gitignore文件！`,
+          en: `Cannot find .gitignore file in ${privates.root}!`,
+        })
+      );
     }
   },
   checkPackageJson(configs: any) {
@@ -442,7 +476,7 @@ const createConfigManager = () => {
   privates.action = '';
   privates.key = '';
 
-  privates.checkDecryptedIgnored();
+  privates.ignore();
 
   const u = {
     get key() {
