@@ -1,8 +1,8 @@
-import * as crypto from 'crypto';
-import { util } from './utils';
+import crypto from 'crypto';
+import { configs, memoize } from './utils';
 
 const deriveKey = (): Buffer => {
-  return crypto.createHash('sha256').update(util.key).digest();
+  return crypto.createHash('sha256').update(configs.key).digest();
 };
 
 export const aes = {
@@ -53,16 +53,16 @@ const fromAlphaString = (text: string): Buffer => {
 };
 
 export const xor = {
-  decrypt(encryptedText: string): string {
+  decrypt: memoize((encryptedText: string): string => {
     const keyBytes = Buffer.from(deriveKey());
     const encryptedBytes = fromAlphaString(encryptedText);
     const decrypted = encryptedBytes.map((byte, i) => byte ^ keyBytes[i % keyBytes.length]);
     return decrypted.toString();
-  },
-  encrypt(text: string): string {
+  }),
+  encrypt: memoize((text: string): string => {
     const keyBytes = Buffer.from(deriveKey());
     const textBytes = Buffer.from(text);
     const encrypted = textBytes.map((byte, i) => byte ^ keyBytes[i % keyBytes.length]);
     return toAlphaString(encrypted); // 转换成只包含 A-Z 的字符串
-  },
+  }),
 };

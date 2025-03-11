@@ -2,7 +2,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { encryption } from './encrypt';
 import { decryption } from './decrypt';
-import { util, i } from './utils';
+import { i, configs } from './utils';
 
 const invalidArgs = (key: string, action: string) => {
   let invalid = false;
@@ -44,8 +44,8 @@ const main = (argv: string[]) => {
       })
     )
   );
-  util.set(key, action);
-  util.display();
+  configs.set(key, action);
+  configs.display();
 
   console.log();
 

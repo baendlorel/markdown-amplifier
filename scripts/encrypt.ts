@@ -1,18 +1,29 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { util, i, tab } from './utils';
+import { util, i, tab, configs } from './utils';
 import { aes, xor } from './cryptor';
+
+const dir = configs.dir;
+
+let getNewFileName = (parsed: path.ParsedPath) => {
+  if (configs.encryptFolderName) {
+    getNewFileName = (parsed: path.ParsedPath) => xor.encrypt(parsed.name) + parsed.ext;
+  } else {
+    getNewFileName = (parsed: path.ParsedPath) => parsed.base;
+  }
+  return getNewFileName(parsed);
+};
 
 const encryptFile = (originPath: string) => {
   const parsed = path.parse(originPath);
+  const encryptedPath = util.toEncryptedPath(originPath);
   // TODO 这里应该是path里的所有在decrypted文件夹内的文件夹名字都需要加密
-  // TODO 考虑到反复加密相同的文件夹名，考虑使用memoize
-  const newName = (util.encryptFolderName ? xor.encrypt(parsed.name) : parsed.name) + parsed.ext;
+  const newName = getNewFileName(parsed);
 
   // 日志用变量
-  const rela1 = path.relative(util.rootDir, originPath);
-  const rela2 = path.relative(util.rootDir, path.join(parsed.dir, newName));
+  const rela1 = path.relative(dir.root, originPath);
+  const rela2 = path.relative(dir.root, path.join(parsed.dir, newName));
   console.log(
     i({
       zh: tab`加密 ${rela1} => ${rela2}`,
@@ -21,8 +32,9 @@ const encryptFile = (originPath: string) => {
   );
 
   // 加密并保存
-  const encryptedContent = aes.encrypt(util.load(originPath));
-  util.save(encryptedContent, util.toEncryptedPath(parsed.dir), newName);
+  const origin = util.load(originPath);
+  const encrypted = aes.encrypt(origin);
+  util.save(encrypted, util.toEncryptedPath(parsed.dir), newName);
 };
 
 export const encryption = () => {
@@ -34,7 +46,7 @@ export const encryption = () => {
       })
     )
   );
-  const files = util.getAllFiles(util.decryptedDir, (f: string) => util.excludes(f));
+  const files = util.getAllFiles(dir.decrypted, (f: string) => configs.excludes(f));
   console.log(
     i({
       zh: tab`检测到${files.length}个文件`,
@@ -42,13 +54,13 @@ export const encryption = () => {
     })
   );
 
-  fs.rm(util.encryptedDir, { recursive: true }, (err) => {
+  fs.rm(dir.encrypted, { recursive: true }, (err) => {
     if (err) {
       console.log(
         chalk.bgRed(
           i({
-            zh: tab`清空${util.encryptedDir}文件夹出错`,
-            en: tab`Error when clearing ${util.encryptedDir}`,
+            zh: tab`清空${dir.encrypted}文件夹出错`,
+            en: tab`Error when clearing ${dir.encrypted}`,
           })
         )
       );
@@ -58,8 +70,8 @@ export const encryption = () => {
 
   console.log(
     i({
-      zh: tab`已清空${util.encryptedDir}`,
-      en: tab`${util.encryptedDir} cleared`,
+      zh: tab`已清空${dir.encrypted}`,
+      en: tab`${dir.encrypted} cleared`,
     })
   );
 

@@ -9,6 +9,28 @@ export const i = (i18nConfig: any) => i18nConfig[privates.locale];
 export const tab = (t: TemplateStringsArray, ...values: any[]) =>
   values.reduce((result, str, i) => result + t[i] + String(str), '  ') + t[t.length - 1];
 
+type Fn<T extends any[], R> = (...args: T) => R;
+/**
+ * 缓存函数结果
+ * @param fn 要缓存的函数
+ * @returns 带缓存功能的函数
+ */
+export const memoize = <T extends any[], R>(fn: Fn<T, R>): Fn<T, R> => {
+  const cache = new Map<string, R>();
+
+  return (...args: T): R => {
+    // 将参数序列化以支持多个参数
+    const key = args.reduce((prev, current) => prev + '_' + String(current), '');
+    if (cache.has(key)) {
+      return cache.get(key)!; // `!` 表示断言，告诉 TS 这里一定有值
+    } else {
+      const result = fn(...args);
+      cache.set(key, result);
+      return result;
+    }
+  };
+};
+
 /**
  * 把一个地址拆分成数组
  * @param filePath 文件路径
@@ -30,18 +52,158 @@ const splitPath = (filePath: string) => {
   return list;
 };
 
+// # 工具函数
+export const util = {
+  actualWidth(text: string) {
+    return stringWidth(text);
+  },
+
+  /**
+   * 按实际宽度补空格
+   * @param text
+   * @param length
+   * @param direction
+   * @returns
+   */
+  padAlign(text: string, length: number, direction: 'left' | 'right' = 'right') {
+    const width = stringWidth(text);
+    if (direction === 'left') {
+      return ' '.repeat(length - width) + text; // 按实际宽度补空格
+    }
+    if (direction === 'right') {
+      return text + ' '.repeat(length - width); // 按实际宽度补空格
+    }
+    throw new Error("direction should be 'left' or 'right'");
+  },
+
+  /**
+   * 递归获取文件夹下的所有文件
+   * @param dir 目标文件夹路径
+   * @param excludes 用于判断是否不包含这个文件，返回true则跳过该文件
+   * @returns 文件路径数组
+   */
+  getAllFiles(dir: string, excludes: (fileName: string) => boolean): string[] {
+    const list = [] as string[];
+    const _detect = (dir: string) => {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        if (excludes(path.join(dir, file))) {
+          continue; // 跳过部分文件夹
+        }
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        stat.isDirectory() ? _detect(filePath) : list.push(filePath);
+      }
+    };
+    _detect(dir);
+    return list;
+  },
+
+  /**
+   * 把一个地址拆分成数组
+   * @param filePath
+   * @returns
+   */
+  splitPath,
+
+  /**
+   * 将路径转换为加密路径
+   * @param p 原路径
+   * @returns 加密路径
+   */
+  toEncryptedPath(p: string) {
+    // $ 此处进行懒重载
+    const list = util.splitPath(p);
+    const index = list.findIndex((p) => p === privates.directory.decrypted);
+    if (index === -1) {
+      throw new Error(
+        i({
+          zh: '找不到需要加密的文件夹',
+          en: 'Cannot find the folder to be encrypted',
+        })
+      );
+    }
+    list[index] = privates.directory.encrypted;
+    // 如果需要加密文件夹名，那么还要进一步加密
+    return path.join(...list);
+  },
+
+  /**
+   * 将路径转换为解密路径
+   * @param p 原路径
+   * @returns 解密路径
+   */
+  toDecryptedPath(p: string) {
+    const list = util.splitPath(p);
+    const index = list.findIndex((p) => p === privates.directory.decrypted);
+    if (index === -1) {
+      throw new Error(
+        i({
+          zh: '找不到未加密的文件夹',
+          en: 'Cannot find the folder to be decrypted',
+        })
+      );
+    }
+    list[index] = privates.directory.decrypted;
+    return path.join(...list);
+  },
+
+  /**
+   * 读取文件
+   * @param filePath 源文件路径
+   * @returns 文件内容
+   */
+  load(filePath: string): string {
+    // 读取文件内容
+    return fs.readFileSync(filePath).toString();
+  },
+
+  /**
+   * 保存数据到文件
+   * @param data 数据内容
+   * @param folder 文件夹路径
+   * @param fileName 文件名
+   */
+  save(data: string, folder: string, fileName: string) {
+    // 创建文件夹
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+    // 写入到新文件
+    fs.writeFileSync(path.join(folder, fileName), data);
+  },
+};
+
 const privates = {
+  /**
+   * 语言，从执行参数或系统中获取
+   */
   locale: '',
-  rootDir: '',
+
+  /**
+   * 根目录，递归向上查找package.json所在的文件夹
+   */
+  root: '',
+
+  /**
+   * 操作，由参数决定
+   */
+  action: '',
+
+  /**
+   * 密钥，由参数决定
+   */
+  key: '',
+
+  // 以下是package.json读取出来的
   exclude: [] as string[],
   encryptFolderName: true,
   directory: {
     decrypted: '',
     encrypted: '',
   },
-  action: '',
-  key: '',
 
+  // 私有方法
   initLocale() {
     // 先看参数里有没有
     if (process.argv.includes('--en')) {
@@ -62,7 +224,7 @@ const privates = {
     }
   },
   checkDecryptedIgnored() {
-    const gitigorePath = path.join(privates.rootDir, '.gitignore');
+    const gitigorePath = path.join(privates.root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
       const content = fs.readFileSync(gitigorePath);
       const lines = content
@@ -92,7 +254,7 @@ const privates = {
       }
     }
   },
-  check(encryptConfigs: any) {
+  checkPackageJson(encryptConfigs: any) {
     const k = chalk.rgb(177, 220, 251);
     const v = chalk.rgb(193, 148, 125);
     const p = chalk.rgb(202, 123, 210);
@@ -209,7 +371,7 @@ ${y(`}`)}`;
       const root = path.join(...paths.slice(0, i));
       const p = path.join(root, 'package.json');
       if (fs.existsSync(p)) {
-        privates.rootDir = root;
+        privates.root = root;
         return require(p);
       }
     }
@@ -230,13 +392,12 @@ ${y(`}`)}`;
   },
 };
 
-// TODO util和config看能否分成两个对象导出？
-const createUtil = () => {
+const createConfigManager = () => {
   privates.initLocale();
 
   // 寻找配置文件package.json
   const config = privates.getPackageJson().encryptConfigs;
-  privates.check(config);
+  privates.checkPackageJson(config);
 
   privates.encryptFolderName = config.encryptFolderName === false ? false : true;
   privates.exclude = config.exclude;
@@ -251,17 +412,20 @@ const createUtil = () => {
     get key() {
       return privates.key;
     },
+
     get encryptFolderName() {
       return privates.encryptFolderName;
     },
-    get rootDir() {
-      return privates.rootDir;
-    },
-    get decryptedDir() {
-      return path.join(privates.rootDir, privates.directory.decrypted);
-    },
-    get encryptedDir() {
-      return path.join(privates.rootDir, privates.directory.encrypted);
+
+    /**
+     * 目录配置，包含了根目录
+     */
+    get dir() {
+      return {
+        root: privates.root,
+        decrypted: privates.directory.decrypted,
+        encrypted: privates.directory.encrypted,
+      };
     },
     set(key: string, action: string) {
       privates.key = key;
@@ -283,11 +447,11 @@ const createUtil = () => {
         { en: 'key', zh: '密钥' },
       ];
       const maxKeyLength = i({
-        en: 4 + Math.max(...keys.map((k) => u.actualWidth(k.en))),
-        zh: 2 + Math.max(...keys.map((k) => u.actualWidth(k.zh))),
+        en: 4 + Math.max(...keys.map((k) => util.actualWidth(k.en))),
+        zh: 2 + Math.max(...keys.map((k) => util.actualWidth(k.zh))),
       });
       const pk = (key: string) =>
-        u.padAlign(key, maxKeyLength).replace(/^[\w]/, (a) => a.toUpperCase());
+        util.padAlign(key, maxKeyLength).replace(/^[\w]/, (a) => a.toUpperCase());
 
       const get = (key: { en: string; zh: string }) => {
         let r = { value: '', key: '', comment: '' };
@@ -302,9 +466,7 @@ const createUtil = () => {
             break;
           case 'root':
             r.value =
-              privates.rootDir.length > 24
-                ? path.relative(__dirname, privates.rootDir)
-                : privates.rootDir;
+              privates.root.length > 24 ? path.relative(__dirname, privates.root) : privates.root;
             r.key = chalk.rgb(147, 183, 236)(pk(' ├─ ' + i(key)));
             r.comment = i({
               zh: '笔记的根目录',
@@ -359,8 +521,8 @@ const createUtil = () => {
       };
 
       const values = keys.map((key) => get(key));
-      const maxValueLength = Math.max(...values.map((v) => u.actualWidth(v.value)));
-      const pv = (v: string) => u.padAlign(v, maxValueLength);
+      const maxValueLength = Math.max(...values.map((v) => util.actualWidth(v.value)));
+      const pv = (v: string) => util.padAlign(v, maxValueLength);
 
       const c = chalk.rgb(122, 154, 96);
       for (let index = 0; index < keys.length; index++) {
@@ -374,127 +536,8 @@ const createUtil = () => {
         console.log(tab`${v.key} : ${pv(v.value)} ${v.comment ? c(' // ' + v.comment) : ''}`);
       }
     },
-
-    // # 工具函数
-
-    actualWidth(text: string) {
-      return stringWidth(text);
-    },
-
-    /**
-     * 按实际宽度补空格
-     * @param text
-     * @param length
-     * @param direction
-     * @returns
-     */
-    padAlign(text: string, length: number, direction: 'left' | 'right' = 'right') {
-      const width = stringWidth(text);
-      if (direction === 'left') {
-        return ' '.repeat(length - width) + text; // 按实际宽度补空格
-      }
-      if (direction === 'right') {
-        return text + ' '.repeat(length - width); // 按实际宽度补空格
-      }
-      throw new Error("direction should be 'left' or 'right'");
-    },
-
-    /**
-     * 递归获取文件夹下的所有文件
-     * @param dir 目标文件夹路径
-     * @param excludes 用于判断是否不包含这个文件，返回true则跳过该文件
-     * @returns 文件路径数组
-     */
-    getAllFiles(dir: string, excludes: (fileName: string) => boolean): string[] {
-      const list = [] as string[];
-      const _detect = (dir: string) => {
-        const files = fs.readdirSync(dir);
-        for (const file of files) {
-          if (excludes(path.join(dir, file))) {
-            continue; // 跳过部分文件夹
-          }
-          const filePath = path.join(dir, file);
-          const stat = fs.statSync(filePath);
-          stat.isDirectory() ? _detect(filePath) : list.push(filePath);
-        }
-      };
-      _detect(dir);
-      return list;
-    },
-
-    /**
-     * 把一个地址拆分成数组
-     * @param filePath
-     * @returns
-     */
-    splitPath,
-
-    /**
-     * 将路径转换为加密路径
-     * @param p 原路径
-     * @returns 加密路径
-     */
-    toEncryptedPath(p: string) {
-      const list = u.splitPath(p);
-      const index = list.findIndex((p) => p === privates.directory.decrypted);
-      if (index === -1) {
-        throw new Error(
-          i({
-            zh: '找不到需要加密的文件夹',
-            en: 'Cannot find the folder to be encrypted',
-          })
-        );
-      }
-      list[index] = privates.directory.encrypted;
-      return path.join(...list);
-    },
-
-    /**
-     * 将路径转换为解密路径
-     * @param p 原路径
-     * @returns 解密路径
-     */
-    toDecryptedPath(p: string) {
-      const list = u.splitPath(p);
-      const index = list.findIndex((p) => p === privates.directory.decrypted);
-      if (index === -1) {
-        throw new Error(
-          i({
-            zh: '找不到未加密的文件夹',
-            en: 'Cannot find the folder to be decrypted',
-          })
-        );
-      }
-      list[index] = privates.directory.decrypted;
-      return path.join(...list);
-    },
-
-    /**
-     * 读取文件
-     * @param filePath 源文件路径
-     * @returns 文件内容
-     */
-    load(filePath: string): string {
-      // 读取文件内容
-      return fs.readFileSync(filePath).toString();
-    },
-
-    /**
-     * 保存数据到文件
-     * @param data 数据内容
-     * @param folder 文件夹路径
-     * @param fileName 文件名
-     */
-    save(data: string, folder: string, fileName: string) {
-      // 创建文件夹
-      if (!fs.existsSync(folder)) {
-        fs.mkdirSync(folder, { recursive: true });
-      }
-      // 写入到新文件
-      fs.writeFileSync(path.join(folder, fileName), data);
-    },
   };
   return u;
 };
 
-export const util = createUtil();
+export const configs = createConfigManager();

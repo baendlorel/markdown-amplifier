@@ -7,9 +7,12 @@ package.json 中配置了加密要忽略的文件夹，可以手动修改。
 ```json
 {
   "encryptConfigs": {
-    "secretFolder": "secret",
+    "encryptFolderName": true,
     "exclude": [],
-    "outDir": "encrypted"
+    "directory": {
+      "decrypted": "decrypted",
+      "encrypted": "encrypted"
+    }
   }
 }
 ```
