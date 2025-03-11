@@ -15,7 +15,7 @@
 	"encryptConfigs": {
 		"exclude": [],
 		"directory": {
-			"secret": "secret",
+			"decrypted": "decrypted",
 			"encrypted": "encrypted"
 		}
 	}

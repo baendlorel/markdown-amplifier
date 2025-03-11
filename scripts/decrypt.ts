@@ -1,9 +1,8 @@
 import chalk from 'chalk';
-import { config } from './configs';
-import { getAllFiles } from './utils';
+import { util } from './utils';
 
-export const decrypt = () => {
+export const decryption = () => {
   console.log(chalk.bgBlue('Decrypting'));
-  const files = getAllFiles(config.secretFolder);
+  const files = util.getAllFiles(util.secretFolder);
   console.log(` Detected ${files.length} file(s)`);
 };

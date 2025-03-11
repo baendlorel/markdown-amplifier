@@ -1,8 +1,8 @@
 import path from 'path';
 import chalk from 'chalk';
-import { encrypt } from './encrypt';
-import { decrypt } from './decrypt';
-import { config, i } from './configs';
+import { encryption } from './encrypt';
+import { decryption } from './decrypt';
+import { util, i } from './utils';
 
 const invalidArgs = (key: string, action: string) => {
   let invalid = false;
@@ -44,13 +44,13 @@ const main = (argv: string[]) => {
       })
     )
   );
-  config.set(key, action);
-  config.display();
+  util.set(key, action);
+  util.display();
 
   console.log();
 
-  action === '--encrypt' && encrypt();
-  action === '--decrypt' && decrypt();
+  action === '--encrypt' && encryption();
+  action === '--decrypt' && decryption();
 };
 
 main(Array.isArray(process.argv) ? Array.from(process.argv) : []);
