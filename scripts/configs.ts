@@ -15,8 +15,8 @@ class Configuration {
 
   constructor() {
     // 寻找配置文件package.json
-    const config = this.getPackageJson().encryptConfigs;
-    this.check(config);
+    const config = this.#getPackageJson().encryptConfigs;
+    this.#check(config);
 
     this.#exclude = config.exclude;
     this.#directory = {
@@ -25,9 +25,32 @@ class Configuration {
     };
     this.#action = '';
     this.#key = '';
+
+    this.#checkSecretIgnored();
   }
 
-  private check(encryptConfigs: any) {
+  #checkSecretIgnored() {
+    const gitigorePath = path.join(this.#rootDir, '.gitignore');
+    if (fs.existsSync(gitigorePath)) {
+      const content = fs.readFileSync(gitigorePath);
+      const lines = content
+        .toString()
+        .split('\n')
+        .map((line) => line.trim());
+      if (!lines.some((p) => p.match(new RegExp(`${this.#directory.secret}`)))) {
+        console.log(
+          chalk.bgRed(
+            `It seems .gitignore in root directory does not contain '${
+              this.#directory.secret
+            }'. ${chalk.underline('Unencrypted files may be pushed to remote repository!')}`
+          )
+        );
+        throw new Error('Secret directory is not ignored in .gitignore');
+      }
+    }
+  }
+
+  #check(encryptConfigs: any) {
     const k = chalk.rgb(177, 220, 251);
     const v = chalk.rgb(193, 148, 125);
     const p = chalk.rgb(202, 123, 210);
@@ -73,7 +96,7 @@ ${y(`}`)}`;
     }
   }
 
-  private getPackageJson() {
+  #getPackageJson() {
     const paths = splitPath(__dirname);
     console.log('paths', paths);
     for (let i = paths.length; i >= 1; i--) {
