@@ -2,34 +2,13 @@ import path from 'path';
 import fs from 'fs';
 import chalk from 'chalk';
 import stringWidth from 'string-width';
+import { xor } from './cryptor';
 
 // 一些常用的单独导出的函数
 export const i = (i18nConfig: any) => i18nConfig[privates.locale];
 
 export const tab = (t: TemplateStringsArray, ...values: any[]) =>
   values.reduce((result, str, i) => result + t[i] + String(str), '  ') + t[t.length - 1];
-
-type Fn<T extends any[], R> = (...args: T) => R;
-/**
- * 缓存函数结果
- * @param fn 要缓存的函数
- * @returns 带缓存功能的函数
- */
-export const memoize = <T extends any[], R>(fn: Fn<T, R>): Fn<T, R> => {
-  const cache = new Map<string, R>();
-
-  return (...args: T): R => {
-    // 将参数序列化以支持多个参数
-    const key = args.reduce((prev, current) => prev + '_' + String(current), '');
-    if (cache.has(key)) {
-      return cache.get(key)!; // `!` 表示断言，告诉 TS 这里一定有值
-    } else {
-      const result = fn(...args);
-      cache.set(key, result);
-      return result;
-    }
-  };
-};
 
 /**
  * 把一个地址拆分成数组
@@ -107,25 +86,41 @@ export const util = {
   splitPath,
 
   /**
-   * 将路径转换为加密路径
+   * 将路径转换为加密路径，如果encryptFolderName为false那么不会加密目录
    * @param p 原路径
    * @returns 加密路径
    */
   toEncryptedPath(p: string) {
-    // $ 此处进行懒重载
-    const list = util.splitPath(p);
-    const index = list.findIndex((p) => p === privates.directory.decrypted);
-    if (index === -1) {
-      throw new Error(
-        i({
-          zh: '找不到需要加密的文件夹',
-          en: 'Cannot find the folder to be encrypted',
-        })
-      );
+    const getChangedFolder = (p: string) => {
+      const pathSplit = util.splitPath(p);
+      const index = pathSplit.findIndex((p) => p === privates.directory.decrypted);
+      if (index === -1) {
+        throw new Error(
+          i({
+            zh: '找不到需要加密的文件夹',
+            en: 'Cannot find the folder to be encrypted',
+          })
+        );
+      }
+      pathSplit[index] = privates.directory.encrypted;
+      return { pathSplit, index };
+    };
+
+    // OL 此处进行懒重载
+    if (configs.encryptFolderName) {
+      util.toEncryptedPath = (p: string) => path.join(...getChangedFolder(p).pathSplit);
+    } else {
+      util.toEncryptedPath = (p: string) => {
+        const { pathSplit, index } = getChangedFolder(p);
+        for (let i = index + 1; i < pathSplit.length; i++) {
+          pathSplit[i] = xor.encrypt(pathSplit[i]);
+        }
+        path.join(...pathSplit);
+      };
     }
-    list[index] = privates.directory.encrypted;
+
     // 如果需要加密文件夹名，那么还要进一步加密
-    return path.join(...list);
+    return util.toEncryptedPath(p);
   },
 
   /**
@@ -134,19 +129,46 @@ export const util = {
    * @returns 解密路径
    */
   toDecryptedPath(p: string) {
-    const list = util.splitPath(p);
-    const index = list.findIndex((p) => p === privates.directory.decrypted);
-    if (index === -1) {
-      throw new Error(
-        i({
-          zh: '找不到未加密的文件夹',
-          en: 'Cannot find the folder to be decrypted',
-        })
-      );
+    const getChangedFolder = (p: string) => {
+      const pathSplit = util.splitPath(p);
+      const index = pathSplit.findIndex((p) => p === privates.directory.encrypted);
+      if (index === -1) {
+        throw new Error(
+          i({
+            zh: '找不到需要解密的文件夹',
+            en: 'Cannot find the folder to be decrypted',
+          })
+        );
+      }
+      pathSplit[index] = privates.directory.decrypted;
+      return { pathSplit, index };
+    };
+
+    // OL 此处进行懒重载
+    if (configs.encryptFolderName) {
+      util.toDecryptedPath = (p: string) => path.join(...getChangedFolder(p).pathSplit);
+    } else {
+      util.toDecryptedPath = (p: string) => {
+        const { pathSplit, index } = getChangedFolder(p);
+        for (let i = index + 1; i < pathSplit.length; i++) {
+          pathSplit[i] = xor.decrypt(pathSplit[i]);
+        }
+        path.join(...pathSplit);
+      };
     }
-    list[index] = privates.directory.decrypted;
-    return path.join(...list);
+
+    // 如果需要加密文件夹名，那么还要进一步加密
+    return util.toDecryptedPath(p);
   },
+
+  /**
+   * 加解密文件路径，这一定是文件地址在访问，而非目录
+   * @param origin 原路径
+   * @param form 从哪个文件夹
+   * @param to 加解密到哪个文件夹
+   * @param cryptor 加解密函数
+   */
+  cryptFilePath(origin: string, form: string, to: string, cryptor: (s: string) => string) {},
 
   /**
    * 读取文件
@@ -164,13 +186,14 @@ export const util = {
    * @param folder 文件夹路径
    * @param fileName 文件名
    */
-  save(data: string, folder: string, fileName: string) {
+  save(data: string, filePath: string) {
+    const parsed = path.parse(filePath);
     // 创建文件夹
-    if (!fs.existsSync(folder)) {
-      fs.mkdirSync(folder, { recursive: true });
+    if (!fs.existsSync(parsed.dir)) {
+      fs.mkdirSync(parsed.dir, { recursive: true });
     }
     // 写入到新文件
-    fs.writeFileSync(path.join(folder, fileName), data);
+    fs.writeFileSync(filePath, data);
   },
 };
 
@@ -197,6 +220,7 @@ const privates = {
 
   // 以下是package.json读取出来的
   exclude: [] as string[],
+  encryptFileName: true,
   encryptFolderName: true,
   directory: {
     decrypted: '',
@@ -254,7 +278,7 @@ const privates = {
       }
     }
   },
-  checkPackageJson(encryptConfigs: any) {
+  checkPackageJson(configs: any) {
     const k = chalk.rgb(177, 220, 251);
     const v = chalk.rgb(193, 148, 125);
     const p = chalk.rgb(202, 123, 210);
@@ -273,7 +297,7 @@ const privates = {
 ${y(`}`)}`;
 
     const messages = [] as string[];
-    if (!encryptConfigs) {
+    if (!configs) {
       messages.push(
         chalk.red(
           i({
@@ -283,7 +307,18 @@ ${y(`}`)}`;
         )
       );
     } else {
-      if (encryptConfigs.encryptFolderName !== true && encryptConfigs.encryptFolderName !== false) {
+      if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
+        messages.push(
+          chalk.red(
+            i({
+              zh: 'encryptConfigs.encryptFileName 应该是boolean型',
+              en: 'encryptConfigs.encryptFileName should be a boolean',
+            })
+          )
+        );
+      }
+
+      if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
         messages.push(
           chalk.red(
             i({
@@ -293,7 +328,7 @@ ${y(`}`)}`;
           )
         );
       }
-      if (!encryptConfigs.exclude) {
+      if (!configs.exclude) {
         messages.push(
           chalk.red(
             i({
@@ -303,7 +338,7 @@ ${y(`}`)}`;
           )
         );
       }
-      if (!encryptConfigs.directory) {
+      if (!configs.directory) {
         messages.push(
           chalk.red(
             i({
@@ -313,7 +348,7 @@ ${y(`}`)}`;
           )
         );
       } else {
-        if (!encryptConfigs.directory.decrypted) {
+        if (!configs.directory.decrypted) {
           messages.push(
             chalk.red(
               i({
@@ -323,7 +358,7 @@ ${y(`}`)}`;
             )
           );
         }
-        if (!encryptConfigs.directory.encrypted) {
+        if (!configs.directory.encrypted) {
           messages.push(
             chalk.red(
               i({
@@ -399,7 +434,8 @@ const createConfigManager = () => {
   const config = privates.getPackageJson().encryptConfigs;
   privates.checkPackageJson(config);
 
-  privates.encryptFolderName = config.encryptFolderName === false ? false : true;
+  privates.encryptFileName = config.encryptFileName;
+  privates.encryptFolderName = config.encryptFolderName;
   privates.exclude = config.exclude;
   privates.directory.decrypted = config.directory.decrypted;
   privates.directory.encrypted = config.directory.encrypted;
@@ -438,6 +474,7 @@ const createConfigManager = () => {
 
     display() {
       const keys = [
+        { en: 'encryptFileName', zh: '加密文件名' },
         { en: 'encryptFolderName', zh: '加密文件夹名' },
         { en: 'root', zh: '根目录' },
         { en: 'decrypted', zh: '加密前' },
@@ -456,6 +493,14 @@ const createConfigManager = () => {
       const get = (key: { en: string; zh: string }) => {
         let r = { value: '', key: '', comment: '' };
         switch (key.en) {
+          case 'encryptFileName':
+            r.value = String(privates.encryptFileName);
+            r.key = chalk.blue(pk(i(key)));
+            r.comment = i({
+              zh: '是否加密文件名，默认为true',
+              en: 'Whether to encrypt file name, default is true',
+            });
+            break;
           case 'encryptFolderName':
             r.value = String(privates.encryptFolderName);
             r.key = chalk.blue(pk(i(key)));

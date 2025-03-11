@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { util, i, tab, configs } from './utils';
+import { util, i, tab, configs } from './misc';
 import { aes, xor } from './cryptor';
 
 const dir = configs.dir;

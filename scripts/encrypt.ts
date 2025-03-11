@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { util, i, tab, configs } from './utils';
+import { util, i, tab, configs } from './misc';
 import { aes, xor } from './cryptor';
 
 const dir = configs.dir;
@@ -16,25 +16,20 @@ let getNewFileName = (parsed: path.ParsedPath) => {
 };
 
 const encryptFile = (originPath: string) => {
-  const parsed = path.parse(originPath);
   const encryptedPath = util.toEncryptedPath(originPath);
-  // TODO 这里应该是path里的所有在decrypted文件夹内的文件夹名字都需要加密
-  const newName = getNewFileName(parsed);
 
   // 日志用变量
-  const rela1 = path.relative(dir.root, originPath);
-  const rela2 = path.relative(dir.root, path.join(parsed.dir, newName));
   console.log(
     i({
-      zh: tab`加密 ${rela1} => ${rela2}`,
-      en: tab`Encrypting ${rela1} => ${rela2}`,
+      zh: tab`加密 ${originPath} => ${encryptedPath}`,
+      en: tab`Encrypting ${originPath} => ${encryptedPath}`,
     })
   );
 
   // 加密并保存
   const origin = util.load(originPath);
   const encrypted = aes.encrypt(origin);
-  util.save(encrypted, util.toEncryptedPath(parsed.dir), newName);
+  util.save(encrypted, encryptedPath);
 };
 
 export const encryption = () => {
