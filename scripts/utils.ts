@@ -3,8 +3,17 @@ import fs from 'fs';
 import chalk from 'chalk';
 import stringWidth from 'string-width';
 
+// 一些常用的单独导出的函数
 export const i = (i18nConfig: any) => i18nConfig[privates.locale];
 
+export const tab = (t: TemplateStringsArray, ...values: any[]) =>
+  values.reduce((result, str, i) => result + t[i] + String(str), '  ') + t[t.length - 1];
+
+/**
+ * 把一个地址拆分成数组
+ * @param filePath 文件路径
+ * @returns 路径数组
+ */
 const splitPath = (filePath: string) => {
   const list = [] as string[];
   const _detect = (filePath: string) => {
@@ -23,8 +32,9 @@ const splitPath = (filePath: string) => {
 
 const privates = {
   locale: '',
-  exclude: [] as string[],
   rootDir: '',
+  exclude: [] as string[],
+  encryptFolderName: true,
   directory: {
     decrypted: '',
     encrypted: '',
@@ -91,6 +101,7 @@ const privates = {
     const example = `${y(`{`)}
   ...other configs,
   ${k(`"encryptConfigs"`)}: ${p(`{`)}
+      ${k(`"encryptFolderName"`)}: ${b(`true`)},
       ${k(`"exclude"`)}: ${b(`[]`)},
       ${k(`"directory"`)}: ${b(`{`)}
         ${k(`"decrypted"`)}: ${v(`"decrypted"`)},
@@ -110,11 +121,21 @@ ${y(`}`)}`;
         )
       );
     } else {
+      if (encryptConfigs.encryptFolderName !== true && encryptConfigs.encryptFolderName !== false) {
+        messages.push(
+          chalk.red(
+            i({
+              zh: 'encryptConfigs.encryptFolderName 应该是boolean型',
+              en: 'encryptConfigs.encryptFolderName should be a boolean',
+            })
+          )
+        );
+      }
       if (!encryptConfigs.exclude) {
         messages.push(
           chalk.red(
             i({
-              zh: 'encryptConfigs.exclude未设置，需设置为字符串数组',
+              zh: 'encryptConfigs.exclude 未设置，需设置为字符串数组',
               en: 'encryptConfigs.exclude should be an string array',
             })
           )
@@ -124,7 +145,7 @@ ${y(`}`)}`;
         messages.push(
           chalk.red(
             i({
-              zh: 'encryptConfigs.directory未设置',
+              zh: 'encryptConfigs.directory 未设置',
               en: 'encryptConfigs.directory is not set',
             })
           )
@@ -134,7 +155,7 @@ ${y(`}`)}`;
           messages.push(
             chalk.red(
               i({
-                zh: 'encryptConfigs.directory.decrypted未设置，需设置为字符串',
+                zh: 'encryptConfigs.directory.decrypted 未设置，需设置为字符串',
                 en: 'encryptConfigs.directory.decrypted should be a string',
               })
             )
@@ -144,7 +165,7 @@ ${y(`}`)}`;
           messages.push(
             chalk.red(
               i({
-                zh: 'encryptConfigs.directory.encrypted未设置，需设置为字符串',
+                zh: 'encryptConfigs.directory.encrypted 未设置，需设置为字符串',
                 en: 'encryptConfigs.directory.encrypted should be a string',
               })
             )
@@ -216,6 +237,7 @@ const createUtil = () => {
   const config = privates.getPackageJson().encryptConfigs;
   privates.check(config);
 
+  privates.encryptFolderName = config.encryptFolderName === false ? false : true;
   privates.exclude = config.exclude;
   privates.directory.decrypted = config.directory.decrypted;
   privates.directory.encrypted = config.directory.encrypted;
@@ -248,7 +270,8 @@ const createUtil = () => {
 
     display() {
       const keys = [
-        { en: 'root', zh: '根' },
+        { en: 'encryptFolderName', zh: '加密文件夹名' },
+        { en: 'root', zh: '根目录' },
         { en: 'decrypted', zh: '加密前' },
         { en: 'encrypted', zh: '加密后' },
         { en: 'exclude', zh: '忽略目录' },
@@ -265,8 +288,19 @@ const createUtil = () => {
       const get = (key: { en: string; zh: string }) => {
         let r = { value: '', key: '', comment: '' };
         switch (key.en) {
+          case 'encryptFolderName':
+            r.value = String(privates.encryptFolderName);
+            r.key = chalk.blue(pk(i(key)));
+            r.comment = i({
+              zh: '是否加密文件夹名，默认为true',
+              en: 'Whether to encrypt folder name, default is true',
+            });
+            break;
           case 'root':
-            r.value = path.relative(__dirname, privates.rootDir);
+            r.value =
+              privates.rootDir.length > 24
+                ? path.relative(__dirname, privates.rootDir)
+                : privates.rootDir;
             r.key = chalk.rgb(147, 183, 236)(pk(' ├─ ' + i(key)));
             r.comment = i({
               zh: '笔记的根目录',
@@ -324,11 +358,16 @@ const createUtil = () => {
       const maxValueLength = Math.max(...values.map((v) => u.actualWidth(v.value)));
       const pv = (v: string) => u.padAlign(v, maxValueLength);
 
-      console.log(chalk.blue(pk(i({ en: 'Directory', zh: '目录配置' }))));
       const c = chalk.rgb(122, 154, 96);
-      for (let i = 0; i < keys.length; i++) {
-        const v = values[i];
-        console.log(`${v.key} : ${pv(v.value)} ${v.comment ? c('// ' + v.comment) : ''}`);
+      for (let index = 0; index < keys.length; index++) {
+        const v = values[index];
+        if (keys[index].en === 'root') {
+          console.log(chalk.blue(pk(i({ en: tab`Directory`, zh: tab`目录配置` }))));
+        }
+        if (keys[index].en === 'key') {
+          v.key = chalk.red(v.key);
+        }
+        console.log(tab`${v.key} : ${pv(v.value)} ${v.comment ? c(' // ' + v.comment) : ''}`);
       }
     },
 
@@ -342,6 +381,7 @@ const createUtil = () => {
      * 按实际宽度补空格
      * @param text
      * @param length
+     * @param direction
      * @returns
      */
     padAlign(text: string, length: number, direction: 'left' | 'right' = 'right') {
@@ -385,6 +425,11 @@ const createUtil = () => {
      */
     splitPath,
 
+    /**
+     * 将路径转换为加密路径
+     * @param p 原路径
+     * @returns 加密路径
+     */
     toEncryptedPath(p: string) {
       const list = u.splitPath(p);
       const index = list.findIndex((p) => p === privates.directory.decrypted);
@@ -400,6 +445,11 @@ const createUtil = () => {
       return path.join(...list);
     },
 
+    /**
+     * 将路径转换为解密路径
+     * @param p 原路径
+     * @returns 解密路径
+     */
     toDecryptedPath(p: string) {
       const list = u.splitPath(p);
       const index = list.findIndex((p) => p === privates.directory.decrypted);
@@ -417,13 +467,20 @@ const createUtil = () => {
 
     /**
      * 读取文件
-     * @param filePath  源文件路径
+     * @param filePath 源文件路径
+     * @returns 文件内容
      */
     load(filePath: string): string {
       // 读取文件内容
       return fs.readFileSync(filePath).toString();
     },
 
+    /**
+     * 保存数据到文件
+     * @param data 数据内容
+     * @param folder 文件夹路径
+     * @param fileName 文件名
+     */
     save(data: string, folder: string, fileName: string) {
       // 创建文件夹
       if (!fs.existsSync(folder)) {
