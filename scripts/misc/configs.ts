@@ -10,8 +10,9 @@ import chalk from 'chalk';
 import stringWidth from 'string-width';
 import { i } from './locale';
 import { formatDatetime, load, padAlign, splitPath, tab } from './utils';
-import { log, lbgBlue, lbgRed, lgrey, lred } from './logger';
+import { log, lbgBlue, lbgRed, lgrey, lred, table } from './logger';
 import { argv } from './argv';
+console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
 
 const createConfigManager = () => {
   // * 定义私有变量
@@ -75,7 +76,7 @@ const createConfigManager = () => {
   };
 
   const loadPackageJsonConfigs = (rootPath: string) => {
-    const configs = require(rootPath).encryptConfigs;
+    const configs = require(path.join(rootPath, 'package.json')).encryptConfigs;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
@@ -172,7 +173,7 @@ ${y(`}`)}`;
   };
 
   // * 开始加载配置
-  lbgBlue('加载配置', 'Loading Configuration');
+  lbgBlue('加载配置表', 'Loading Configuration Table');
 
   // 以package.json的目录定为root
   _root = locateRoot();
@@ -201,8 +202,8 @@ ${y(`}`)}`;
     },
     get directory() {
       return {
-        decrypted: _directory.decrypted,
-        encrypted: _directory.encrypted,
+        decrypted: path.join(_root, _directory.decrypted),
+        encrypted: path.join(_root, _directory.encrypted),
       };
     },
     excludes(folder: string) {
@@ -263,23 +264,31 @@ ${y(`}`)}`;
           ),
         },
       ];
-      const mk = Math.max(...entries.map((k) => stringWidth(k.key)));
-      const mv = Math.max(...entries.map((v) => stringWidth(v.value)));
-      const pk = (key: string) => padAlign(key, mk).replace(/^[\w]/, (a) => a.toUpperCase());
-      const pv = (v: string) => padAlign(v, mv);
 
-      for (const e of entries) {
-        const k = chalk.blue(pk(e.key));
-        const v = pv(e.value);
-        const c = chalk.rgb(122, 154, 96)(' //  ' + e.comment);
-        log(tab`${k} : ${v} ${c}`);
-      }
+      table(
+        entries.map((e) => ({
+          key: chalk.blue(e.key),
+          value: e.value,
+          comment: chalk.rgb(122, 154, 96)(e.comment),
+        })),
+        [
+          { index: 'key', alias: chalk.bold(i('配置项', 'ConfigItem')) },
+          { index: 'value', alias: chalk.bold(i('值', 'Value')) },
+          { index: 'comment', alias: chalk.bold(i('注释', 'Comment')) },
+        ]
+      );
     },
+    /**
+     * 把使用的key保存在.history-keys文件中
+     */
     saveHistoryKey() {
-      // 把使用的key保存在.history-keys文件中
-      const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
       const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
-      fs.appendFileSync(conf.historyKeysPath, head + newKey);
+      if (fs.existsSync(conf.historyKeysPath)) {
+        const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
+        fs.appendFileSync(conf.historyKeysPath, head + newKey);
+      } else {
+        fs.writeFileSync(conf.historyKeysPath, newKey);
+      }
     },
   };
   return conf;

@@ -3,6 +3,7 @@
  * @description
  * 无依赖
  */
+console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
 
 import fs from 'fs';
 import path from 'path';

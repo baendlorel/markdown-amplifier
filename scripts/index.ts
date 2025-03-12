@@ -5,10 +5,10 @@
  * @description
  */
 
+import { argv } from './misc';
+import { configs } from './misc';
 import { encryption } from './encrypt';
 import { decryption } from './decrypt';
-import { configs } from './misc';
-import { argv } from './misc';
 
 const main = () => {
   configs.display();

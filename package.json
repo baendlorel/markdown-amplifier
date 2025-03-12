@@ -2,7 +2,8 @@
 	"name": "apulldore",
 	"scripts": {
 		"encrypt": "tsx scripts/index.ts --encrypt",
-		"decrypt": "tsx scripts/index.ts --decrypt"
+		"decrypt": "tsx scripts/index.ts --decrypt",
+		"test": "tsx scripts/test.ts"
 	},
 	"devDependencies": {
 		"@types/node": "^22.13.10",

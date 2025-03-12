@@ -3,10 +3,10 @@
  * @description
  * 依赖于argv、memoize
  */
-
 import crypto from 'crypto';
 import { argv } from './argv';
 import { memoize } from './utils';
+console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
 
 const deriveKey = (): Buffer => {
   return crypto.createHash('sha256').update(argv.key).digest();
@@ -82,41 +82,41 @@ export const xor = {
  * @param to 加解密到哪个文件夹（加密前或加密后）
  * @param cryptor 加解密函数
  */
-export const cryptPath = (
-  origin: string,
-  from: string,
-  to: string,
-  cryptor: (s: string) => string
-) => {
-  const paths = u.splitPath(origin);
-  const cryptIndex = paths.findIndex((p) => p === from);
-  if (cryptIndex === -1) {
-    const m = i(
-      `没有找到待处理文件夹'${from}'`,
-      `Cannot find the folder '${from}' to be encrypted`
-    );
-    lred(m);
-    throw new Error(m);
-  }
-  paths[cryptIndex] = to;
-  const init = (origin: string, from: string, to: string) => {
-    const paths = u.splitPath(origin);
-    const cryptIndex = paths.findIndex((p) => p === from);
-    if (cryptIndex === -1) {
-      const m = i(
-        `没有找到待处理文件夹'${from}'`,
-        `Cannot find the folder '${from}' to be encrypted`
-      );
-      lred(m);
-      throw new Error(m);
-    }
-    paths[cryptIndex] = to;
-    return { paths, cryptIndex };
-  };
-  const cryptFileName = (paths: string[], cryptIndex: number, cryptor: (s: string) => string) => {};
-  const cryptFolderName = (
-    paths: string[],
-    cryptIndex: number,
-    cryptor: (s: string) => string
-  ) => {};
-};
+// export const cryptPath = (
+//   origin: string,
+//   from: string,
+//   to: string,
+//   cryptor: (s: string) => string
+// ) => {
+//   const paths = u.splitPath(origin);
+//   const cryptIndex = paths.findIndex((p) => p === from);
+//   if (cryptIndex === -1) {
+//     const m = i(
+//       `没有找到待处理文件夹'${from}'`,
+//       `Cannot find the folder '${from}' to be encrypted`
+//     );
+//     lred(m);
+//     throw new Error(m);
+//   }
+//   paths[cryptIndex] = to;
+//   const init = (origin: string, from: string, to: string) => {
+//     const paths = u.splitPath(origin);
+//     const cryptIndex = paths.findIndex((p) => p === from);
+//     if (cryptIndex === -1) {
+//       const m = i(
+//         `没有找到待处理文件夹'${from}'`,
+//         `Cannot find the folder '${from}' to be encrypted`
+//       );
+//       lred(m);
+//       throw new Error(m);
+//     }
+//     paths[cryptIndex] = to;
+//     return { paths, cryptIndex };
+//   };
+//   const cryptFileName = (paths: string[], cryptIndex: number, cryptor: (s: string) => string) => {};
+//   const cryptFolderName = (
+//     paths: string[],
+//     cryptIndex: number,
+//     cryptor: (s: string) => string
+//   ) => {};
+// };
