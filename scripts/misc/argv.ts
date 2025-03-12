@@ -3,8 +3,9 @@
  * @description
  * 依赖于locale、logger
  */
+import chalk from 'chalk';
 import { i } from './locale';
-import { lred } from './logger';
+import { log, lred, table, lbgSucc, lbgBlue, br } from './logger';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
 const resolveArgV = () => {
@@ -29,19 +30,109 @@ const resolveArgV = () => {
     { arg: Command.DECRYPT, category: 'action', property: 'decrypt' },
   ] as { arg: string; category: CommandCategory; property: string }[];
 
-  const help = `[Cryption] ${i('可选参数如下', 'Optional arguments')} 
-  --help, -h : ${i('显示帮助', 'Show this help')}
-  --zh       : ${i('日志、报错设为使用中文', 'Display logs and errors in Chinese')}
-  --en       : ${i('日志、报错设为使用英文', 'Display logs and errors in English')}
-  --encrypt  : ${i(
-    '执行加密，会清空加密文件夹，并把加密后的文件放入',
-    'Do the encryption, will clear the encrypted folder and put the encrypted files in'
-  )}
-  --decrypt  : ${i(
-    '执行解密，会清空解密文件夹，并把解密后的文件放入',
-    'Do the decryption, will clear the decrypted folder and put the decrypted files in'
-  )}
-  `;
+  // 配置案例
+  const showPackageJsonConfigExample = () => {
+    const cm = chalk.rgb(122, 154, 96);
+    const k = chalk.rgb(177, 220, 251);
+    const v = chalk.rgb(193, 148, 125);
+    const p = chalk.rgb(202, 123, 210);
+    const b = chalk.rgb(93, 161, 248);
+    const y = chalk.rgb(245, 214, 74);
+
+    const _cryption = i('Cryption配置，以下为默认值', 'Cryption config, default values');
+    const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
+    const _encryptFolderName = i('是否加密文件夹名', 'Whether to encrypt folder names');
+    const _exclude = i('排除的文件或文件夹', 'Excluded files or folders');
+    const _directory = i('加解密文件夹', 'En/decrypt folder name');
+    const _decrypted = i('包含秘密信息的文件夹', 'Folder that contains secret files');
+    const _encrypted = i('放置加密后文件的文件夹', 'Encrypted file will be put into them');
+
+    const packageJsonConfigExample = `${y(`{`)}
+  ...other configs,
+  ${k(`"cryption"`)}: ${p(`{`)}                   ${cm('// ' + _cryption)}
+      ${k(`"encryptFileName"`)}: ${b(`true`)},    ${cm('// ' + _encryptFileName)}
+      ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${cm('// ' + _encryptFolderName)}
+      ${k(`"exclude"`)}: ${b(`[]`)},              ${cm('// ' + _exclude)}
+      ${k(`"directory"`)}: ${b(`{`)}              ${cm('// ' + _directory)}
+        ${k(`"decrypted"`)}: ${v(`"decrypted"`)}, ${cm('// ' + _decrypted)}
+        ${k(`"encrypted"`)}: ${v(`"encrypted"`)}  ${cm('// ' + _encrypted)}
+    ${b(`}`)}
+  ${p(`}`)}
+${y(`}`)}`;
+    console.log(packageJsonConfigExample);
+  };
+
+  const showHelp = () => {
+    const dic = [
+      {
+        directive: [Command.HELP, Command.HELP_SHORT].join(', '),
+        description: i('显示帮助', 'Show Help'),
+      },
+      {
+        directive: Command.LOCALE_ZH,
+        description: i('日志、报错设为使用中文', 'Display logs and errors in Chinese'),
+      },
+      {
+        directive: Command.LOCALE_EN,
+        description: i('日志、报错设为使用英文', 'Display logs and errors in English'),
+      },
+      {
+        directive: Command.ENCRYPT + ' <key>',
+        description: i(
+          '以<key>为密钥执行加密，会清空加密文件夹',
+          `Encrypt files with <key>. Will clear 'encrypted' the folder first.`
+        ),
+      },
+      {
+        directive: Command.DECRYPT + ' <key>',
+        description: i(
+          '以<key>为密钥执行解密，会清空解密文件夹',
+          `Decrypt files with <key>. Will clear the 'decrypted' folder first.`
+        ),
+      },
+    ];
+
+    const cm = chalk.rgb(122, 154, 96);
+    lbgBlue(i('介绍', 'Introduction'));
+    log(
+      `
+  Cryption是为了让git管理的个人笔记、知识库能够更安全地记录秘密信息而编写加密解密工具
+  - 程序会从脚本目录开始往上层逐级搜索package.json，并将找到的目录定为笔记的根目录
+  - 您可以在package.json中设置要加密、解密的文件夹（其他配置见下方例子）
+  - 解密文件夹就是在本地编写秘密信息的文件夹，Cryption会自动将其纳入.gitignore中
+  - 每次使用的密钥key会自动记入.history-keys文件中，此文件也会自动纳入.gitignore
+  - 加密、解密时，会清空对应的目标文件夹，请注意备份`,
+      ``
+    );
+    br();
+
+    lbgBlue(i('package.json配置例', 'package.json config example'));
+    showPackageJsonConfigExample();
+    br();
+
+    lbgBlue(i('指令列表', 'Directive Table'));
+    table(
+      dic.map((d) => ({
+        directive: chalk.gray(d.directive),
+        description: cm(d.description),
+      })),
+      [
+        { index: 'directive', alias: i('指令', 'Supported Directives') },
+        { index: 'description', alias: i('指令用途', 'Description') },
+      ]
+    );
+    br();
+
+    lbgBlue(i('使用例', 'Example'));
+    log(
+      '  crypt --encrypt --zh <key>' +
+        cm(
+          ' // ' +
+            i('以<key>为密钥加密，展示中文信息', 'Encrypt with <key> and display logs in Chinese')
+        )
+    );
+    br();
+  };
 
   const resolve = (commands: string[]) => {
     // 如果有key，先把密钥找出来
@@ -81,9 +172,10 @@ const resolveArgV = () => {
     for (const [k, v] of Object.entries(count)) {
       if (v > 1) {
         lred(
-          i('同一种参数不能重复', 'Commands in same category should not be used at the same time') +
-            ': ' +
-            k
+          i(
+            '同一种参数不能重复: ' + k,
+            'Commands in same category should not be used at the same time: ' + k
+          )
         );
         return undefined;
       }
@@ -107,6 +199,7 @@ const resolveArgV = () => {
       isEncrypt: commands.includes(Command.ENCRYPT),
       isDecrypt: commands.includes(Command.DECRYPT),
       isHelp: commands.includes(Command.HELP) || commands.includes(Command.HELP_SHORT),
+      showPackageJsonConfigExample, // 此处仅仅是为了configs模块可以使用它，避免argv和configs都写一遍
     };
 
     resolved.isEncrypt && (resolved.action = 'encrypt');
@@ -125,8 +218,8 @@ const resolveArgV = () => {
 
   // 如果参数不合法或包含了帮助指令，那么输出帮助并退出
   if (!resolved || resolved.isHelp) {
-    console.log(help);
-    process.exit(0);
+    showHelp();
+    process.exit(1);
   }
 
   // 至此，commands一定包含ACTION，同命令不重复，没有不合法的命令

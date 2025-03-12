@@ -1,3 +1,4 @@
+#!/usr/bin/env tsx
 /**
  * @name Cryption
  * @version 1.0.0
@@ -5,8 +6,8 @@
  * @description
  */
 
-import { argv } from './misc';
-import { configs } from './misc';
+import { configs, argv } from './misc';
+import {} from './misc';
 import { encryption } from './encrypt';
 import { decryption } from './decrypt';
 

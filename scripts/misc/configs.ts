@@ -24,6 +24,10 @@ const createConfigManager = () => {
    */
   let _root = '';
 
+  // 以下是参数里读取来的
+  let _action = argv.action;
+  let _key = argv.key;
+
   // 以下是package.json读取出来的
   let _encryptFileName = true;
   let _encryptFolderName = true;
@@ -76,64 +80,46 @@ const createConfigManager = () => {
 
   const loadPackageJsonConfigs = (rootPath: string) => {
     lgrey('检测package.json中的配置', 'Checking configs in package.json');
-    const configs = require(path.join(rootPath, 'package.json')).encryptConfigs;
+    const configs = require(path.join(rootPath, 'package.json')).cryption;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
-    const k = chalk.rgb(177, 220, 251);
-    const v = chalk.rgb(193, 148, 125);
-    const p = chalk.rgb(202, 123, 210);
-    const b = chalk.rgb(93, 161, 248);
-    const y = chalk.rgb(245, 214, 74);
-
-    // 配置案例
-    const example = `${y(`{`)}
-  ...other configs,
-  ${k(`"encryptConfigs"`)}: ${p(`{`)}
-      ${k(`"encryptFolderName"`)}: ${b(`true`)},
-      ${k(`"exclude"`)}: ${b(`[]`)},
-      ${k(`"directory"`)}: ${b(`{`)}
-        ${k(`"decrypted"`)}: ${v(`"decrypted"`)},
-        ${k(`"encrypted"`)}: ${v(`"encrypted"`)}
-    ${b(`}`)}
-  ${p(`}`)}
-${y(`}`)}`;
 
     if (!configs) {
-      mi('在package.json中找不到encryptConfigs配置', 'Cannot find encryptConfigs in package.json');
+      mi('在package.json中找不到cryption配置', 'Cannot find cryption in package.json');
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
         mi(
-          'encryptConfigs.encryptFileName 应该是boolean型',
-          'encryptConfigs.encryptFileName should be a boolean'
+          'cryption.encryptFileName 应该是boolean型',
+          'cryption.encryptFileName should be a boolean'
         );
       }
 
       if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
         mi(
-          'encryptConfigs.encryptFolderName 应该是boolean型',
-          'encryptConfigs.encryptFolderName should be a boolean'
+          'cryption.encryptFolderName 应该是boolean型',
+          'cryption.encryptFolderName should be a boolean'
         );
       }
       if (!configs.exclude) {
         mi(
-          'encryptConfigs.exclude 未设置，需设置为字符串数组',
-          'encryptConfigs.exclude should be an string array'
+          'cryption.exclude 未设置，需设置为字符串数组',
+          'cryption.exclude should be an string array'
         );
       }
       if (!configs.directory) {
-        mi('encryptConfigs.directory 未设置', 'encryptConfigs.directory is not set');
+        mi('cryption.directory 未设置', 'cryption.directory is not set');
       } else {
         if (!configs.directory.decrypted) {
           mi(
-            'encryptConfigs.directory.decrypted 未设置，需设置为字符串',
-            'encryptConfigs.directory.decrypted should be a string'
+            'cryption.directory.decrypted 未设置，需设置为字符串',
+            'cryption.directory.decrypted should be a string'
           );
         }
         if (!configs.directory.encrypted) {
           mi(
-            'encryptConfigs.directory.encrypted 未设置，需设置为字符串',
-            'encryptConfigs.directory.encrypted should be a string'
+            'cryption.directory.encrypted 未设置，需设置为字符串',
+            'cryption.directory.encrypted should be a string'
           );
         }
       }
@@ -144,10 +130,8 @@ ${y(`}`)}`;
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lred(messages.join('\n'));
       lbgBlue('package.json中的配置例子如下：', 'An example in package.json should be like this :');
-      log(example);
-      throw new Error(
-        i('package.json中的encryptConfigs配置无效', 'Invalid encryptConfigs in package.json')
-      );
+      argv.showPackageJsonConfigExample();
+      throw new Error(i('package.json中的cryption配置无效', 'Invalid cryption in package.json'));
     }
 
     return configs;
@@ -190,6 +174,12 @@ ${y(`}`)}`;
   log.decrIndent();
 
   const conf = {
+    get key() {
+      return _key;
+    },
+    get action() {
+      return _action;
+    },
     get historyKeysPath() {
       return path.join(_root, _historyKeys);
     },
@@ -299,9 +289,9 @@ ${y(`}`)}`;
           comment: chalk.rgb(122, 154, 96)(e.comment),
         })),
         [
-          { index: 'key', alias: chalk.bold(i('配置项', 'ConfigItem')) },
-          { index: 'value', alias: chalk.bold(i('值', 'Value')) },
-          { index: 'comment', alias: chalk.bold(i('注释', 'Comment')) },
+          { index: 'key', alias: chalk.white(i('配置项', 'ConfigItem')) },
+          { index: 'value', alias: chalk.white(i('值', 'Value')) },
+          { index: 'comment', alias: chalk.white(i('注释', 'Comment')) },
         ]
       );
     },

@@ -1,14 +1,14 @@
 /**
  * @name Cryptor
  * @description
- * 依赖于argv、memoize
+ * 依赖于configs、memoize
  */
 import crypto from 'crypto';
-import { argv } from './argv';
+import { configs } from './configs';
 import { memoize } from './utils';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const deriveKey = (): Buffer => {
-  return crypto.createHash('sha256').update(argv.key).digest();
+  return crypto.createHash('sha256').update(configs.key).digest();
 };
 
 export const aes = {

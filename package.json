@@ -5,6 +5,9 @@
 		"decrypt": "tsx scripts/index.ts --decrypt",
 		"test": "tsx scripts/test.ts"
 	},
+	"bin": {
+		"crypt": "scripts/index.ts"
+	},
 	"devDependencies": {
 		"@types/node": "^22.13.10",
 		"tsx": "^4.19.3"
@@ -13,7 +16,7 @@
 		"chalk": "^5.4.1",
 		"string-width": "^7.2.0"
 	},
-	"encryptConfigs": {
+	"cryption": {
 		"encryptFileName": true,
 		"encryptFolderName": true,
 		"exclude": [],
