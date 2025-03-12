@@ -11,7 +11,6 @@ import { configs } from './misc';
 import { argv } from './misc';
 
 const main = () => {
-  configs.set(argv.key, argv.action);
   configs.display();
 
   console.log();

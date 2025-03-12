@@ -3,89 +3,71 @@ import fs from 'fs';
 import path from 'path';
 import { util, tab } from './utils';
 import { i } from './locale';
-import { log, lbgBlue, lbgRed, lblue, lgrey, lred } from './logger';
+import { log, lbgBlue, lbgRed, lgrey, lred } from './logger';
+import { argv } from './argv';
 
-const privates = {
+const createConfigManager = () => {
+  // * 定义私有变量
   /**
-   * 语言，从执行参数或系统中获取
+   * 保存历史用key的文件名
    */
-  locale: '',
-
-  /**
-   * 语言，从执行参数或系统中获取
-   */
-  historyKeys: '.history-keys' as const,
+  const _historyKeys = '.history-keys' as const;
 
   /**
    * 根目录，递归向上查找package.json所在的文件夹
    */
-  root: '',
-
-  /**
-   * 操作，由参数决定
-   */
-  action: '',
-
-  /**
-   * 密钥，由参数决定
-   */
-  key: '',
+  let _root = '';
 
   // 以下是package.json读取出来的
-  exclude: [] as string[],
-  encryptFileName: true,
-  encryptFolderName: true,
-  directory: {
+  let _encryptFileName = true;
+  let _encryptFolderName = true;
+  let _exclude = [] as string[];
+  let _directory = {
     decrypted: '',
     encrypted: '',
-  },
+  };
 
-  // # 私有方法
+  // * 定义私有函数
+
   /**
    * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
    */
-  ignore() {
-    const gitigorePath = path.join(privates.root, '.gitignore');
+  const ignore = () => {
+    const gitigorePath = path.join(_root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
       const content = fs.readFileSync(gitigorePath).toString();
       const lines = content.split('\n').map((line) => line.trim());
 
       // 确认是否忽略了加密前的文件夹，没有则加入
-      if (!lines.some((p) => p === privates.directory.decrypted)) {
+      if (!lines.some((p) => p === _directory.decrypted)) {
         lgrey(
           '.gitignore文件并未包含要加密的文件夹，添加中',
           'It seems .gitignore in root directory does not contain'
         );
-        fs.appendFileSync(gitigorePath, `\n${privates.directory.decrypted}`);
+        fs.appendFileSync(gitigorePath, `\n${_directory.decrypted}`);
         lgrey(
-          `.gitignore已添加'${privates.directory.decrypted}'`,
-          `'${privates.directory.decrypted}' is added to .gitignore`
+          `.gitignore已添加'${_directory.decrypted}'`,
+          `'${_directory.decrypted}' is added to .gitignore`
         );
       }
 
       // 确认是否忽略了.history-keys文件，没有则加入
-      if (!lines.some((p) => p === privates.historyKeys)) {
+      if (!lines.some((p) => p === _historyKeys)) {
         lgrey(
-          `.gitignore文件并未包含'${privates.historyKeys}'，添加中...`,
-          `It seems .gitignore does not contain '${privates.historyKeys}'. Adding...`
+          `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
+          `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
         );
-        fs.appendFileSync(gitigorePath, `\n${privates.historyKeys}`);
-        lgrey(
-          `.gitignore已添加'${privates.historyKeys}'`,
-          `'${privates.historyKeys}' is added to .gitignore`
-        );
+        fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
+        lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
       }
     } else {
       throw new Error(
-        i(
-          `${privates.root}下未找到.gitignore文件！`,
-          `Cannot find .gitignore file in ${privates.root}!`
-        )
+        i(`${_root}下未找到.gitignore文件！`, `Cannot find .gitignore file in ${_root}!`)
       );
     }
-  },
+  };
 
-  checkPackageJson(configs: any) {
+  const checkPackageJson = (configs: any) => {
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
@@ -158,14 +140,15 @@ ${y(`}`)}`;
         i('package.json中的encryptConfigs配置无效', 'Invalid encryptConfigs in package.json')
       );
     }
-  },
-  getPackageJson() {
+  };
+
+  const getPackageJson = () => {
     const paths = util.splitPath(__dirname);
     for (let i = paths.length; i >= 1; i--) {
       const root = path.join(...paths.slice(0, i));
       const p = path.join(root, 'package.json');
       if (fs.existsSync(p)) {
-        privates.root = root;
+        _root = root;
         return require(p);
       }
     }
@@ -176,67 +159,52 @@ ${y(`}`)}`;
     );
 
     throw new Error(i('找不到package.json', 'Cannot find package.json'));
-  },
-};
+  };
 
-const createConfigManager = () => {
-  // 读取配置
+  // * 开始加载配置
   lbgBlue('加载配置', 'Loading Configuration');
 
   // 寻找配置文件package.json
-  const config = privates.getPackageJson().encryptConfigs;
-  privates.checkPackageJson(config);
+  const config = getPackageJson().encryptConfigs;
+  checkPackageJson(config);
 
-  privates.encryptFileName = config.encryptFileName;
-  privates.encryptFolderName = config.encryptFolderName;
-  privates.exclude = config.exclude;
-  privates.directory.decrypted = config.directory.decrypted;
-  privates.directory.encrypted = config.directory.encrypted;
-  privates.action = '';
-  privates.key = '';
+  _encryptFileName = config.encryptFileName;
+  _encryptFolderName = config.encryptFolderName;
+  _exclude = config.exclude;
+  _directory.decrypted = config.directory.decrypted;
+  _directory.encrypted = config.directory.encrypted;
 
-  privates.ignore();
+  ignore();
 
   const u = {
-    get key() {
-      return privates.key;
+    get encryptFileName() {
+      return _encryptFileName;
     },
-
-    get locale() {
-      return privates.locale;
-    },
-
     get encryptFolderName() {
-      return privates.encryptFolderName;
+      return _encryptFolderName;
     },
-
-    /**
-     * 目录配置，包含了根目录
-     */
-    get dir() {
+    get root() {
+      return _root;
+    },
+    get directory() {
       return {
-        root: privates.root,
-        decrypted: privates.directory.decrypted,
-        encrypted: privates.directory.encrypted,
+        decrypted: _directory.decrypted,
+        encrypted: _directory.encrypted,
       };
     },
-    set(key: string, action: string) {
-      privates.key = key;
-      privates.action = action.replace('--', '');
-    },
     excludes(folder: string) {
-      return privates.exclude.includes(folder);
+      return _exclude.includes(folder);
     },
     display() {
       const entries = [
         {
           key: i('加密文件名', 'encryptFileName'),
-          value: String(privates.encryptFileName),
+          value: String(_encryptFileName),
           comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
         },
         {
           key: i('加密文件夹名', 'encryptFolderName'),
-          value: String(privates.encryptFolderName),
+          value: String(_encryptFolderName),
           comment: i(
             '是否加密文件夹名，默认为true',
             'Whether to encrypt folder name, default is true'
@@ -244,22 +212,22 @@ const createConfigManager = () => {
         },
         {
           key: i(`根目录`, `root`),
-          value: privates.root,
+          value: _root,
           comment: i('笔记的根目录', 'Root directory of the note'),
         },
         {
           key: i(`加密前`, `decrypted`),
-          value: privates.directory.decrypted,
+          value: _directory.decrypted,
           comment: i('要加密的文件夹', 'The folder to be encrypted'),
         },
         {
           key: i(`加密后`, `encrypted`),
-          value: privates.directory.encrypted,
+          value: _directory.encrypted,
           comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
         },
         {
           key: i('忽略', 'exclude'),
-          value: `[${privates.exclude.join(', ')}]`,
+          value: `[${_exclude.join(', ')}]`,
           comment: i(
             '要加密的文件夹下，不加密的文件/文件夹',
             'Folders in decrypted directory will not be encrypted'
@@ -267,7 +235,7 @@ const createConfigManager = () => {
         },
         {
           key: i('操作', 'action'),
-          value: privates.action,
+          value: argv.action,
           comment: i(
             '会清空目标文件夹，' + chalk.underline('注意备份!'),
             'Will clear the target folder. ' + chalk.underline('Backup first!')
@@ -275,7 +243,7 @@ const createConfigManager = () => {
         },
         {
           key: i('密钥', 'key'),
-          value: privates.key,
+          value: argv.key,
           comment: i(
             chalk.bold.underline('请记住') + '密钥',
             'Promise you will ' + chalk.bold.underline('remember it')

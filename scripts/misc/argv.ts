@@ -2,9 +2,8 @@ import { i } from './locale';
 import { lred } from './logger';
 
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
-const createArgVManager = () => {
-  // # 定义私有变量和常量
-
+const resolveArgV = () => {
+  // * 定义私有变量和常量
   type CommandCategory = 'help' | 'locale' | 'action';
 
   const Command = {
@@ -111,7 +110,7 @@ const createArgVManager = () => {
     return resolved;
   };
 
-  // # 主逻辑
+  // * 开始处理参数
 
   // 第一第二个参数是 node 和 脚本路径，省略之
   // 去重
@@ -129,4 +128,4 @@ const createArgVManager = () => {
   return resolved;
 };
 
-export const argv = createArgVManager();
+export const argv = resolveArgV();
