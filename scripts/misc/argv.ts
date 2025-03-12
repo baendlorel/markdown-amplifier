@@ -5,8 +5,7 @@
  */
 import { i } from './locale';
 import { lred } from './logger';
-console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
-
+//// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
 const resolveArgV = () => {
   // * 定义私有变量和常量

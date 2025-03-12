@@ -3,7 +3,7 @@
  * @description
  * 无依赖
  */
-console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
+//// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 
 const createLocaleManager = () => {
   let locale = 'zh' as 'zh' | 'en';

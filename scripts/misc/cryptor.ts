@@ -6,8 +6,7 @@
 import crypto from 'crypto';
 import { argv } from './argv';
 import { memoize } from './utils';
-console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
-
+//// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const deriveKey = (): Buffer => {
   return crypto.createHash('sha256').update(argv.key).digest();
 };

@@ -3,11 +3,10 @@
  * @description
  * 依赖于locale
  */
-console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
-
+//// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
+import stringWidth from 'string-width';
 import chalk from 'chalk';
 import { i } from './locale';
-import stringWidth from 'string-width';
 
 export const log = (zh: string, en?: string) =>
   en === undefined ? console.log(zh) : console.log(i(zh, en));

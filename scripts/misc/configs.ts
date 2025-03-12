@@ -7,13 +7,11 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import stringWidth from 'string-width';
 import { i } from './locale';
-import { formatDatetime, load, padAlign, splitPath, tab } from './utils';
+import { formatDatetime, load, splitPath } from './utils';
 import { log, lbgBlue, lbgRed, lgrey, lred, table } from './logger';
 import { argv } from './argv';
-console.log(global.idx === undefined ? (global.idx = 0) : global.idx++, __filename);
-
+//// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
   // * 定义私有变量
   /**
@@ -41,6 +39,7 @@ const createConfigManager = () => {
    * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
    */
   const checkGitIgnore = () => {
+    lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
     const gitigorePath = path.join(_root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
       const content = fs.readFileSync(gitigorePath).toString();
@@ -76,6 +75,7 @@ const createConfigManager = () => {
   };
 
   const loadPackageJsonConfigs = (rootPath: string) => {
+    lgrey('检测package.json中的配置', 'Checking configs in package.json');
     const configs = require(path.join(rootPath, 'package.json')).encryptConfigs;
     // 定义化简函数
     const messages = [] as string[];
