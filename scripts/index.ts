@@ -6,19 +6,16 @@
  * @description
  */
 
-import { configs, argv } from './misc';
-import {} from './misc';
+import { br, configs } from './misc';
 import { encryption } from './encrypt';
 import { decryption } from './decrypt';
 
 const main = () => {
   configs.display();
-
-  console.log();
-
-  argv.isEncrypt && encryption();
-  argv.isDecrypt && decryption();
-
+  br();
+  configs.action.isEncrypt && encryption();
+  configs.action.isDecrypt && decryption();
+  br();
   configs.saveHistoryKey();
 };
 

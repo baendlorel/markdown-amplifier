@@ -9,7 +9,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { i } from './locale';
 import { formatDatetime, load, splitPath } from './utils';
-import { log, lbgBlue, lbgRed, lgrey, lred, table } from './logger';
+import { log, lbgBlue, lbgRed, lgrey, lred, table, lyellow } from './logger';
 import { argv } from './argv';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
@@ -25,7 +25,6 @@ const createConfigManager = () => {
   let _root = '';
 
   // 以下是参数里读取来的
-  let _action = argv.action;
   let _key = argv.key;
 
   // 以下是package.json读取出来的
@@ -40,7 +39,8 @@ const createConfigManager = () => {
   // * 定义私有函数
 
   /**
-   * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
+   * .gitignore文件必须包含待加密的文件夹、keys历史
+   * 不能包含加密后的文件夹
    */
   const checkGitIgnore = () => {
     lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
@@ -52,8 +52,8 @@ const createConfigManager = () => {
       // 确认是否忽略了加密前的文件夹，没有则加入
       if (!lines.some((p) => p === _directory.decrypted)) {
         lgrey(
-          '.gitignore文件并未包含要加密的文件夹，添加中',
-          'It seems .gitignore in root directory does not contain'
+          `.gitignore文件并未包含要加密的文件夹'${_directory.decrypted}'，添加中...`,
+          `It seems .gitignore in root directory does not contain '${_directory.decrypted}'. Adding...`
         );
         fs.appendFileSync(gitigorePath, `\n${_directory.decrypted}`);
         lgrey(
@@ -70,6 +70,14 @@ const createConfigManager = () => {
         );
         fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
         lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
+      }
+
+      // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
+      if (lines.some((p) => p === _directory.encrypted)) {
+        lyellow(
+          `.gitignore包含了加密后的文件夹'${_directory.encrypted}'，如果需要git追踪它，请手动删除`,
+          `.gitignore contains the encrypted folder '${_directory.encrypted}'. If you want git to track it, please remove it manually`
+        );
       }
     } else {
       throw new Error(
@@ -178,7 +186,10 @@ const createConfigManager = () => {
       return _key;
     },
     get action() {
-      return _action;
+      return {
+        isEncrypt: argv.isEncrypt,
+        isDecrypt: argv.isDecrypt,
+      };
     },
     get historyKeysPath() {
       return path.join(_root, _historyKeys);
@@ -204,12 +215,14 @@ const createConfigManager = () => {
     display() {
       const entries = [
         {
-          key: i('加密文件名', 'encryptFileName'),
+          key: 'encryptFileName',
+          label: i('加密文件名', 'encryptFileName'),
           value: _encryptFileName,
           comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
         },
         {
-          key: i('加密文件夹名', 'encryptFolderName'),
+          key: 'encryptFolderName',
+          label: i('加密文件夹名', 'encryptFolderName'),
           value: _encryptFolderName,
           comment: i(
             '是否加密文件夹名，默认为true',
@@ -217,22 +230,26 @@ const createConfigManager = () => {
           ),
         },
         {
-          key: i(`根目录`, `root`),
+          key: 'root',
+          label: i(`根目录`, `root`),
           value: _root,
           comment: i('笔记的根目录', 'Root directory of the note'),
         },
         {
-          key: i(`加密前`, `decrypted`),
+          key: 'decrypted',
+          label: i(`加密前`, `decrypted`),
           value: _directory.decrypted,
           comment: i('要加密的文件夹', 'The folder to be encrypted'),
         },
         {
-          key: i(`加密后`, `encrypted`),
+          key: 'encrypted',
+          label: i(`加密后`, `encrypted`),
           value: _directory.encrypted,
           comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
         },
         {
-          key: i('忽略', 'exclude'),
+          key: 'exclude',
+          label: i('忽略', 'exclude'),
           value: _exclude,
           comment: i(
             '要加密的文件夹下，不加密的文件/文件夹',
@@ -240,7 +257,8 @@ const createConfigManager = () => {
           ),
         },
         {
-          key: i('操作', 'action'),
+          key: 'action',
+          label: i('操作', 'action'),
           value: argv.action,
           comment: i(
             '会清空目标文件夹，' + chalk.underline('注意备份!'),
@@ -248,7 +266,8 @@ const createConfigManager = () => {
           ),
         },
         {
-          key: i('密钥', 'key'),
+          key: 'key',
+          label: i('密钥', 'key'),
           value: argv.key,
           comment: i(
             chalk.bold.underline('请记住') + '密钥',
@@ -284,12 +303,12 @@ const createConfigManager = () => {
 
       table(
         entries.map((e) => ({
-          key: chalk.blueBright(e.key.replace(/^[\w]/, (a) => a.toUpperCase())),
-          value: cv(e.value),
+          label: chalk.blueBright(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
+          value: e.key === 'key' ? chalk.red.underline(e.value) : cv(e.value),
           comment: chalk.rgb(122, 154, 96)(e.comment),
         })),
         [
-          { index: 'key', alias: chalk.white(i('配置项', 'ConfigItem')) },
+          { index: 'label', alias: chalk.white(i('配置项', 'ConfigItem')) },
           { index: 'value', alias: chalk.white(i('值', 'Value')) },
           { index: 'comment', alias: chalk.white(i('注释', 'Comment')) },
         ]

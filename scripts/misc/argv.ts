@@ -49,13 +49,13 @@ const resolveArgV = () => {
 
     const packageJsonConfigExample = `${y(`{`)}
   ...other configs,
-  ${k(`"cryption"`)}: ${p(`{`)}                   ${cm('// ' + _cryption)}
-      ${k(`"encryptFileName"`)}: ${b(`true`)},    ${cm('// ' + _encryptFileName)}
-      ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${cm('// ' + _encryptFolderName)}
-      ${k(`"exclude"`)}: ${b(`[]`)},              ${cm('// ' + _exclude)}
-      ${k(`"directory"`)}: ${b(`{`)}              ${cm('// ' + _directory)}
-        ${k(`"decrypted"`)}: ${v(`"decrypted"`)}, ${cm('// ' + _decrypted)}
-        ${k(`"encrypted"`)}: ${v(`"encrypted"`)}  ${cm('// ' + _encrypted)}
+  ${k(`"cryption"`)}: ${p(`{`)}                 ${cm('// ' + _cryption)}
+    ${k(`"encryptFileName"`)}: ${b(`true`)},    ${cm('// ' + _encryptFileName)}
+    ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${cm('// ' + _encryptFolderName)}
+    ${k(`"exclude"`)}: ${b(`[]`)},              ${cm('// ' + _exclude)}
+    ${k(`"directory"`)}: ${b(`{`)}              ${cm('// ' + _directory)}
+      ${k(`"decrypted"`)}: ${v(`"decrypted"`)}, ${cm('// ' + _decrypted)}
+      ${k(`"encrypted"`)}: ${v(`"encrypted"`)}  ${cm('// ' + _encrypted)}
     ${b(`}`)}
   ${p(`}`)}
 ${y(`}`)}`;
@@ -133,7 +133,10 @@ ${y(`}`)}`;
       '  crypt --encrypt --zh aaaaa' +
         cm(
           ' // ' +
-            i('以aaaaa为密钥加密，展示中文信息', `Encrypt with 'aaaaa' and display logs in Chinese`)
+            i(
+              '以aaaaa为密钥加密，日志、信息中文',
+              `Encrypt with 'aaaaa' and display logs in Chinese`
+            )
         )
     );
     br();
