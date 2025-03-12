@@ -40,27 +40,7 @@ const privates = {
     encrypted: '',
   },
 
-  // 私有方法
-  initLocale() {
-    // 先看参数里有没有
-    if (process.argv.includes('--en')) {
-      privates.locale = 'en';
-      return;
-    }
-    if (process.argv.includes('--zh')) {
-      privates.locale = 'zh';
-      return;
-    }
-
-    // 如果没有参数，再从系统中获取
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-    if (locale.slice(0, 2) === 'zh') {
-      privates.locale = 'zh';
-    } else {
-      privates.locale = 'en';
-    }
-  },
-
+  // # 私有方法
   /**
    * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
    */
@@ -104,12 +84,18 @@ const privates = {
       );
     }
   },
+
   checkPackageJson(configs: any) {
+    // 定义化简函数
+    const messages = [] as string[];
+    const mi = (zh: string, en: string) => messages.push(i(zh, en));
     const k = chalk.rgb(177, 220, 251);
     const v = chalk.rgb(193, 148, 125);
     const p = chalk.rgb(202, 123, 210);
     const b = chalk.rgb(93, 161, 248);
     const y = chalk.rgb(245, 214, 74);
+
+    // 配置案例
     const example = `${y(`{`)}
   ...other configs,
   ${k(`"encryptConfigs"`)}: ${p(`{`)}
@@ -122,54 +108,41 @@ const privates = {
   ${p(`}`)}
 ${y(`}`)}`;
 
-    const messages = [] as string[];
     if (!configs) {
-      messages.push(
-        i('在package.json中找不到encryptConfigs配置', 'Cannot find encryptConfigs in package.json')
-      );
+      mi('在package.json中找不到encryptConfigs配置', 'Cannot find encryptConfigs in package.json');
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
-        messages.push(
-          i(
-            'encryptConfigs.encryptFileName 应该是boolean型',
-            'encryptConfigs.encryptFileName should be a boolean'
-          )
+        mi(
+          'encryptConfigs.encryptFileName 应该是boolean型',
+          'encryptConfigs.encryptFileName should be a boolean'
         );
       }
 
       if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
-        messages.push(
-          i(
-            'encryptConfigs.encryptFolderName 应该是boolean型',
-            'encryptConfigs.encryptFolderName should be a boolean'
-          )
+        mi(
+          'encryptConfigs.encryptFolderName 应该是boolean型',
+          'encryptConfigs.encryptFolderName should be a boolean'
         );
       }
       if (!configs.exclude) {
-        messages.push(
-          i(
-            'encryptConfigs.exclude 未设置，需设置为字符串数组',
-            'encryptConfigs.exclude should be an string array'
-          )
+        mi(
+          'encryptConfigs.exclude 未设置，需设置为字符串数组',
+          'encryptConfigs.exclude should be an string array'
         );
       }
       if (!configs.directory) {
-        messages.push(i('encryptConfigs.directory 未设置', 'encryptConfigs.directory is not set'));
+        mi('encryptConfigs.directory 未设置', 'encryptConfigs.directory is not set');
       } else {
         if (!configs.directory.decrypted) {
-          messages.push(
-            i(
-              'encryptConfigs.directory.decrypted 未设置，需设置为字符串',
-              'encryptConfigs.directory.decrypted should be a string'
-            )
+          mi(
+            'encryptConfigs.directory.decrypted 未设置，需设置为字符串',
+            'encryptConfigs.directory.decrypted should be a string'
           );
         }
         if (!configs.directory.encrypted) {
-          messages.push(
-            i(
-              'encryptConfigs.directory.encrypted 未设置，需设置为字符串',
-              'encryptConfigs.directory.encrypted should be a string'
-            )
+          mi(
+            'encryptConfigs.directory.encrypted 未设置，需设置为字符串',
+            'encryptConfigs.directory.encrypted should be a string'
           );
         }
       }
@@ -196,6 +169,7 @@ ${y(`}`)}`;
         return require(p);
       }
     }
+
     lbgRed(
       '加载配置失败。找不到package.json',
       'Load Configuration Failed. Cannot find package.json'
@@ -206,7 +180,8 @@ ${y(`}`)}`;
 };
 
 const createConfigManager = () => {
-  privates.initLocale();
+  // 读取配置
+  lbgBlue('加载配置', 'Loading Configuration');
 
   // 寻找配置文件package.json
   const config = privates.getPackageJson().encryptConfigs;
@@ -249,112 +224,74 @@ const createConfigManager = () => {
       privates.key = key;
       privates.action = action.replace('--', '');
     },
-
     excludes(folder: string) {
       return privates.exclude.includes(folder);
     },
-
     display() {
-      const keys = [
-        { en: 'encryptFileName', zh: '加密文件名' },
-        { en: 'encryptFolderName', zh: '加密文件夹名' },
-        { en: 'root', zh: '根目录' },
-        { en: 'decrypted', zh: '加密前' },
-        { en: 'encrypted', zh: '加密后' },
-        { en: 'exclude', zh: '忽略目录' },
-        { en: 'action', zh: '操作' },
-        { en: 'key', zh: '密钥' },
+      const entries = [
+        {
+          key: i('加密文件名', 'encryptFileName'),
+          value: String(privates.encryptFileName),
+          comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
+        },
+        {
+          key: i('加密文件夹名', 'encryptFolderName'),
+          value: String(privates.encryptFolderName),
+          comment: i(
+            '是否加密文件夹名，默认为true',
+            'Whether to encrypt folder name, default is true'
+          ),
+        },
+        {
+          key: i(`根目录`, `root`),
+          value: privates.root,
+          comment: i('笔记的根目录', 'Root directory of the note'),
+        },
+        {
+          key: i(`加密前`, `decrypted`),
+          value: privates.directory.decrypted,
+          comment: i('要加密的文件夹', 'The folder to be encrypted'),
+        },
+        {
+          key: i(`加密后`, `encrypted`),
+          value: privates.directory.encrypted,
+          comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
+        },
+        {
+          key: i('忽略', 'exclude'),
+          value: `[${privates.exclude.join(', ')}]`,
+          comment: i(
+            '要加密的文件夹下，不加密的文件/文件夹',
+            'Folders in decrypted directory will not be encrypted'
+          ),
+        },
+        {
+          key: i('操作', 'action'),
+          value: privates.action,
+          comment: i(
+            '会清空目标文件夹，' + chalk.underline('注意备份!'),
+            'Will clear the target folder. ' + chalk.underline('Backup first!')
+          ),
+        },
+        {
+          key: i('密钥', 'key'),
+          value: privates.key,
+          comment: i(
+            chalk.bold.underline('请记住') + '密钥',
+            'Promise you will ' + chalk.bold.underline('remember it')
+          ),
+        },
       ];
-      const maxKeyLength = i(
-        4 + Math.max(...keys.map((k) => util.actualWidth(k.en))),
-        2 + Math.max(...keys.map((k) => util.actualWidth(k.zh)))
-      );
-      const pk = (key: string) =>
-        util.padAlign(key, maxKeyLength).replace(/^[\w]/, (a) => a.toUpperCase());
+      const mk = Math.max(...entries.map((k) => util.actualWidth(k.key)));
+      const mv = Math.max(...entries.map((v) => util.actualWidth(v.value)));
+      const pk = (key: string) => util.padAlign(key, mk).replace(/^[\w]/, (a) => a.toUpperCase());
+      const pv = (v: string) => util.padAlign(v, mv);
 
-      const get = (zh: string, en: string) => {
-        let r = { value: '', key: '', comment: '' };
-        switch (en) {
-          case 'encryptFileName':
-            r.value = String(privates.encryptFileName);
-            r.key = chalk.blue(pk(i(zh, en)));
-            r.comment = i(
-              '是否加密文件名，默认为true',
-              'Whether to encrypt file name, default is true'
-            );
-            break;
-          case 'encryptFolderName':
-            r.value = String(privates.encryptFolderName);
-            r.key = chalk.blue(pk(i(zh, en)));
-            r.comment = i(
-              '是否加密文件夹名，默认为true',
-              'Whether to encrypt folder name, default is true'
-            );
-            break;
-          case 'root':
-            r.value =
-              privates.root.length > 24 ? path.relative(__dirname, privates.root) : privates.root;
-            r.key = chalk.rgb(147, 183, 236)(pk(' ├─ ' + i(zh, en)));
-            r.comment = i('笔记的根目录', 'Root directory of the note');
-            break;
-          case 'decrypted':
-            r.value = privates.directory.decrypted;
-            r.key = chalk.rgb(147, 183, 236)(pk(' ├─ ' + i(zh, en)));
-            r.comment = i('要加密的文件夹', 'The folder to be encrypted');
-            break;
-          case 'encrypted':
-            r.value = privates.directory.encrypted;
-            r.key = chalk.rgb(147, 183, 236)(pk(' └─ ' + i(zh, en)));
-            r.comment = i(
-              '加密后的文件将放在这个文件夹',
-              'Encrypted files will be put in this folder'
-            );
-            break;
-          case 'exclude':
-            r.value = `[${privates.exclude.join(', ')}]`;
-            r.key = chalk.blue(pk(i(zh, en)));
-            r.comment = i(
-              '要加密的文件夹下，不加密的文件/文件夹',
-              'Folders in decrypted directory will not be encrypted'
-            );
-            break;
-          case 'action':
-            r.value = privates.action;
-            r.key = chalk.blue(pk(i(zh, en)));
-            break;
-          case 'key':
-            r.value = privates.key;
-            r.key = chalk.blue(pk(i(zh, en)));
-            r.comment = i(
-              chalk.bold.underline('请记住') + '密钥',
-              'Promise you will ' + chalk.bold.underline('remember it')
-            );
-            break;
-          default:
-            throw new Error(
-              i(
-                '无法展示这个字段 key = ' + i(zh, en),
-                "Can't display this config key = " + i(zh, en)
-              )
-            );
-        }
-        return r;
-      };
-
-      const values = keys.map((key) => get(key.zh, key.en));
-      const maxValueLength = Math.max(...values.map((v) => util.actualWidth(v.value)));
-      const pv = (v: string) => util.padAlign(v, maxValueLength);
-
-      const c = chalk.rgb(122, 154, 96);
-      for (let index = 0; index < keys.length; index++) {
-        const v = values[index];
-        if (keys[index].en === 'root') {
-          log(chalk.blue(pk(i(tab`目录配置`, tab`Directory`))));
-        }
-        if (keys[index].en === 'key') {
-          v.key = chalk.red(v.key);
-        }
-        log(tab`${v.key} : ${pv(v.value)} ${v.comment ? c(' // ' + v.comment) : ''}`);
+      for (const e of entries) {
+        const k = chalk.blue(pk(e.key));
+        const v = pv(e.value);
+        const c = chalk.rgb(122, 154, 96)(' //  ' + e.comment);
+        log(tab`${k} : ${v} ${c}`);
       }
     },
   };

@@ -25,6 +25,10 @@ export const util = {
    */
   padAlign(text: string, length: number, direction: 'left' | 'right' = 'right') {
     const width = stringWidth(text);
+    if (width > length) {
+      console.log('padAlign exceed', { text, width, length });
+      return text;
+    }
     if (direction === 'left') {
       return ' '.repeat(length - width) + text; // 按实际宽度补空格
     }
@@ -66,7 +70,7 @@ export const util = {
     const list = [] as string[];
     const { root } = path.parse(filePath);
     let p = filePath;
-    while (p === root) {
+    while (p !== root) {
       const { base, dir } = path.parse(p);
       p = dir;
       list.unshift(base);
