@@ -8,8 +8,31 @@ import stringWidth from 'string-width';
 import chalk from 'chalk';
 import { i } from './locale';
 
-export const log = (zh: string, en?: string) =>
-  en === undefined ? console.log(zh) : console.log(i(zh, en));
+type Log = ((zh: string, en?: string) => void) & {
+  incrIndent: () => void;
+  decrIndent: () => void;
+  setIndent: (n: number) => void;
+  resetIndent: () => void;
+};
+
+let indent = '';
+export const log = ((zh: string, en?: string) =>
+  en === undefined ? console.log(indent + zh) : console.log(indent + i(zh, en))) as Log;
+
+Object.defineProperties(log, {
+  incrIndent: {
+    value: () => (indent += '  '),
+  },
+  decrIndent: {
+    value: () => (indent = indent.replace('  ', '')),
+  },
+  setIndent: {
+    value: (n: number) => (indent = ' '.repeat(n)),
+  },
+  resetIndent: {
+    value: () => (indent = '  '),
+  },
+});
 
 export const lred = (zh: string, en?: string) =>
   en === undefined ? log(chalk.red(zh)) : log(chalk.red(i(zh, en)));
@@ -29,8 +52,8 @@ export const lbgBlue = (zh: string, en?: string) =>
 export const table = (data: any[], props: { index: string; alias?: string }[]) => {
   const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
   const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
-  const logRow0 = (row: string[]) => log('  ' + row.join('  ') + '  ');
-  const logRow1 = (row: string[]) => log(chalk.bgRgb(44, 44, 54)('  ' + row.join('  ') + '  '));
+  const logRow0 = (row: string[]) => console.log(` ${row.join('  ')} `);
+  const logRow1 = (row: string[]) => console.log(chalk.bgRgb(44, 44, 54)(` ${row.join('  ')} `));
 
   // 以表头文字宽度为初值，用reduce求出每列的最大宽度
   const max = data.reduce(

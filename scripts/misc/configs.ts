@@ -174,6 +174,7 @@ ${y(`}`)}`;
 
   // * 开始加载配置
   lbgBlue('加载配置表', 'Loading Configuration Table');
+  log.incrIndent();
 
   // 以package.json的目录定为root
   _root = locateRoot();
@@ -184,8 +185,9 @@ ${y(`}`)}`;
   _exclude = config.exclude;
   _directory.decrypted = config.directory.decrypted;
   _directory.encrypted = config.directory.encrypted;
-
   checkGitIgnore();
+
+  log.decrIndent();
 
   const conf = {
     get historyKeysPath() {
