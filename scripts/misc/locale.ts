@@ -1,3 +1,9 @@
+/**
+ * @name Locale
+ * @description
+ * 无依赖
+ */
+
 const createLocaleManager = () => {
   let locale = 'zh' as 'zh' | 'en';
   // 先看参数里有没有

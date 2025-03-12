@@ -1,3 +1,9 @@
+/**
+ * @name Logger
+ * @description
+ * 依赖于locale
+ */
+
 import chalk from 'chalk';
 import { i } from './locale';
 

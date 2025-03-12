@@ -17,6 +17,8 @@ const main = () => {
 
   argv.isEncrypt && encryption();
   argv.isDecrypt && decryption();
+
+  configs.saveHistoryKey();
 };
 
 main();

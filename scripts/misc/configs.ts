@@ -1,8 +1,15 @@
-import chalk from 'chalk';
+/**
+ * @name Configs
+ * @description
+ * 依赖于locale、utils、logger、argv
+ */
+
 import fs from 'fs';
 import path from 'path';
-import { util, tab } from './utils';
+import chalk from 'chalk';
+import stringWidth from 'string-width';
 import { i } from './locale';
+import { formatDatetime, load, padAlign, splitPath, tab } from './utils';
 import { log, lbgBlue, lbgRed, lgrey, lred } from './logger';
 import { argv } from './argv';
 
@@ -32,7 +39,7 @@ const createConfigManager = () => {
   /**
    * 让找到的gitignore文件包含要**加密的文件夹、keys历史**
    */
-  const ignore = () => {
+  const checkGitIgnore = () => {
     const gitigorePath = path.join(_root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
       const content = fs.readFileSync(gitigorePath).toString();
@@ -67,7 +74,8 @@ const createConfigManager = () => {
     }
   };
 
-  const checkPackageJson = (configs: any) => {
+  const loadPackageJsonConfigs = (rootPath: string) => {
+    const configs = require(rootPath).encryptConfigs;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
@@ -140,16 +148,18 @@ ${y(`}`)}`;
         i('package.json中的encryptConfigs配置无效', 'Invalid encryptConfigs in package.json')
       );
     }
+
+    return configs;
   };
 
-  const getPackageJson = () => {
-    const paths = util.splitPath(__dirname);
+  const locateRoot = () => {
+    const paths = splitPath(__dirname);
+    lgrey(i('寻找package.json的目录作为root目录', 'Locating package.json as root directory'));
     for (let i = paths.length; i >= 1; i--) {
       const root = path.join(...paths.slice(0, i));
       const p = path.join(root, 'package.json');
       if (fs.existsSync(p)) {
-        _root = root;
-        return require(p);
+        return root;
       }
     }
 
@@ -164,9 +174,9 @@ ${y(`}`)}`;
   // * 开始加载配置
   lbgBlue('加载配置', 'Loading Configuration');
 
-  // 寻找配置文件package.json
-  const config = getPackageJson().encryptConfigs;
-  checkPackageJson(config);
+  // 以package.json的目录定为root
+  _root = locateRoot();
+  const config = loadPackageJsonConfigs(_root);
 
   _encryptFileName = config.encryptFileName;
   _encryptFolderName = config.encryptFolderName;
@@ -174,9 +184,12 @@ ${y(`}`)}`;
   _directory.decrypted = config.directory.decrypted;
   _directory.encrypted = config.directory.encrypted;
 
-  ignore();
+  checkGitIgnore();
 
-  const u = {
+  const conf = {
+    get historyKeysPath() {
+      return path.join(_root, _historyKeys);
+    },
     get encryptFileName() {
       return _encryptFileName;
     },
@@ -250,10 +263,10 @@ ${y(`}`)}`;
           ),
         },
       ];
-      const mk = Math.max(...entries.map((k) => util.actualWidth(k.key)));
-      const mv = Math.max(...entries.map((v) => util.actualWidth(v.value)));
-      const pk = (key: string) => util.padAlign(key, mk).replace(/^[\w]/, (a) => a.toUpperCase());
-      const pv = (v: string) => util.padAlign(v, mv);
+      const mk = Math.max(...entries.map((k) => stringWidth(k.key)));
+      const mv = Math.max(...entries.map((v) => stringWidth(v.value)));
+      const pk = (key: string) => padAlign(key, mk).replace(/^[\w]/, (a) => a.toUpperCase());
+      const pv = (v: string) => padAlign(v, mv);
 
       for (const e of entries) {
         const k = chalk.blue(pk(e.key));
@@ -262,8 +275,14 @@ ${y(`}`)}`;
         log(tab`${k} : ${v} ${c}`);
       }
     },
+    saveHistoryKey() {
+      // 把使用的key保存在.history-keys文件中
+      const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
+      const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
+      fs.appendFileSync(conf.historyKeysPath, head + newKey);
+    },
   };
-  return u;
+  return conf;
 };
 
 export const configs = createConfigManager();

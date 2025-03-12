@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { util, tab, configs, i, lbgRed, lbgBlue } from './misc';
-import { aes, xor } from './cryptor';
+import { u, tab, configs, i, lbgRed, lbgBlue } from './misc';
+import { aes, xor } from './misc/cryptor';
 
 const dir = configs.dir;
 
@@ -15,14 +15,14 @@ const decryptFile = (originPath: string) => {
   console.log(i(tab`加密 ${rela1} => ${rela2}`, tab`Encrypting ${rela1} => ${rela2}`));
 
   // 加密并保存
-  const content = util.load(originPath);
+  const content = u.load(originPath);
   const encryptedContent = aes.encrypt(content);
-  util.save(encryptedContent, util.toDecryptedPath(parsed.dir), newName);
+  u.save(encryptedContent, u.toDecryptedPath(parsed.dir), newName);
 };
 
 export const decryption = () => {
   lbgBlue('加密中', 'Encrypting');
-  const files = util.getAllFiles(dir.encrypted, (f: string) => configs.excludes(f));
+  const files = u.getAllFiles(dir.encrypted, (f: string) => configs.excludes(f));
   console.log(i(tab`检测到${files.length}个文件`, tab`Detected ${files.length} file(s)`));
 
   fs.rm(dir.decrypted, { recursive: true }, (err) => {

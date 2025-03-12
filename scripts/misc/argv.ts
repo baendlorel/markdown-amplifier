@@ -1,3 +1,9 @@
+/**
+ * @name ArgV
+ * @description
+ * 依赖于locale、logger
+ */
+
 import { i } from './locale';
 import { lred } from './logger';
 
