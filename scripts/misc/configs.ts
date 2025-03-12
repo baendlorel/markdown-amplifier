@@ -213,12 +213,12 @@ ${y(`}`)}`;
       const entries = [
         {
           key: i('加密文件名', 'encryptFileName'),
-          value: String(_encryptFileName),
+          value: _encryptFileName,
           comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
         },
         {
           key: i('加密文件夹名', 'encryptFolderName'),
-          value: String(_encryptFolderName),
+          value: _encryptFolderName,
           comment: i(
             '是否加密文件夹名，默认为true',
             'Whether to encrypt folder name, default is true'
@@ -241,7 +241,7 @@ ${y(`}`)}`;
         },
         {
           key: i('忽略', 'exclude'),
-          value: `[${_exclude.join(', ')}]`,
+          value: _exclude,
           comment: i(
             '要加密的文件夹下，不加密的文件/文件夹',
             'Folders in decrypted directory will not be encrypted'
@@ -265,10 +265,35 @@ ${y(`}`)}`;
         },
       ];
 
+      // coloredValue
+      const cv = (value: any) => {
+        switch (typeof value) {
+          case 'undefined':
+          case 'boolean':
+            return chalk.yellow(String(value));
+          case 'number':
+            return chalk.cyan(String(value));
+          case 'string':
+            return chalk.grey(value);
+          case 'object':
+            if (Array.isArray(value)) {
+              return (
+                chalk.magentaBright('[') +
+                value.join(chalk.magentaBright(', ')) +
+                chalk.magentaBright(']')
+              );
+            } else {
+              return chalk.magentaBright(String(value));
+            }
+          default:
+            return value;
+        }
+      };
+
       table(
         entries.map((e) => ({
-          key: chalk.blue(e.key),
-          value: e.value,
+          key: chalk.blueBright(e.key.replace(/^[\w]/, (a) => a.toUpperCase())),
+          value: cv(e.value),
           comment: chalk.rgb(122, 154, 96)(e.comment),
         })),
         [

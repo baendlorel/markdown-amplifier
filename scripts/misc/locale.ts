@@ -22,7 +22,7 @@ const createLocaleManager = () => {
     }
   }
 
-  const i = (zh: any, en: any) => {
+  const i = <T>(zh: T, en: T): T => {
     switch (locale) {
       case 'zh':
         return zh;
@@ -30,7 +30,7 @@ const createLocaleManager = () => {
         return en;
       default:
         const a: never = locale;
-        return '[LOCALE_ERROR]';
+        return '[LOCALE_ERROR]' as T;
     }
   };
 

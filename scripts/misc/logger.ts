@@ -30,8 +30,8 @@ export const lbgBlue = (zh: string, en?: string) =>
 export const table = (data: any[], props: { index: string; alias?: string }[]) => {
   const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
   const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
-  const logRow0 = (row: string[]) => log(' ' + row.join('  ') + ' ');
-  const logRow1 = (row: string[]) => log(chalk.bgRgb(44, 44, 54)(' ' + row.join('  ') + ' '));
+  const logRow0 = (row: string[]) => log('  ' + row.join('  ') + '  ');
+  const logRow1 = (row: string[]) => log(chalk.bgRgb(44, 44, 54)('  ' + row.join('  ') + '  '));
 
   // 以表头文字宽度为初值，用reduce求出每列的最大宽度
   const max = data.reduce(
@@ -56,19 +56,3 @@ export const table = (data: any[], props: { index: string; alias?: string }[]) =
     }
   }
 };
-
-// const max = data.reduce(
-//   (acc, cur) => {
-//     for (const p of props) {
-//       acc[p.index] = Math.max(acc[p.index], stringWidth(cur[p.index]));
-//     }
-//     return acc;
-//   },
-//   props.reduce((acc, cur) => ({ ...acc, [cur.index]: 0 }), {} as { [key: string]: number })
-// );
-
-// const header = props.map((p) => padAlign(p.alias ?? p.index, max[p.index]));
-// const body = data.map((d) => props.map((p) => padAlign(d[p.index], max[p.index])));
-
-// log(tab(header));
-// log(tab(body));
