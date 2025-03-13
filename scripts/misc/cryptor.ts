@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { configs } from './configs';
 import { memoize } from './utils';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
+
 const deriveKey = (): Buffer => {
   return crypto.createHash('sha256').update(configs.key).digest();
 };
@@ -71,4 +72,9 @@ export const xor = {
     const encrypted = textBytes.map((byte, i) => byte ^ keyBytes[i % keyBytes.length]);
     return toAlphaString(encrypted); // 转换成只包含 A-Z 的字符串
   }),
+};
+
+export const base64 = {
+  encode: (str: string): string => Buffer.from(str).toString('base64'),
+  decode: (str: string): string => Buffer.from(str, 'base64').toString('utf-8'),
 };

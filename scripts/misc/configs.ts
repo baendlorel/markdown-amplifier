@@ -17,9 +17,9 @@ import { cb, cb1, ck } from './color';
 const createConfigManager = () => {
   // * 定义私有变量
   /**
-   * 保存历史用key的文件名
+   * 保存历史
    */
-  const _historyKeys = '.history-keys' as const;
+  const _akasha = '.cryption-akasha.json' as const;
 
   /**
    * 根目录，递归向上查找package.json所在的文件夹
@@ -126,7 +126,7 @@ const createConfigManager = () => {
     lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
     const gitigorePath = path.join(_root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
-      const content = fs.readFileSync(gitigorePath).toString();
+      const content = fs.readFileSync(gitigorePath, 'utf-8');
       const lines = content.split('\n').map((line) => line.trim());
 
       // 确认是否忽略了加密前的文件夹，没有则加入
@@ -142,14 +142,24 @@ const createConfigManager = () => {
         );
       }
 
-      // 确认是否忽略了.history-keys文件，没有则加入
-      if (!lines.some((p) => p === _historyKeys)) {
+      // // 确认是否忽略了.history-keys文件，没有则加入
+      // if (!lines.some((p) => p === _historyKeys)) {
+      //   lgrey(
+      //     `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
+      //     `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
+      //   );
+      //   fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
+      //   lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
+      // }
+
+      // 确认是否忽略了.cryption.json文件，没有则加入
+      if (!lines.some((p) => p === _akasha)) {
         lgrey(
-          `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
-          `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
+          `.gitignore文件并未包含'${_akasha}'，添加中...`,
+          `It seems .gitignore does not contain '${_akasha}'. Adding...`
         );
-        fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
-        lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
+        fs.appendFileSync(gitigorePath, `\n${_akasha}`);
+        lgrey(`.gitignore已添加'${_akasha}'`, `'${_akasha}' is added to .gitignore`);
       }
 
       // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
@@ -193,8 +203,8 @@ const createConfigManager = () => {
         isDecrypt: argv.isDecrypt,
       };
     },
-    get historyKeysPath() {
-      return path.join(_root, _historyKeys);
+    get akashaPath() {
+      return path.join(_root, _akasha);
     },
     get encryptFileName() {
       return _encryptFileName;
@@ -331,20 +341,20 @@ const createConfigManager = () => {
     /**
      * 把使用的key保存在.history-keys文件中
      */
-    saveHistoryKey() {
-      lflag('保存key到历史文件', 'Save key to history file');
-      log.incrIndent();
-      const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
-      lgrey('添加key到' + configs.historyKeysPath, 'Appending key to ' + configs.historyKeysPath);
-      if (fs.existsSync(conf.historyKeysPath)) {
-        const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
-        fs.appendFileSync(conf.historyKeysPath, head + newKey);
-      } else {
-        fs.writeFileSync(conf.historyKeysPath, newKey);
-      }
-      lgreen('添加完成', 'Key added successfully');
-      log.decrIndent();
-    },
+    // saveHistoryKey() {
+    //   lflag('保存key到历史文件', 'Save key to history file');
+    //   log.incrIndent();
+    //   const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
+    //   lgrey('添加key到' + configs.historyKeysPath, 'Appending key to ' + configs.historyKeysPath);
+    //   if (fs.existsSync(conf.historyKeysPath)) {
+    //     const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
+    //     fs.appendFileSync(conf.historyKeysPath, head + newKey);
+    //   } else {
+    //     fs.writeFileSync(conf.historyKeysPath, newKey);
+    //   }
+    //   lgreen('添加完成', 'Key added successfully');
+    //   log.decrIndent();
+    // },
   };
   return conf;
 };

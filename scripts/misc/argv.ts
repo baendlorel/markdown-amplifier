@@ -99,13 +99,11 @@ ${y(`}`)}`;
   - 程序会从脚本目录开始往上层逐级搜索package.json，并将找到的目录定为笔记的根目录
   - 您可以在package.json中设置要加密、解密的文件夹（其他配置见下方例子）
   - 解密文件夹就是在本地编写秘密信息的文件夹，Cryption会自动将其纳入.gitignore中
-  - 每次使用的密钥key会自动记入.history-keys文件中，此文件也会自动纳入.gitignore
   - 加密、解密时，会清空对应的目标文件夹，请注意备份`,
       `Cryption is designed to enhance the security of personal notes and knowledge bases managed by Git by providing encryption and decryption capabilities.
   - The program will start from the script directory and search upward through parent directories for a package.json file. Once found, that directory will be identified as the root of your notes project.
   - You can configure the folders to be encrypted and decrypted directly within the package.json file (see example configuration below).
   - The decryption folder is where you write and manage your secret information locally. Cryption will automatically add this folder to .gitignore to prevent it from being committed to your repository.
-  - Each key used for encryption or decryption will be automatically recorded in a .history-keys file. This file is also automatically added to .gitignore.
   - Warning: When encrypting or decrypting, the corresponding target folder will be cleared. Please ensure you have backups before proceeding.
 `
     );

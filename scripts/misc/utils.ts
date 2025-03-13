@@ -84,7 +84,7 @@ export const splitPath = (filePath: string) => {
  */
 export const load = (filePath: string): string => {
   // 读取文件内容
-  return fs.readFileSync(filePath).toString();
+  return fs.readFileSync(filePath, 'utf-8');
 };
 
 /**
