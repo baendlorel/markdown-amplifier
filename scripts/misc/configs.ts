@@ -9,7 +9,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { i } from './locale';
 import { formatDatetime, load, splitPath } from './utils';
-import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table, lgreen } from './logger';
+import { log, lflag, lbgRed, lgrey, lyellow, lerr, table, lgreen } from './logger';
 import { argv } from './argv';
 import stringWidth from 'string-width';
 import { cb, cb1, ck } from './color';
@@ -110,7 +110,7 @@ const createConfigManager = () => {
     if (messages.length > 0) {
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
-      lbgBlue('package.json中的配置例子如下：', 'An example in package.json should be like this :');
+      lflag('package.json中的配置例子如下：', 'An example in package.json should be like this :');
       argv.showPackageJsonConfigExample();
       throw new Error(i('package.json中的cryption配置无效', 'Invalid cryption in package.json'));
     }
@@ -167,7 +167,7 @@ const createConfigManager = () => {
   };
 
   // * 开始加载配置
-  lbgBlue('加载配置表', 'Loading Configuration Table');
+  lflag('加载配置表', 'Loading Configuration Table');
   log.incrIndent();
 
   // 以package.json的目录定为root
@@ -211,8 +211,8 @@ const createConfigManager = () => {
         encrypted: _directory.encrypted,
       };
     },
-    excludes(folder: string) {
-      return _exclude.includes(folder);
+    excludes(dir: string, fileName: string) {
+      return _exclude.includes(fileName);
     },
     display() {
       const entries = [
@@ -332,7 +332,7 @@ const createConfigManager = () => {
      * 把使用的key保存在.history-keys文件中
      */
     saveHistoryKey() {
-      lbgBlue('保存key到历史文件', 'Save key to history file');
+      lflag('保存key到历史文件', 'Save key to history file');
       log.incrIndent();
       const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
       lgrey('添加key到' + configs.historyKeysPath, 'Appending key to ' + configs.historyKeysPath);

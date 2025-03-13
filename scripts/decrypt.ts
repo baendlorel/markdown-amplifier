@@ -6,7 +6,7 @@ import {
   getAllFiles,
   lbgRed,
   log,
-  lbgBlue,
+  lflag,
   lgrey,
   xor,
   aes,
@@ -31,10 +31,10 @@ const decryptFile = (originPath: string) => {
 };
 
 export const decryption = () => {
-  lbgBlue('开始解密', 'Start Decrypting');
+  lflag('开始解密', 'Start Decrypting');
   log.incrIndent();
 
-  const files = getAllFiles(path.join(configs.root, encrypted), (f: string) => configs.excludes(f));
+  const files = getAllFiles(path.join(configs.root, encrypted), configs.excludes);
   lgrey(`检测到${files.length}个待解密文件`, `Detected ${files.length} file(s) to be derypted`);
 
   try {

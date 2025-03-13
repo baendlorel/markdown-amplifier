@@ -6,11 +6,11 @@ import {
   getAllFiles,
   lbgRed,
   log,
-  lbgBlue,
   lgrey,
   xor,
   aes,
   lgreen,
+  lflag,
 } from './misc';
 import { cryptPath, relaPath } from './crypt-path';
 import path from 'path';
@@ -31,10 +31,10 @@ const encryptFile = (originPath: string) => {
 };
 
 export const encryption = () => {
-  lbgBlue('开始加密', 'Start Encrypting');
+  lflag('开始加密', 'Start Encrypting');
   log.incrIndent();
 
-  const files = getAllFiles(path.join(configs.root, decrypted), (f: string) => configs.excludes(f));
+  const files = getAllFiles(path.join(configs.root, decrypted), configs.excludes);
   lgrey(`检测到${files.length}个待加密文件`, `Detected ${files.length} file(s) to be ecrypted`);
 
   try {

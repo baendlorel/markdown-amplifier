@@ -5,7 +5,7 @@
  */
 import chalk from 'chalk';
 import { i } from './locale';
-import { log, table, lbgBlue, br, lerr } from './logger';
+import { log, table, lflag, br, lerr } from './logger';
 import { cb1, cb2, cb3, ccms, ck, cv } from './color';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
@@ -93,7 +93,7 @@ ${y(`}`)}`;
     ];
 
     const cm = chalk.rgb(122, 154, 96);
-    lbgBlue('介绍', 'Introduction');
+    lflag('介绍', 'Introduction');
     log(
       `Cryption是为了让git管理的个人笔记、知识库能够更安全地记录秘密信息而编写加密解密工具
   - 程序会从脚本目录开始往上层逐级搜索package.json，并将找到的目录定为笔记的根目录
@@ -111,11 +111,11 @@ ${y(`}`)}`;
     );
     br();
 
-    lbgBlue('package.json配置例', 'package.json config example');
+    lflag('package.json配置例', 'package.json config example');
     showPackageJsonConfigExample();
     br();
 
-    lbgBlue('指令列表', 'Directive Table');
+    lflag('指令列表', 'Directive Table');
     table(
       dic.map((d) => ({
         directive: chalk.gray(d.directive),
@@ -128,7 +128,7 @@ ${y(`}`)}`;
     );
     br();
 
-    lbgBlue('使用例', 'Example');
+    lflag('使用例', 'Example');
     log(
       '  crypt --encrypt --zh aaaaa' +
         cm(

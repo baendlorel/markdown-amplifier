@@ -39,12 +39,15 @@ export const padAlign = (text: string, length: number, direction: 'left' | 'righ
  * @param excludes 用于判断是否不包含这个文件，返回true则跳过该文件
  * @returns 文件路径数组
  */
-export const getAllFiles = (dir: string, excludes: (fileName: string) => boolean): string[] => {
+export const getAllFiles = (
+  dir: string,
+  excludes: (dir: string, fileName: string) => boolean
+): string[] => {
   const list = [] as string[];
   const _detect = (dir: string) => {
     const files = fs.readdirSync(dir);
     for (const file of files) {
-      if (excludes(path.join(dir, file))) {
+      if (excludes(dir, file)) {
         continue; // 跳过部分文件夹
       }
       const filePath = path.join(dir, file);

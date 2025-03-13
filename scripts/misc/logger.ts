@@ -66,6 +66,9 @@ export const lblue = (zh: string, en?: string) => l(indent + chalk.blue(pdi(zh, 
 export const lbgBlue = (zh: string, en?: string) => l(indent + chalk.bgBlue(pdi(zh, en)));
 
 // # 功能日志
+export const lflag = (zh: string, en?: string) =>
+  l(chalk.bgWhiteBright.black(' Cryption ') + chalk.bgBlue(pdi(zh, en)));
+
 export const lerr = (zh: string, en?: string, title?: string) => {
   const header = ` ${title ?? 'Cryption Error'} `;
   const content = i(zh, en ?? zh);

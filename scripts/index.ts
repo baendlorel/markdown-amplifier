@@ -6,10 +6,9 @@
  * @description
  */
 
-import { br, configs, i, pdi } from './misc';
+import { br, configs, lflag } from './misc';
 import { encryption } from './encrypt';
 import { decryption } from './decrypt';
-import chalk from 'chalk';
 
 const main = () => {
   configs.display();
@@ -19,11 +18,7 @@ const main = () => {
   br();
   configs.saveHistoryKey();
   br();
-  console.log(
-    chalk.bgGreenBright(pdi('Cryption')) +
-      ' ' +
-      chalk.green(i('操作完成，欢迎下次使用', 'Done, welcome to use next time'))
-  );
+  lflag('操作完成，欢迎下次使用', 'Done, see you next time');
   br();
 };
 
