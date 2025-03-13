@@ -1,42 +1,60 @@
 import fs from 'fs';
-import { configs, load, save, getAllFiles, lbgRed, log, lbgBlue, lgrey } from './misc';
-import { aes } from './misc';
-import { cryptPath } from './crypt-path';
+import {
+  configs,
+  load,
+  save,
+  getAllFiles,
+  lbgRed,
+  log,
+  lbgBlue,
+  lgrey,
+  xor,
+  aes,
+  lgreen,
+} from './misc';
+import { cryptPath, relaPath } from './crypt-path';
+import path from 'path';
 
-const dir = configs.directory;
+const { decrypted, encrypted } = configs.directory;
 
 const encryptFile = (originPath: string) => {
-  const encryptedPath = cryptPath(originPath, dir.decrypted, dir.encrypted, aes.encrypt);
+  const encryptedPath = cryptPath(originPath, decrypted, encrypted, xor.encrypt);
   // 日志用变量
-  lgrey(`加密 ${originPath} => ${encryptedPath}`, `Encrypting ${originPath} => ${encryptedPath}`);
+  lgrey(
+    `加密 ${relaPath(decrypted, originPath)} => ${relaPath(encrypted, encryptedPath)}`,
+    `Encrypting ${relaPath(decrypted, originPath)} => ${relaPath(encrypted, encryptedPath)}`
+  );
   // 加密并保存
   const origin = load(originPath);
-  const encrypted = aes.encrypt(origin);
-  save(encrypted, encryptedPath);
+  const encryptedContent = aes.encrypt(origin);
+  save(encryptedContent, encryptedPath);
 };
 
 export const encryption = () => {
   lbgBlue('开始加密', 'Start Encrypting');
   log.incrIndent();
 
-  const files = getAllFiles(dir.decrypted, (f: string) => configs.excludes(f));
+  const files = getAllFiles(path.join(configs.root, decrypted), (f: string) => configs.excludes(f));
   lgrey(`检测到${files.length}个待加密文件`, `Detected ${files.length} file(s) to be ecrypted`);
+
   try {
-    if (fs.existsSync(dir.encrypted)) {
-      fs.rmSync(dir.encrypted, { recursive: true });
+    if (fs.existsSync(encrypted)) {
+      fs.rmSync(encrypted, { recursive: true });
     } else {
-      fs.mkdirSync(dir.encrypted);
+      fs.mkdirSync(encrypted);
     }
   } catch (error) {
     if (error) {
-      lbgRed(`清空${dir.encrypted}文件夹出错`, `Error when clearing ${dir.encrypted}`);
+      lbgRed(`清空${encrypted}文件夹出错`, `Error when clearing ${encrypted}`);
       throw error;
     }
   }
-  lgrey(`已清空 ${dir.encrypted}`, `${dir.encrypted} cleared`);
-  log.decrIndent();
+  lgrey(`已清空 ${encrypted}`, `${encrypted} cleared`);
 
   for (const f of files) {
     encryptFile(f);
   }
+
+  lgreen('加密完成', 'Encryption completed');
+  log.decrIndent();
 };

@@ -5,3 +5,4 @@ test.ts
 # 机密文件夹只跟踪加密后的文件和脚本文件 
 decrypted
 .history-keys
+decrypted2

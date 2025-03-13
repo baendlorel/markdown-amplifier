@@ -9,7 +9,7 @@ import chalk from 'chalk';
 import stringWidth from 'string-width';
 import { i } from './locale';
 
-type Log = ((zh: string, en?: string) => void) & {
+type Logger = ((zh: string, en?: string) => void) & {
   incrIndent: () => void;
   decrIndent: () => void;
   setIndent: (n: number) => void;
@@ -22,8 +22,8 @@ let padRight = ' ';
 let gap = ' ';
 
 // padding i18n
-const pdi = (zh: string, en?: string) => padLeft + i(zh, en ?? zh) + padRight;
-export const log = ((zh: string, en?: string) => l(indent + pdi(zh, en))) as Log;
+export const pdi = (zh: string, en?: string) => padLeft + i(zh, en ?? zh) + padRight;
+export const log = ((zh: string, en?: string) => l(indent + pdi(zh, en))) as Logger;
 Object.defineProperties(log, {
   incrIndent: {
     value: () => (indent += '  '),

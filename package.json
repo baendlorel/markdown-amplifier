@@ -19,10 +19,7 @@
 	"cryption": {
 		"encryptFileName": true,
 		"encryptFolderName": true,
-		"exclude": [
-			"aseADFADFFAD",
-			"ADSFASD"
-		],
+		"exclude": [],
 		"directory": {
 			"decrypted": "decrypted",
 			"encrypted": "encrypted"

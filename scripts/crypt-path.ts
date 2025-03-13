@@ -15,7 +15,6 @@ const init = (origin: string, from: string, to: string) => {
       `没有找到待处理文件夹'${from}'`,
       `Cannot find the folder '${from}' to be encrypted`
     );
-    console.log('paths', paths);
     lerr(m);
     throw new Error(m);
   }
@@ -50,9 +49,16 @@ export const cryptPath = (
   to: string,
   cryptor: (s: string) => string
 ) => {
-  const { paths, cryptIndex } = init(origin, from, to);
-  const oldFileName = paths.pop() as string;
-  const dir = cryptFolderName(paths, cryptIndex, cryptor);
-  const fileName = cryptFileName(oldFileName, cryptor);
-  return path.join(...dir, fileName);
+  const parsed = path.parse(origin);
+  const newFileName = cryptFileName(parsed.name, cryptor) + parsed.ext;
+
+  const { paths, cryptIndex } = init(parsed.dir, from, to);
+  const newPath = cryptFolderName(paths, cryptIndex, cryptor);
+
+  // 不加密后缀名
+  return path.join(...newPath, newFileName);
+};
+
+export const relaPath = (folder: string, filePath: string) => {
+  return path.relative(path.join(configs.root, folder), filePath);
 };

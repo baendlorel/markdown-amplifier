@@ -9,7 +9,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { i } from './locale';
 import { formatDatetime, load, splitPath } from './utils';
-import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table } from './logger';
+import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table, lgreen } from './logger';
 import { argv } from './argv';
 import stringWidth from 'string-width';
 import { cb, cb1, ck } from './color';
@@ -207,8 +207,8 @@ const createConfigManager = () => {
     },
     get directory() {
       return {
-        decrypted: path.join(_root, _directory.decrypted),
-        encrypted: path.join(_root, _directory.encrypted),
+        decrypted: _directory.decrypted,
+        encrypted: _directory.encrypted,
       };
     },
     excludes(folder: string) {
@@ -332,13 +332,18 @@ const createConfigManager = () => {
      * 把使用的key保存在.history-keys文件中
      */
     saveHistoryKey() {
+      lbgBlue('保存key到历史文件', 'Save key to history file');
+      log.incrIndent();
       const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
+      lgrey('添加key到' + configs.historyKeysPath, 'Appending key to ' + configs.historyKeysPath);
       if (fs.existsSync(conf.historyKeysPath)) {
         const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
         fs.appendFileSync(conf.historyKeysPath, head + newKey);
       } else {
         fs.writeFileSync(conf.historyKeysPath, newKey);
       }
+      lgreen('添加完成', 'Key added successfully');
+      log.decrIndent();
     },
   };
   return conf;
