@@ -11,6 +11,7 @@ import { i } from './locale';
 import { formatDatetime, load, splitPath } from './utils';
 import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table } from './logger';
 import { argv } from './argv';
+import stringWidth from 'string-width';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
   // * 定义私有变量
@@ -38,52 +39,23 @@ const createConfigManager = () => {
 
   // * 定义私有函数
 
-  /**
-   * .gitignore文件必须包含待加密的文件夹、keys历史
-   * 不能包含加密后的文件夹
-   */
-  const checkGitIgnore = () => {
-    lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
-    const gitigorePath = path.join(_root, '.gitignore');
-    if (fs.existsSync(gitigorePath)) {
-      const content = fs.readFileSync(gitigorePath).toString();
-      const lines = content.split('\n').map((line) => line.trim());
-
-      // 确认是否忽略了加密前的文件夹，没有则加入
-      if (!lines.some((p) => p === _directory.decrypted)) {
-        lgrey(
-          `.gitignore文件并未包含要加密的文件夹'${_directory.decrypted}'，添加中...`,
-          `It seems .gitignore in root directory does not contain '${_directory.decrypted}'. Adding...`
-        );
-        fs.appendFileSync(gitigorePath, `\n${_directory.decrypted}`);
-        lgrey(
-          `.gitignore已添加'${_directory.decrypted}'`,
-          `'${_directory.decrypted}' is added to .gitignore`
-        );
+  const locateRoot = () => {
+    const paths = splitPath(__dirname);
+    lgrey('寻找package.json的目录作为root目录', 'Locating package.json as root directory');
+    for (let i = paths.length; i >= 1; i--) {
+      const root = path.join(...paths.slice(0, i));
+      const p = path.join(root, 'package.json');
+      if (fs.existsSync(p)) {
+        return root;
       }
-
-      // 确认是否忽略了.history-keys文件，没有则加入
-      if (!lines.some((p) => p === _historyKeys)) {
-        lgrey(
-          `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
-          `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
-        );
-        fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
-        lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
-      }
-
-      // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
-      if (lines.some((p) => p === _directory.encrypted)) {
-        lyellow(
-          `.gitignore包含了加密后的文件夹'${_directory.encrypted}'，如果需要git追踪它，请手动删除`,
-          `.gitignore contains the encrypted folder '${_directory.encrypted}'. If you want git to track it, please remove it manually`
-        );
-      }
-    } else {
-      throw new Error(
-        i(`${_root}下未找到.gitignore文件！`, `Cannot find .gitignore file in ${_root}!`)
-      );
     }
+
+    lbgRed(
+      '加载配置失败。找不到package.json',
+      'Load Configuration Failed. Cannot find package.json'
+    );
+
+    throw new Error(i('找不到package.json', 'Cannot find package.json'));
   };
 
   const loadPackageJsonConfigs = (rootPath: string) => {
@@ -145,23 +117,52 @@ const createConfigManager = () => {
     return configs;
   };
 
-  const locateRoot = () => {
-    const paths = splitPath(__dirname);
-    lgrey('寻找package.json的目录作为root目录', 'Locating package.json as root directory');
-    for (let i = paths.length; i >= 1; i--) {
-      const root = path.join(...paths.slice(0, i));
-      const p = path.join(root, 'package.json');
-      if (fs.existsSync(p)) {
-        return root;
+  /**
+   * .gitignore文件必须包含待加密的文件夹、keys历史
+   * 不能包含加密后的文件夹
+   */
+  const checkGitIgnore = () => {
+    lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
+    const gitigorePath = path.join(_root, '.gitignore');
+    if (fs.existsSync(gitigorePath)) {
+      const content = fs.readFileSync(gitigorePath).toString();
+      const lines = content.split('\n').map((line) => line.trim());
+
+      // 确认是否忽略了加密前的文件夹，没有则加入
+      if (!lines.some((p) => p === _directory.decrypted)) {
+        lgrey(
+          `.gitignore文件并未包含要加密的文件夹'${_directory.decrypted}'，添加中...`,
+          `It seems .gitignore in root directory does not contain '${_directory.decrypted}'. Adding...`
+        );
+        fs.appendFileSync(gitigorePath, `\n${_directory.decrypted}`);
+        lgrey(
+          `.gitignore已添加'${_directory.decrypted}'`,
+          `'${_directory.decrypted}' is added to .gitignore`
+        );
       }
+
+      // 确认是否忽略了.history-keys文件，没有则加入
+      if (!lines.some((p) => p === _historyKeys)) {
+        lgrey(
+          `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
+          `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
+        );
+        fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
+        lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
+      }
+
+      // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
+      if (lines.some((p) => p === _directory.encrypted)) {
+        lyellow(
+          `.gitignore包含了加密后的文件夹'${_directory.encrypted}'，如果需要git追踪它，请手动删除`,
+          `.gitignore contains the encrypted folder '${_directory.encrypted}'. If you want git to track it, please remove it manually`
+        );
+      }
+    } else {
+      throw new Error(
+        i(`${_root}下未找到.gitignore文件！`, `Cannot find .gitignore file in ${_root}!`)
+      );
     }
-
-    lbgRed(
-      '加载配置失败。找不到package.json',
-      'Load Configuration Failed. Cannot find package.json'
-    );
-
-    throw new Error(i('找不到package.json', 'Cannot find package.json'));
   };
 
   // * 开始加载配置
@@ -288,11 +289,32 @@ const createConfigManager = () => {
             return chalk.grey(value);
           case 'object':
             if (Array.isArray(value)) {
-              return (
-                chalk.magentaBright('[') +
-                value.join(chalk.magentaBright(', ')) +
-                chalk.magentaBright(']')
-              );
+              if (value.length === 0) {
+                return chalk.magentaBright('[]');
+              }
+
+              let width = 0;
+              for (let i = 0; i < Math.min(15, value.length); i++) {
+                width += stringWidth(value[i]);
+              }
+
+              if (width <= 15) {
+                return (
+                  chalk.magentaBright(`[ `) +
+                  `'` +
+                  value.join(`', '`) +
+                  `'` +
+                  chalk.magentaBright(`' ]`)
+                );
+              } else {
+                return (
+                  chalk.magentaBright(`[\n  `) +
+                  `'` +
+                  value.join(`',\n  '`) +
+                  `'` +
+                  chalk.magentaBright(` \n]`)
+                );
+              }
             } else {
               return chalk.magentaBright(String(value));
             }

@@ -15,6 +15,7 @@ const init = (origin: string, from: string, to: string) => {
       `没有找到待处理文件夹'${from}'`,
       `Cannot find the folder '${from}' to be encrypted`
     );
+    console.log('paths', paths);
     lerr(m);
     throw new Error(m);
   }
