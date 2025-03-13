@@ -4,10 +4,10 @@
  * 依赖于locale
  */
 //// l(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
-import stringWidth from 'string-width';
-import chalk from 'chalk';
-import { i } from './locale';
 import { log as l } from 'console';
+import chalk from 'chalk';
+import stringWidth from 'string-width';
+import { i } from './locale';
 
 type Log = ((zh: string, en?: string) => void) & {
   incrIndent: () => void;
@@ -45,6 +45,7 @@ Object.defineProperties(log, {
 
 export const br = () => l();
 
+// # 彩色日志
 export const lred = (zh: string, en?: string) => l(indent + chalk.red(pdi(zh, en)));
 export const lbgRed = (zh: string, en?: string) => l(indent + chalk.bgRed(pdi(zh, en)));
 
@@ -63,6 +64,16 @@ export const lbgGrey = (zh: string, en?: string) => l(indent + chalk.bgGrey(pdi(
 
 export const lblue = (zh: string, en?: string) => l(indent + chalk.blue(pdi(zh, en)));
 export const lbgBlue = (zh: string, en?: string) => l(indent + chalk.bgBlue(pdi(zh, en)));
+
+// # 功能日志
+export const lerr = (zh: string, en?: string, title?: string) => {
+  const header = ` ${title ?? 'Cryption Error'} `;
+  const content = i(zh, en ?? zh);
+  l(
+    chalk.bgRed(header) +
+      chalk.red(' ' + content.replace(/\n/, '\n' + ' '.repeat(stringWidth(header))))
+  );
+};
 
 export const table = (data: any[], props: { index: string; alias?: string }[]) => {
   const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;

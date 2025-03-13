@@ -9,7 +9,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { i } from './locale';
 import { formatDatetime, load, splitPath } from './utils';
-import { log, lbgBlue, lbgRed, lgrey, lred, table, lyellow } from './logger';
+import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table } from './logger';
 import { argv } from './argv';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
@@ -136,7 +136,7 @@ const createConfigManager = () => {
     // 输出错误信息
     if (messages.length > 0) {
       lbgRed('加载配置失败', 'Load Configuration Failed');
-      lred(messages.join('\n'));
+      lerr(messages.join('\n'));
       lbgBlue('package.json中的配置例子如下：', 'An example in package.json should be like this :');
       argv.showPackageJsonConfigExample();
       throw new Error(i('package.json中的cryption配置无效', 'Invalid cryption in package.json'));
@@ -147,7 +147,7 @@ const createConfigManager = () => {
 
   const locateRoot = () => {
     const paths = splitPath(__dirname);
-    lgrey(i('寻找package.json的目录作为root目录', 'Locating package.json as root directory'));
+    lgrey('寻找package.json的目录作为root目录', 'Locating package.json as root directory');
     for (let i = paths.length; i >= 1; i--) {
       const root = path.join(...paths.slice(0, i));
       const p = path.join(root, 'package.json');

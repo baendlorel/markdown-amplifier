@@ -5,7 +5,7 @@
  */
 import chalk from 'chalk';
 import { i } from './locale';
-import { log, lred, table, lbgSucc, lbgBlue, br } from './logger';
+import { log, table, lbgBlue, br, lerr } from './logger';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
 const resolveArgV = () => {
@@ -93,7 +93,7 @@ ${y(`}`)}`;
     ];
 
     const cm = chalk.rgb(122, 154, 96);
-    lbgBlue(i('介绍', 'Introduction'));
+    lbgBlue('介绍', 'Introduction');
     log(
       `Cryption是为了让git管理的个人笔记、知识库能够更安全地记录秘密信息而编写加密解密工具
   - 程序会从脚本目录开始往上层逐级搜索package.json，并将找到的目录定为笔记的根目录
@@ -111,11 +111,11 @@ ${y(`}`)}`;
     );
     br();
 
-    lbgBlue(i('package.json配置例', 'package.json config example'));
+    lbgBlue('package.json配置例', 'package.json config example');
     showPackageJsonConfigExample();
     br();
 
-    lbgBlue(i('指令列表', 'Directive Table'));
+    lbgBlue('指令列表', 'Directive Table');
     table(
       dic.map((d) => ({
         directive: chalk.gray(d.directive),
@@ -128,7 +128,7 @@ ${y(`}`)}`;
     );
     br();
 
-    lbgBlue(i('使用例', 'Example'));
+    lbgBlue('使用例', 'Example');
     log(
       '  crypt --encrypt --zh aaaaa' +
         cm(
@@ -172,18 +172,16 @@ ${y(`}`)}`;
 
     // 检测是否在没有HELP指令的情况下，没有ACTION指令
     if (count.help === 0 && count.action === 0) {
-      lred(i('没有有效的指令', 'No valid command'));
+      lerr('没有有效的指令', 'No valid command');
       return undefined;
     }
 
     // 检测是否有同一种参数多重书写的
     for (const [k, v] of Object.entries(count)) {
       if (v > 1) {
-        lred(
-          i(
-            '同一种参数不能重复: ' + k,
-            'Commands in same category should not be used at the same time: ' + k
-          )
+        lerr(
+          '同一种参数不能重复: ' + k,
+          'Commands in same category should not be used at the same time: ' + k
         );
         return undefined;
       }
@@ -191,13 +189,13 @@ ${y(`}`)}`;
 
     // 检测是否有不合法的参数
     if (invalidCommands.length > 0) {
-      lred(i('这些参数不合法', 'Invalid command') + ': ' + invalidCommands.join(' '));
+      lerr('这些参数不合法', 'Invalid command') + ': ' + invalidCommands.join(' ');
       return undefined;
     }
 
     // 如果没有密钥，但是有ACTION指令，那么就是不合法的
     if (count.action > 0 && key === '') {
-      lred(i('没有提供密钥', 'No key provided'));
+      lerr('没有提供密钥', 'No key provided');
       return undefined;
     }
 
