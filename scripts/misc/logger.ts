@@ -78,30 +78,61 @@ export const lerr = (zh: string, en?: string, title?: string) => {
 export const table = (data: any[], props: { index: string; alias?: string }[]) => {
   const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
   const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
-  const logRow0 = (row: string[]) => l(`${padLeft}${row.join(gap)}${padRight}`);
-  const logRow1 = (row: string[]) =>
-    l(chalk.bgRgb(44, 44, 54)(`${padLeft}${row.join(gap)}${padRight}`));
+  const joinRow = (row: string[], colWidth: number[]) => {
+    if (row.some((t) => t.includes('\n'))) {
+      // 把本行每一列按换行符分割
+      const linedRow = row.map((t) => t.split('\n'));
+      // 找出最大行数
+      const maxLineCount = Math.max(...linedRow.map((lr) => lr.length));
+
+      let inlineRows = [] as string[];
+      for (let i = 0; i < maxLineCount; i++) {
+        // linedRow[0-length][i] pad to colWidth
+        const curInlineRow = linedRow.map((lr, colIndex) => pad(lr[i] ?? '', colWidth[colIndex]));
+        inlineRows.push(`${padLeft}${curInlineRow.join(gap)}${padRight}`);
+      }
+      return inlineRows.join('\n');
+    }
+    // 如果r的每一项都没有换行符，那么直接如下操作
+    else {
+      const paddedRow = row.map((r, i) => pad(r, colWidth[i]));
+      return `${padLeft}${paddedRow.join(gap)}${padRight}`;
+    }
+  };
+  const logRow0 = (row: string[], colWidth: number[]) => l(joinRow(row, colWidth));
+  const logRow1 = (row: string[], colWidth: number[]) =>
+    l(chalk.bgRgb(44, 44, 54)(joinRow(row, colWidth)));
 
   // 以表头文字宽度为初值，用reduce求出每列的最大宽度
   const max = data.reduce(
     (prev, cur) => {
       for (const p of props) {
-        prev[p.index] = Math.max(prev[p.index], stringWidth(cur[p.index]));
+        const text = cur[p.index];
+        if (text.includes('\n')) {
+          const maxLineWidth = Math.max(...text.split('\n').map((l) => stringWidth(l)));
+          prev[p.index] = Math.max(prev[p.index], maxLineWidth);
+        } else {
+          prev[p.index] = Math.max(prev[p.index], stringWidth(cur[p.index]));
+        }
       }
       return prev;
     },
     props.reduce((prev, cur) => ((prev[cur.index] = stringWidth(nm(cur))), prev), {})
   );
 
+  // 由max计算列宽
+  const colWidth = props.map((p) => max[p.index]);
+
   const header = props.map((p) => pad(nm(p), max[p.index]));
-  logRow1(header);
+  logRow1(header, colWidth);
   for (let i = 0; i < data.length; i++) {
     const d = data[i];
-    const row = props.map((p) => pad(d[p.index], max[p.index]));
+    const row = props.map((p) => d[p.index]);
+    // const row = props.map((p) => pad(d[p.index], colWidth[p.index]));
     if (i % 2 === 0) {
-      logRow0(row);
+      logRow0(row, colWidth);
     } else {
-      logRow1(row);
+      logRow1(row, colWidth);
     }
   }
 };

@@ -12,6 +12,7 @@ import { formatDatetime, load, splitPath } from './utils';
 import { log, lbgBlue, lbgRed, lgrey, lyellow, lerr, table } from './logger';
 import { argv } from './argv';
 import stringWidth from 'string-width';
+import { cb, cb1, ck } from './color';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
   // * 定义私有变量
@@ -282,15 +283,15 @@ const createConfigManager = () => {
         switch (typeof value) {
           case 'undefined':
           case 'boolean':
-            return chalk.yellow(String(value));
+            return cb(String(value));
           case 'number':
             return chalk.cyan(String(value));
           case 'string':
-            return chalk.grey(value);
+            return chalk.gray(value);
           case 'object':
             if (Array.isArray(value)) {
               if (value.length === 0) {
-                return chalk.magentaBright('[]');
+                return cb1('[]');
               }
 
               let width = 0;
@@ -299,24 +300,15 @@ const createConfigManager = () => {
               }
 
               if (width <= 15) {
-                return (
-                  chalk.magentaBright(`[ `) +
-                  `'` +
-                  value.join(`', '`) +
-                  `'` +
-                  chalk.magentaBright(`' ]`)
-                );
+                const v = chalk.grey(`"${value.join(`", "`)}"`);
+                return `${cb1('[')}${v}${cb1(']')}`;
               } else {
-                return (
-                  chalk.magentaBright(`[\n  `) +
-                  `'` +
-                  value.join(`',\n  '`) +
-                  `'` +
-                  chalk.magentaBright(` \n]`)
-                );
+                const TAB = '  ';
+                const v = chalk.grey(`"${value.join(`",\n${TAB}"`)}"`);
+                return `${cb1('[\n')}${TAB}${v}${cb1('\n]')}`;
               }
             } else {
-              return chalk.magentaBright(String(value));
+              return cb1(String(value));
             }
           default:
             return value;
@@ -325,7 +317,7 @@ const createConfigManager = () => {
 
       table(
         entries.map((e) => ({
-          label: chalk.blueBright(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
+          label: ck(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
           value: e.key === 'key' ? chalk.red.underline(e.value) : cv(e.value),
           comment: chalk.rgb(122, 154, 96)(e.comment),
         })),

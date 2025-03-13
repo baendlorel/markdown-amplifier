@@ -6,6 +6,7 @@
 import chalk from 'chalk';
 import { i } from './locale';
 import { log, table, lbgBlue, br, lerr } from './logger';
+import { cb1, cb2, cb3, ccms, ck, cv } from './color';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 // 由于选取语言文本和打日志的需要，只能在locale.ts里提前处理参数里的语言
 const resolveArgV = () => {
@@ -32,12 +33,11 @@ const resolveArgV = () => {
 
   // 配置案例
   const showPackageJsonConfigExample = () => {
-    const cm = chalk.rgb(122, 154, 96);
-    const k = chalk.rgb(177, 220, 251);
-    const v = chalk.rgb(193, 148, 125);
-    const p = chalk.rgb(202, 123, 210);
-    const b = chalk.rgb(93, 161, 248);
-    const y = chalk.rgb(245, 214, 74);
+    const k = ck;
+    const v = cv;
+    const y = cb1;
+    const p = cb2;
+    const b = cb3;
 
     const _cryption = i('Cryption配置，以下为默认值', 'Cryption config, default values');
     const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
@@ -49,13 +49,13 @@ const resolveArgV = () => {
 
     const packageJsonConfigExample = `${y(`{`)}
   ...other configs,
-  ${k(`"cryption"`)}: ${p(`{`)}                 ${cm('// ' + _cryption)}
-    ${k(`"encryptFileName"`)}: ${b(`true`)},    ${cm('// ' + _encryptFileName)}
-    ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${cm('// ' + _encryptFolderName)}
-    ${k(`"exclude"`)}: ${b(`[]`)},              ${cm('// ' + _exclude)}
-    ${k(`"directory"`)}: ${b(`{`)}              ${cm('// ' + _directory)}
-      ${k(`"decrypted"`)}: ${v(`"decrypted"`)}, ${cm('// ' + _decrypted)}
-      ${k(`"encrypted"`)}: ${v(`"encrypted"`)}  ${cm('// ' + _encrypted)}
+  ${k(`"cryption"`)}: ${p(`{`)}                 ${ccms(_cryption)}
+    ${k(`"encryptFileName"`)}: ${b(`true`)},    ${ccms(_encryptFileName)}
+    ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${ccms(_encryptFolderName)}
+    ${k(`"exclude"`)}: ${b(`[]`)},              ${ccms(_exclude)}
+    ${k(`"directory"`)}: ${b(`{`)}              ${ccms(_directory)}
+      ${k(`"decrypted"`)}: ${v(`"decrypted"`)}, ${ccms(_decrypted)}
+      ${k(`"encrypted"`)}: ${v(`"encrypted"`)}  ${ccms(_encrypted)}
     ${b(`}`)}
   ${p(`}`)}
 ${y(`}`)}`;
