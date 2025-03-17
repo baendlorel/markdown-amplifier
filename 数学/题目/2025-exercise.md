@@ -1,0 +1,966 @@
+---
+author:
+  - Tsumugi
+title: 2025年每日习题
+---
+
+#
+
+![原题](images/zj_42.png){width="100%"}
+
+## 1.1
+
+$\because$ $O$是矩形$ABCD$对称中心，$EF$穿过点$O$
+
+$\therefore EO=EF$
+
+$\because$ 四边形$ABFE$与$A'B'FE$存在轴对称
+
+$\therefore\angle BFE= \angle B'FE$
+
+$\because$ 矩形 $ABCD$ 有$ED\parallel BF$
+
+$\therefore \angle DEF= \angle BFE$，进一步有$\angle GFE= \angle GEO$，由此可得等腰$\triangle EGF$，$GE=GF$
+
+## 1.2
+
+$\because$ $O$是矩形$ABCD$对称中心，$EF$穿过点$O$\<br\>
+$\therefore AE=CF$\<br\>
+根据勾股定理有$(FC-GD)^2+DC^2=GF^2$，又有$AE+EG+GD=AD$可得方程组
+
+$$
+\left\{
+  \begin{aligned}
+    (FC-GD)^2+4^2 & =GF^2 \\
+    AE+EG+GD      & =8    \\
+    AE=FC         & =2GD  \\
+    GE            & =GF
+  \end{aligned}
+  \right.
+$$
+
+解得$AE=6\pm2\sqrt{3}$，由于$AE<3$，故$AE=6-2\sqrt{3}$
+
+## 1.3
+
+### 1.3.1
+
+同[1.2](#sec:1.2){reference-type="ref"
+reference="sec:1.2"}中的逻辑根据勾股定理列出方程
+
+$$
+\left\{
+  \begin{aligned}
+    (FC-GD)^2+4^2 & =GF^2 \\
+    AE+EG+GD      & =8    \\
+    AE            & =FC   \\
+    GE            & =GF
+  \end{aligned}
+  \right.
+$$
+
+代入$AE=a$和$DG=b$得
+
+$$(a-b)^2+16=(8-a-b)^2$$
+
+展开化简得
+
+$$(4-a)(4-b)=4$$
+
+### 1.3.2
+
+![image](images/zj_42_3_2.png){width="25%"}
+
+连接$HK$、$BO$、$OG$。
+
+$\because$ $O$是矩形$ABCD$对称中心，$EF$穿过点$O$
+
+$\therefore$ $ED=BF$
+
+$\because$ 四边形$ABFE$和四边形$A'B'FE$轴对称
+
+$\therefore$ $BF=B'F$、$\angle FBO=\angle GB'H$
+
+$\therefore$ $ED=B'F$
+
+$\therefore$ $B'F-GF=ED-EG$，进而$B'G=GD$
+
+$\because$ $AD \parallel BC$，两直线平行，内错角相等
+
+$\therefore$ $\angle FBO=\angle GDK$，进一步有$\angle GB'H=\angle GDK$
+
+于是，$\angle GB'H=\angle GDK$、$\angle B'GH=\angle DGK$（对顶角相等）、$B'G=GD$
+
+可得
+$\triangle GB'H \cong \triangle GDK(ASA)$，有$GH=GK$、$GB'=GD$、$\angle B'HG=\angle DKG$
+
+进一步有$\angle B'KO=\angle DHO$（补角），$HD=B'K$
+
+那么又$\because$$\angle ODH=\angle OB'K$
+
+$\therefore$ $\triangle ODH \cong \triangle OKB'(ASA)$，$OH=OK$
+
+$\because$ $OH=OK$、$GH=GK$、$OG=OG$
+
+$\therefore$
+$\triangle OGH \cong \triangle OGK(SSS)$，$S_{\triangle OGH}=S_{\triangle OGK}=\frac{1}{2}S_1$
+
+设$HG=GK=x$，那么 $$S_1= 2S_{\triangle OGH}=2x\cdot\frac{1}{2}DC=2x$$
+$$S_2=S_{\triangle OHD}-S_2=S_{\triangle OHD}-S_1=\frac{1}{2}(b+x)\cdot\frac{1}{2}DC-2x\cdot\frac{1}{2}DC=b-x$$
+$$\frac{S_1}{S_2} =\frac{2x}{b-x}$$
+
+$\because$ $GH=GK$、$GE=GF$
+
+$\therefore$
+$\triangle GHK \sim \triangle GEF$，有$HK\parallel EF$，进一步有$\triangle DHK \sim \triangle DEO$
+
+由这两个相似关系可得边长比例关系
+
+$$\frac{DH}{DE}=\frac{HK}{EO}=\frac{b+x}{8-a}$$
+$$\frac{GH}{GE}=\frac{HK}{EF}=\frac{x}{8-a-b}$$
+
+而恰好$2EO=EF$，所以联立上面两个算式得到
+
+$$
+\begin{aligned}
+      \frac{HK}{2EO} =  \frac{1}{2}\cdot\frac{b+x}{8-a} & = \frac{x}{8-a-b}=\frac{HK}{EF} \\
+      \frac{b+x}{2x}                                    & = \frac{8-a}{8-a-b}             \\
+      \frac{b+x}{2x} - 1                                & = \frac{8-a}{8-a-b} - 1         \\
+      \frac{b+x-2x}{2x}                                 & = \frac{8-a-(8-a-b)}{8-a-b}     \\
+      \frac{S_2}{S_1} = \frac{b-x}{2x}                  & = \frac{b}{8-a-b}               \\
+      \frac{S_1}{S_2}                                   & = \frac{8-a-b}{b}
+    \end{aligned}
+$$
+
+$\because$ $a=1$、$(4-a)(4-b)=4$
+
+$\therefore$ $b=\frac{8}{3}$
+
+$\therefore$ $\frac{S_1}{S_2}  = \frac{8-a-b}{b} = \frac{13}{8}$
+
+# 2
+
+## 2.1
+
+将$s=50$，$t=20$代入$s=kt^2$，得$k=\frac{50}{20^2}=\frac{1}{8}$
+
+故$s=\frac{1}{8}t^2$，$t\in [0,20]$
+
+## 2.2
+
+### 2.2.1
+
+速度为 5m/s，即图 2 中直线斜率为 5，那么直线方程为$s-50=5(t-20)$
+
+化简得$s=5t-50$，$t\in [20,90]$
+
+代入$t=90$得$s=400$，总路程为 400 米
+
+### 2.2.2
+
+当$t\leqslant85.20$，还处于途中阶段，此时为匀速运动，代入$s=5t-50$，得$s=376>500-125$，所以龙舟队伍能达标
+
+### 2.2.3
+
+当$t>90$，此时已经走了 400 米，先加速 1 秒，再匀速划行。
+
+第一秒，速度从 5m/s 均匀加速到 5.25m/s，走过路程为$\frac{5+5.25}{2}=5.125$米。
+
+后续还剩$500-400-5.125=94.875m$，此时的速度为 5.25m/s，剩余时间为$\frac{94.875}{5.25}=18.071$秒
+
+总共花费时间为$90+1+18.071=109.071$秒
+
+# 3
+
+## 3.1
+
+正方形$ABCD$，有$AB=BC=CD=DA$。
+
+$\angle ADP+\angle PDC = \angle MDC+\angle PDC = 90^\circ$。
+
+所以$\angle ADP = \angle MDC$。
+
+又因为$DA=DC$，$\angle DAP = \angle DCM = 90^\circ$。
+
+所以$\triangle DAP \cong \triangle DCM(ASA)$。
+
+## 3.2
+
+$PQ$与$BC$交点记为$E$，设$BP=x$。
+
+因为$Rt\triangle ABC$，所以$AB=\sqrt{AC^2-BC^2}=6$。
+
+又$AD=2DB$和$AD+DB=AB$可得$AD=4$，$DB=2$。
+
+因为$\angle BEP=\angle QEM$（对顶角），且$\angle PBE=\angle MQE = 90^\circ$。
+
+所以$\triangle PBE \sim \triangle MQE$
+
+显然$DQ \perp AB$，$BE \perp AB$，有$DQ \parallel BE$，进一步地$\triangle PBE \sim \triangle PDQ$。
+
+所以$\triangle PBE \sim \triangle PDQ  \sim \triangle MQE$，可得若干边长比例关系如下
+
+$$
+\begin{aligned}
+      \frac{DQ}{QE} & =\frac{DP}{QM} \\
+      \frac{DQ}{DP} & =\frac{QE}{QM} \\
+    \end{aligned}
+$$
+
+$$
+\begin{aligned}
+      \frac{PQ}{PE}   & =\frac{PD}{PB}        \\
+      \frac{PQ}{PE}-1 & =\frac{PD}{PB}-1      \\
+      \frac{EQ}{PE}   & =\frac{2}{x}          \\
+      PQ              & =PE\cdot\frac{x+2}{x} \\
+      PQ              & =QE\cdot\frac{x+2}{2} \\
+      QE              & =PQ\cdot\frac{2}{x+2} \\
+    \end{aligned}
+$$
+
+因为$DQ \parallel BE$，所以$\triangle ADQ\sim \triangle ABC$，有$DQ=BC\cdot\frac{AD}{AB}=\frac{16}{3}$。
+
+联立上述边长关系，代入$DQ=\frac{16}{3}$，有 $$\begin{aligned}
+      \frac{QE}{QM}                   & = \frac{DQ}{DP}                          \\
+      \frac{QE}{QM}                   & = \frac{\frac{16}{3}}{2+x}               \\
+      \frac{PQ\cdot\frac{2}{x+2}}{QM} & = \frac{16}{3(x+2)}                      \\
+      \frac{PQ}{QM}                   & = \frac{16}{3(x+2)} \cdot\frac{x+2}  {2} \\
+      \frac{PQ}{QM}                   & = \frac{8}{3}                            \\
+    \end{aligned}$$
+
+## 3.3
+
+记$BP=x$，$AB=y$，那么$AC=my$，$BC=\sqrt{1+m^2}y$，$CQ=nmy$。
+
+记$BC$交$PQ$于$E$点
+
+作$QD$平行于$BC$交$AB$于$D$点。有$\triangle ADQ\sim \triangle ABC$
+
+所以$\frac{DQ}{BC}=\frac{AQ}{AC}=1-n$，可得$DQ=(1-n)BC=(1-n)\sqrt{1+m^2}y$。
+
+同理可得$AD=(1-n)y$，$DB=ny$。
+
+因为$\angle PBE = \angle MQE$,$\angle PEB = \angle MEQ$(对顶角)，所以$\triangle PBE \sim \triangle MQE$。
+
+又因为$QD$平行于$BC$，所以$\triangle PBE \sim \triangle PDQ$。
+
+所以$\triangle PBE \sim \triangle PDQ \sim \triangle MQE$，可得边长比例关系如下
+
+$$
+\begin{aligned}
+    \frac{PQ}{PE} & =\frac{DP}{BP} \\
+    \frac{DQ}{QE} & =\frac{DP}{QM}
+
+\end{aligned}$$ 对1式进行处理，有 $$\begin{aligned}
+    \frac{PQ}{PE} & =\frac{DP}{BP}             \\
+    \frac{PQ}{PE} & =\frac{DB+BP}{BP}          \\
+    \frac{PQ}{PE} & =\frac{ny+x}{x}            \\
+    PQ            & =PE\cdot\frac{ny+x}{x}     \\
+    QE            & =PQ-PE=PE\cdot\frac{ny}{x} \\
+
+\end{aligned}$$ 对2式进行处理，有 $$\begin{aligned}
+    \frac{DQ}{QE} & =\frac{DP}{QM}                                             \\
+    QM            & =(DB+BP)\cdot\frac{QE}{DQ}                                 \\
+                  & =(ny+x)\cdot\frac{PE\cdot\frac{ny}{x}}{(1-n)\sqrt{1+m^2}y} \\
+                  & =\frac{PE\cdot(ny+x)\cdot n}{x(1-n)\sqrt{1+m^2}}           \\
+
+\end{aligned}$$ $PQ$和$QM$均已有表达式，下面计算两者比例
+$$\begin{aligned}
+    \frac{PQ}{QM} & =PE\cdot\frac{ny+x}{x} \cdot \frac{x(1-n)\sqrt{1+m^2}}{PE\cdot(ny+x)\cdot n} \\
+                  & =\frac{(1-n)\sqrt{1+m^2}}{n}                                                 \\
+
+\end{aligned}
+$$
+
+# 4
+
+已知三棱锥$S-ABC$的三条侧棱$SA,SB,SC$两两垂直，且长度分别为$SA=3$，$SB=4$，$SC=12$。
+
+求该三棱锥的外接球半径，并证明当点$P$在空间内运动时，$PA^2+PB^2+PC^2+PS^2$的最小值为外接球直径的平方。
+
+## 4.1
+
+以$S$为原点，$SA$、$SB$、$SC$为坐标轴，设$A$、$B$、$C$的坐标分别为$(3,0,0)$，$(0,4,0)$，$(0,0,12)$。
+
+设球心$O$的坐标为$(x,y,z)$，半径为$r$，则有 $$\begin{aligned}
+r^2 & = x^2+y^2+z^2 \\
+r^2 & = (x-3)^2+y^2+z^2 \\
+r^2 & = x^2+(y-4)^2+z^2 \\
+r^2 & = x^2+y^2+(z-12)^2 \\
+
+\end{aligned}$$
+
+对比可得 $$\begin{aligned}
+x^2 = (x-3)^2 & \Rightarrow x=\frac{3}{2} \\
+y^2 = (y-4)^2 & \Rightarrow y=2 \\
+z^2 = (z-12)^2 & \Rightarrow z=6 \\
+
+\end{aligned}$$ 解得$r=\frac{13}{2}$
+
+## 4.2
+
+设$P$的坐标为$(x,y,z)$，则$PA^2=(x-3)^2+y^2+z^2$，$PB^2=x^2+(y-4)^2+z^2$，$PC^2=x^2+y^2+(z-12)^2$，$PS^2=x^2+y^2+z^2$。
+
+相加有 $$\begin{aligned}
+PA^2+PB^2+PC^2+PS^2 & =4x^2+4y^2+4z^2-6x-8y-24z+169 \\
+& =(2x-\frac{3}{2})^2+(2y-2)^2+(2z-6)^2 -(\frac{3}{2})^2-2^2-6^2 +169 \\
+& \geqslant -(\frac{3}{2})^2-2^2-6^2 +169 \\
+& = \frac{3\cdot169}{4} \\
+& = \frac{507}{4} \\
+
+\end{aligned}$$
+
+# 5. 46-2023 年浙江省嘉兴市中考数学真题
+
+## 5.1
+
+$\bigodot O$半径为$r=(8+2)/2=5$，$OE=OD-DE=3$。
+
+于是$AB=2AE=2\sqrt{OA^2-OE^2}=8$
+
+## 5.2
+
+### 5.2.1
+
+$G$是$\overset{\frown}{AB}$中点，自然有$\overset{\frown}{CG}$=$\overset{\frown}{GB}$，于是$\angle GAC=\angle GAF$。
+
+连接$BC$，根据圆周角相等有$\angle GAF=\angle BCG$。
+
+所以$\angle GAF=\angle BCG=\angle GAC$。
+
+由于$CD\perp AB$，且$CD$是$\bigodot O$的直径。由垂径定理得$\triangle ACE\cong\triangle BCE$，所以$\angle CAE=\angle CBE$。
+
+$$
+\begin{aligned}
+    \angle BCF+\angle F & =\angle CBE （外角）     \\
+    \angle BCF+\angle F & =\angle CAE              \\
+    \angle BCF+\angle F & =\angle GAC + \angle GAB \\
+    \angle GAB+\angle F & =\angle GAB + \angle GAB \\
+    \angle F            & =\angle GAB              \\
+\end{aligned}
+$$
+
+### 5.2.2
+
+连接$BC$，根据圆周角相等有$\angle GAF=\angle BCG$。
+
+$CD\perp AB$，且$CD$是$\bigodot O$的直径。由垂径定理得$\triangle ACE\cong\triangle BCE$，所以$\angle CAE=\angle CBE$。
+
+所以
+
+$$
+\begin{aligned}
+\angle F+\angle BCG & = \angle CBE \\
+\angle F+\angle BCG & = \angle CAE \\
+\angle F+\angle BCG & = \angle CAG +\angle GAF \\
+\angle F & = \angle CAG \\
+\end{aligned}
+$$
+
+作$OH\perp CG$于$H$，连接$OG$。
+
+由垂径定理得$\angle COG=2\angle GOH$，$GH=HC=\frac{1}{2}CG$。
+
+由圆周角是圆心角的一半可得$\angle COG=2\angle CAG$，所以$\angle GOH=\angle CAG$。
+
+所以$\angle GOH=\angle F$，有$\triangle CEF\sim\triangle GHO$，可得边长比例关系如下
+
+$$
+\begin{aligned}
+  \frac{OG}{FC} & =\frac{HG}{EC} \\
+  \frac{5}{y} & =\frac{\frac{1}{2}x}{8} \\
+  xy & =80 \\
+\end{aligned}
+$$
+
+所以$y=\frac{80}{x}$
+
+### 5.2.3
+
+由对称性可知$CF\neq DF$。下面分类讨论。
+
+1、$CF=CD=10$
+
+由$CF\cdot CG=80$得$CG=8$。
+
+于是$CG=AB=8$，于是$\overset{\frown}{AB}=\overset{\frown}{CG}$。
+
+所以$\angle CAG=\angle AGB$，得$GB\parallel AC$，进一步有$\triangle FGB\sim\triangle FCA$。
+
+根据相似三角形边长关系有
+
+$$
+\begin{aligned}
+\frac{FG}{FC} & =\frac{BG}{CA} \\
+\frac{CF-CG}{FC} & =\frac{BG}{\sqrt{AE^2+CE^2}} \\
+\frac{10-8}{10} & =\frac{BG}{\sqrt{4^2+8^2}} \\
+BG & =\frac{4\sqrt{5}}{5}
+\end{aligned}
+$$
+
+2、$DF=CD=10$
+
+根据勾股定理有
+
+$$
+\begin{aligned}
+EF^2+CE^2 & = CF^2 \\
+EF^2+DE^2 & = DF^2
+\end{aligned}
+$$
+
+于是$CF=\sqrt{CE^2-DE^2+DF^2}=\sqrt{8^2-2^2+10^2}=4\sqrt{10}$，$CG=2\sqrt{10}$。
+
+因为$\angle CBG=\angle CAG=\angle BFC$,所以$\triangle CBG\sim\triangle CFB$，可得边长比例关系如下
+
+$$
+\begin{aligned}
+\frac{CG}{CB} & = \frac{BG}{BF} \\
+\frac{2\sqrt{10}}{4\sqrt{5}} & = \frac{BG}{BF} \\
+BF & = \sqrt{2}BG
+\end{aligned}
+$$
+
+又由勾股定理可知$BF=EF-EB=\sqrt{DF^2-DE^2}-EB=4\sqrt{6}-4$。
+
+所以$BG=\frac{\sqrt{2}}{2}BF=4\sqrt{3}-2\sqrt{2}$。
+
+综上，$BG=4\sqrt{3}-2\sqrt{2}$或$\frac{4\sqrt{5}}{5}$。
+
+# 6. $\frac{3}{2+x}$连分数收敛证明
+
+探究如下连分数的收敛性 $$a=\frac{3}{2+\frac{3}{2+\frac{3}{2+\ddots}}}$$
+
+设$a_{n+1}=\frac{3}{2+a_n}(n\in\mathbb{N})$，$a_1$未知，暂时认为它是任意的实数，那么$a$有可能是$\{a_n\}$的极限。
+
+函数$f(x)=\frac{3}{2+x}$显然有两个不动点$x=1$和$-3$。下面排除不动点和奇点-2，对$a_n$的取值讨论
+
+**Case 1**. 对于$a_n>1$的情形，有
+$$0<a_{n+1}=\frac{3}{2+a_n}<\frac{3}{2+1}=1$$
+为了知道收敛性，考察$a_{n+1}$和$a_n$与 1 的距离，有
+
+$$
+\lvert a\_{n+1}-1 \rvert =\lvert \frac{3}{2+a_n}-1 \rvert =\lvert \frac{1-a_n}{2+a_n} \rvert <\lvert \frac{1-a_n}{2+1} \rvert <\frac{1}{3}\lvert a_n-1 \rvert
+$$
+
+说明在$a_n>1$时，下一项$a_{n+1}$与 1 的距离会缩小。
+
+**Case 2**. 对于$0\leqslant a_n<1$的情形，有
+$$1=\frac{3}{2+1}<a_{n+1}=\frac{3}{2+a_n}\leqslant\frac{3}{2+0}=\frac{3}{2}$$
+为了知道收敛性，考察$a_{n+1}$和$a_n$与 1 的距离，有
+
+$$
+\lvert a\_{n+1}-1 \rvert =\lvert \frac{3}{2+a_n}-1 \rvert =\lvert \frac{1-a_n}{2+a_n} \rvert \leqslant\lvert \frac{1-a_n}{2+0} \rvert \leqslant\frac{1}{2}\lvert a_n-1 \rvert
+$$
+
+说明在$0<a_n<1$时，下一项$a_{n+1}$与 1 的距离会缩小。
+
+综合[Case 1]和[Case 2]，可得$a_n>0$时必有$\lvert a_{n+1}-1 \rvert\leqslant\frac{1}{2}\lvert a_n-1 \rvert$成立，由迫敛性可知$\{a_n\}$收敛于 1。
+
+**Case 3**. 对于$-2<a_n<0$，有
+
+$$
+  1<\frac{3}{2}<a_{n+1}=\frac{3}{2+a*n}<\infty
+$$
+
+因此，此情形迭代一次后可归结为[Case 1]的情形，不再赘述。
+
+**Corollary 1**.
+_若$\exists n\in\mathbb{N}$使$a_n>-2$，则$\{a_n\}$收敛于 1。_
+
+**Case 4**. 对于$a_n<-3$，有
+
+$$
+  -1=\frac{3}{2+(-3)}<a\_{n+1}<0
+$$
+
+此时恰好归为[Corollary 1]的情形。不再赘述
+
+**Case 5**. 对于$-3<a_n<-2$，有
+
+$$
+-\infty<a\_{n+1}<\frac{3}{2+(-3)}=-3
+$$
+
+此时恰好归为[4]的情形。不再赘述
+
+综上所述，$\{a_n\}$在$\mathbb{R}$中除了$a_1=-3$（$a_1=-2$时数列无意义，不考虑）的地方都收敛于 1。
+
+# 7. 101 个硬币比 100 个硬币正面多的概率
+
+## 7.1 强行计算所有情况之和
+
+$$
+\begin{aligned}
+P(\text{甲正面数为}X)=p(x) & =C*{101}^x(\frac{1}{2})^{101} \\
+P(\text{乙正面数为}Y)=q(y) & =C*{100}^y(\frac{1}{2})^{100}
+\end{aligned}
+$$
+
+记$f(x,y)=p(x)q(y)$，那么要求的概率为
+
+$$
+  P=\sum_{x=0}^{100}\sum_{k=1}^{100-x}f(x+k,x)
+$$
+
+考察$f(x+k,x)$的表达式，有
+
+$$
+\begin{aligned}
+p(x+1) & =C*{101}^{x+1}(\frac{1}{2})^{101} \\
+& =(C*{100}^x+C\_{100}^{x+1})\cdot\frac{1}{2^{101}} \\
+& =\frac{1}{2}(q(x)+q(x+1)) \\
+p(x+k) & =\frac{1}{2}(q(x+k-1)+q(x+k)) \\
+f(x+k,x) & =\frac{1}{2}q(x)(q(x+k-1)+q(x+k))
+\end{aligned}
+$$
+
+把要求和的$f(x+k,x)$罗列如下（写成矩阵形式以便观察规律）
+
+$$
+P= \begin{pmatrix}
+f(1,0) \\
+f(2,0) & f(2,1) \\
+f(3,0) & f(3,1) & f(3,2) \\
+\vdots & \vdots & \vdots & \ddots \\
+f(101,0) & f(101,1) & f(101,2) & \cdots & f(101,100)
+\end{pmatrix}
+$$
+
+代入$f(x+k,x)$的表达式，将系数$\frac{1}{2}$移项到$P$前面，并暂时忽略$q(101)$取值问题，有
+
+$$
+2P=\begin{pmatrix}
+q(0)q(0)+ q(0)q(1) \\
+q(0)q(1)+ q(0)q(2) & q(1)q(1)+ q(1)q(2) \\
+\vdots & \vdots & \ddots \\
+q(0)q(100)+ q(0)q(101) & q(1)q(100)+ q(1)q(101) & \cdots & q(100)q(100)+ q(100)q(101) \\
+\end{pmatrix}
+$$
+
+合并同类项，重排，有
+
+$$
+2P=\begin{pmatrix}
+q(0)q(0) \\
+2q(0)q(1) & q(1)q(1) \\
+2q(0)q(2) & 2q(1)q(2) & q(2)q(2) \\
+2q(0)q(3) & 2q(1)q(3) & 2q(2)q(3) \\
+\vdots & \vdots & \vdots & \ddots \\
+2q(0)q(100) & 2q(1)q(100) & 2q(2)q(100) & \cdots & 2q(100) \\
+q(0)q(101) & q(1)q(101) & q(2)q(101) & \cdots & q(100)q(101) \\
+\end{pmatrix}
+$$
+
+考虑$q(101)=C_{100}^{101}=0$，所以$P$的最后一列为 0，不影响求和。所以
+
+$$
+2P=\begin{pmatrix}
+q(0)q(0) \\
+2q(0)q(1) & q(1)q(1) \\
+2q(0)q(2) & 2q(1)q(2) & q(2)q(2) \\
+2q(0)q(3) & 2q(1)q(3) & 2q(2)q(3) \\
+\vdots & \vdots & \vdots & \ddots \\
+2q(0)q(100) & 2q(1)q(100) & 2q(2)q(100) & \cdots & 2q(100)q(100) \\
+\end{pmatrix}
+$$
+
+考虑$P$的转置$P^T$，它的求和与$P$相同
+
+$$
+2P^T=\begin{pmatrix}
+q(0)q(0) & 2q(1)q(0) & 2q(2)q(0) & \cdots & 2q(100)q(0) \\
+& q(1)q(1) & 2q(2)q(1) & \cdots & 2q(100)q(1) \\
+& & q(2)q(2) & 2q(100)q(2) & \vdots \\
+& & & \ddots & \vdots \\
+& & & & 2q(100)q(99) \\
+& & & & q(100)q(100) \\
+\end{pmatrix}
+$$
+
+观察到两者具有对称性，相加有
+
+$$
+4P= 2(P+P^T)=\begin{pmatrix}
+2q(0)q(0) & 2q(1)q(0) & 2q(2)q(0) & \cdots & 2q(100)q(0) \\
+2q(0)q(1) & 2q(1)q(1) & 2q(2)q(1) & \cdots & 2q(100)q(1) \\
+2q(0)q(2) & 2q(1)q(2) & 2q(2)q(2) & \cdots & 2q(100)q(2) \\
+2q(0)q(3) & 2q(1)q(3) & 2q(2)q(3) & & \vdots \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+2q(0)q(100) & 2q(1)q(100) & 2q(2)q(100) & \cdots & 2q(100)q(100) \\
+\end{pmatrix}
+$$
+
+可以看到横向纵向都满足二项式定理系数，先纵向求和得到
+
+$$
+4P=\begin{pmatrix}
+2q(0)\cdot2^{100}\cdot\frac{1}{2^{100}} & 2q(1)\cdot2^{100}\cdot\frac{1}{2^{100}} & 2q(2)\cdot2^{100}\cdot\frac{1}{2^{100}} & \cdots & 2q(100)\cdot2^{100}\cdot\frac{1}{2^{100}} \\
+\end{pmatrix}
+$$
+
+再横向求和得到
+
+$$
+\begin{aligned}
+4P & =2\cdot2^{100}\cdot\frac{1}{2^{100}} \\
+P & =\frac{1}{2} \\
+\end{aligned}
+$$
+
+综上所述，甲正面数大于乙的概率为 0.5。
+
+## 7.2 巧妙算法
+
+考虑甲乙各只有 100 枚硬币的情形，那么抛硬币的结果有 3 种情况
+
+1.  甲正面数多于乙，概率为$P_1$
+
+2.  甲正面数等于乙，概率为$P_2$
+
+3.  甲正面数小于乙，概率为$P_3$
+
+则$P_1+P_2+P_3=1$。由于此时甲乙硬币数相同，由对称性可知$P_1=P_3$，$2P_1+P_2=1$。
+
+现在再抛一个硬币，对于上述三种情况的变化是
+
+1.  甲正面数多于乙------无论抛出正反面依然多于乙，胜利
+
+2.  甲正面数等于乙------抛出正面则胜利
+
+3.  甲正面数小于乙------无论抛出正反面都不会超过乙，不会胜利
+
+据此列出等式
+
+$$
+P_{win}=P_1\cdot1+P_2\cdot\frac{1}{2}+P_3\cdot0=\frac{1}{2}(2P_1+P_2)=\frac{1}{2}
+$$
+
+# 8. 求$\tan(x)=x$所有非 0 根的倒数平方的和
+
+## 8.1 使用欧拉 1753 年的方法给出结果
+
+$\tan(x)=x$的非 0 根等价于$f(x)=\sin(x)/x-\cos(x)=0$的根，通过泰勒展开来计算$f(x)$的表达式有
+
+$$
+\begin{aligned}
+xf(x) & = \sin(x)-x\cos(x) \\
+& = x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\cdots-x\left(1-\frac{x^2}{2!}+\frac{x^4}{4!}-\frac{x^6}{6!}+\cdots\right) \\
+& = x-\frac{x^3}{3!}+\frac{x^5}{5!}-\frac{x^7}{7!}+\cdots-x+\frac{x^3}{2!}-\frac{x^5}{4!}+\frac{x^7}{6!}+\cdots \\
+& = (\frac{1}{2!}-\frac{1}{3!})x^3-(\frac{1}{4!}-\frac{1}{5!})x^5+(\frac{1}{6!}-\frac{1}{7!})x^7\cdots \\
+& = \sum*{n = 1}^{\infty} (-1)^{n+1}\left(\frac{1}{(2n)!}-\frac{1}{(2n+1)!}\right)x^{2n+1} \\
+f(x) & = \sum*{n = 1}^{\infty} (-1)^{n+1}\left(\frac{1}{(2n)!}-\frac{1}{(2n+1)!}\right)x^{2n} \\
+& = \sum\_{n = 1}^{\infty} (-1)^{n+1}\left(\frac{2n}{(2n+1)!}\right)x^{2n} \\
+& =\frac{x^2}{2!}-\frac{x^2}{3!}-(\frac{x^4}{4!}-\frac{x^4}{5!})+\frac{x^6}{6!}-\frac{x^6}{7!}-(\frac{x^8}{8!}-\frac{x^8}{9!})+\frac{x^{10}}{10!}-\frac{x^{10}}{11!}\cdots \\
+& =\frac{2x^2}{3!}-\frac{4x^4}{5!}+\frac{6x^6}{7!}-\frac{8x^8}{9!}+\frac{10x^{10}}{11!}\cdots
+\end{aligned}
+$$
+
+仿照欧拉的做法，设出$f(x)=0$的根。显然$f(x)$是偶函数，说明如果$x_0$是根，那么$-x_0$也是根。
+故可将根设为$\pm x_1,\pm x_2,\pm x_3\ldots(x_k\in \mathbb{N}^* )$，记$c$为常数那么
+
+$$
+\begin{aligned}
+f(x) & =c\cdot x^2\sum*{n = 1}^{\infty}(1-\frac{x}{x_n})(1+\frac{x}{x_n}) \\
+& =c\cdot x^2\sum*{n = 1}^{\infty}(1-\frac{x^2}{x_n^2}) \\
+& =c\cdot x^2(1-\frac{x^2}{x_1^2})(1-\frac{x^2}{x_2^2})(1-\frac{x^2}{x_3^2})\ldots
+\end{aligned}
+$$
+
+通过对比 2 次项系数我们可知$c=\frac{1}{3}$。
+
+观察上式，如果其根的平方倒数和存在，那么其值应该等于$x^4$项的系数。于是有等式
+
+$$
+\begin{aligned}
+\frac{1}{3}(-\frac{1}{x_1^2}-\frac{1}{x_2^2}-\frac{1}{x_3^2}\ldots) & =-(\frac{1}{4!}-\frac{1}{5!}) \\
+(\frac{1}{x_1^2}+\frac{1}{x_2^2}+\frac{1}{x_3^2}\ldots) & =\frac{5-1}{5!}\cdot3 \\
+\frac{1}{x_1^2}+\frac{1}{x_2^2}+\frac{1}{x_3^2}\ldots & =\frac{1}{10}
+\end{aligned}
+$$
+
+上式只包含正根，而负根倒数平方和与之完全相同，所以最终答案为$\frac{1}{5}$。
+
+## 使用魏尔施特拉斯分解定理证明$f(x)$的无穷乘积的正确性
+
+首先，根据$f(z)$的级数展开式
+
+$$
+f(z) = \sum\_{n = 1}^{\infty} (-1)^{n+1}\left(\frac{2n}{(2n+1)!}\right)z^{2n} \\
+$$
+
+可以看出，$f(z)$收敛半径为$\infty$，所以$f(z)$在整个复平面上解析，即$f(z)$为整函数。
+
+那么根据 Weierstrass 分解定理，$f(z)$可以表示为无穷乘积的形式
+$$f(z) = z^me^{g(z)}\prod_{n=1}^{\infty}E_{p_n}(\frac{z}{a_n})$$
+其中$m$为$f(z)$的零点的重数，$g(z)$为另一个整函数，$p_n$为一系列整数，$a_n$为$f(z)$的零点。
+
+# 9.
+
+椭圆离心率$\frac{\sqrt{3}}{2}$，焦点为$F_1$，$F_2$。$P$在椭圆上，$PF_1-PF_2=3$，$\angle F_1PF_2=\frac{\pi}{3}$，求$S_{\triangle PF_1F_2}$
+
+## 9.1 设而不解的第一种设法
+
+椭圆的半长轴为$a$，半短轴为$b$，焦距为$2c$，则$F_1(-c,0)$，$F_2(c,0)$。设$P(x,y)$，根据对称性且$PF_1>PF_2$，可知$x>0$，$y>0$。
+
+在椭圆中有
+
+$$
+\begin{aligned}
+\frac{c}{a} & =\frac{\sqrt{3}}{2} \\
+a^2 & =b^2+c^2
+\end{aligned}
+$$
+
+故有$c=\sqrt{3}b$，$a=2b$，椭圆方程简化为$x^2+4y^2=4b^2$。对于$P$，有
+
+$$
+\begin{aligned}
+PF_1-PF_2 & =3 \\
+PF_1+PF_2 & =2a
+\end{aligned}
+$$
+
+用距离公式代入$PF_1$, $PF_2$的表达式，有
+
+$$
+\begin{aligned}
+PF_1=\sqrt{(x+c)^2+y^2} & =\frac{2a+3}{2} \\
+PF_2= \sqrt{(x-c)^2+y^2} & =\frac{2a-3}{2}
+\end{aligned}
+$$
+
+上两式平方后相减有
+
+$$
+\begin{aligned}
+PF_1^2-PF_2^2 & =(PF_1+PF_2)(PF_1-PF_2) \\
+((x+c)^2+y^2)-((x-c)^2+y^2) & =(2a)\cdot3 \\
+4xc & =(2a)\cdot3 \\
+4\sqrt{3}bx & =4\cdot3 b \\
+x & =\sqrt{3}
+\end{aligned}
+$$
+
+可得$x=\sqrt{3}$，$4y^2=4b^2-3$。下面考虑$S_{\triangle PF_1F_2}$的两种计算方式
+
+$$
+\begin{aligned}
+S\_{\triangle PF_1F_2} =\frac{1}{2}\cdot 2c \cdot y & =\frac{1}{2}\cdot PF_1\cdot PF_2\cdot\sin\frac{\pi}{3} \\
+\frac{1}{2}\cdot 2\sqrt{3}b \cdot y & = \frac{\sqrt{3}}{4}\cdot PF_1\cdot PF_2 \\
+4by & = PF_1\cdot PF_2 \\
+(4by)^2 & = PF_1^2\cdot PF_2^2 \\
+16b^2y^2 & = ((x-c)^2+y^2)((x+c)^2+y^2) \\
+16b^2y^2 & = (x^2+y^2+c^2-2xc)(x^2+y^2+c^2+2xc) \\
+16b^2y^2 & = (x^2+y^2+(\sqrt{3}b)^2)^2-(2x\cdot\sqrt{3}b)^2 \\
+16b^2y^2 & = ((4b^2-4y^2)+y^2+3b^2)^2-12x^2b^2 \\
+16b^2(b^2-\frac{3}{4}) & = (7b^2-3(b^2-\frac{3}{4}))^2-12(\sqrt{3})^2b^2 \\
+16b^4- 12b^2 & = (7b^2-3(b^2-\frac{3}{4}))^2-36b^2 \\
+16b^4- 12b^2 & = (4b^2+\frac{9}{4})^2-36b^2 \\
+16b^4+24b^2 & = 16b^4+\frac{81}{16}+18b^2 \\
+6b^2 & = \frac{81}{16} \\
+b^2 & = \frac{27}{32} \\
+\end{aligned}
+$$
+
+所以$y^2=b^2-\frac{3}{4}=\frac{3}{32}$，进一步有
+
+$$
+\begin{aligned}
+S\_{\triangle PF_1F_2} & =\frac{1}{2}\cdot 2c \cdot y \\
+& =\sqrt{3}by \\
+& =\sqrt{3}\cdot\sqrt{\frac{27}{32}}\cdot\sqrt{\frac{3}{32}} \\
+& =\frac{9\sqrt{3}}{32}
+\end{aligned}
+$$
+
+## 9.2 设而不解的第二种设法
+
+记$PF_1=m$，$PF_2=n$。那么有
+
+$$
+\begin{aligned}
+m+n & =2a \\
+m-n & =3 \\
+m^2+n^2-2mn\cos(\frac{\pi}{3})= m^2+n^2-mn & =4c^2
+\end{aligned}
+$$
+
+两边平方、化简有
+
+$$
+\begin{aligned}
+m^2+n^2+2mn & =16b^2 \\
+m^2+n^2-2mn & =9 \\
+m^2+n^2-mn & =12b^2
+\end{aligned}
+$$
+
+继续相减消去$m^2+n^2$项可以解得$mn=\frac{4}{3}b^2=\frac{9}{8}$。
+
+进而三角形面积为
+
+$$
+S_{\triangle PF_1F_2}=\frac{1}{2}mn\sin\frac{\pi}{3}=\frac{9\sqrt{7}}{32}
+$$
+
+# 10.
+
+QQ 群（公设） 1016760874 入群题
+
+## 10.1
+
+$x,y\in\mathbb{R}^+,x+y+\frac{1}{x}+\frac{4}{y}=10$，求$(x+y)_{min}$
+
+### 柯西不等式
+
+记$a=x+y$，$b=\frac{1}{x}+\frac{4}{y}$，则有$a+b=10$。
+
+根据柯西不等式有
+
+$$
+\begin{aligned}
+ab & =(x+y)(\frac{1}{x}+\frac{4}{y}) \\
+ab & \geq(\sqrt{x}\cdot\frac{1}{\sqrt{x}}+\sqrt{y}\cdot\frac{2}{\sqrt{y}})^2 \\
+ab & \geq9 \\
+a(10-a) & \geq9 \\
+a^2-10a+9 & \leq0
+\end{aligned}
+$$
+
+解得$1\leq a \leq9$，取等条件为柯西不等式取等条件
+
+$$
+\begin{aligned}
+\frac{\sqrt{x}}{ \frac{1}{\sqrt{x}} } & =\frac{\sqrt{y}}{ \frac{2}{\sqrt{y}} } \\
+x & =\frac{1}{2}y
+\end{aligned}
+$$
+
+代入题设条件可求得当$x=\frac{1}{3}$，$y=\frac{2}{3}$时，$x+y$取到最小值 1。
+
+## 10.2
+
+计算勒让德符号$(\frac{137}{227})$
+
+$$
+\begin{aligned}
+    (\frac{137}{227}) & = (\frac{227}{137})\cdot(-1)^{\frac{137-1}{2}\frac{227-1}{2}}  & \text{二次互反律}            \\
+                      & = (\frac{227-137}{137})                                        & \text{同余性质}             \\
+                      & = (\frac{90}{137})                                                                       \\
+                      & = (\frac{2\cdot3^2\cdot5}{137})                                                          \\
+                      & = (\frac{2}{137})(\frac{3}{137})(\frac{3}{137})(\frac{5}{137}) & \text{完全积性}             \\
+                      & = (\frac{2}{137})(\frac{5}{137})                               & \text{显然不为0，消除平方项}      \\
+                      & = (+1)(\frac{5}{137})                                          & \text{二次互反律的补充，137模8余1} \\
+                      & = (\frac{137}{5})\cdot(-1)^{\frac{137-1}{2}\frac{5-1}{2}}      & \text{二次互反律}            \\
+                      & = (\frac{137-135}{5})                                          & \text{同余性质}             \\
+                      & = (\frac{2}{5})                                                                          \\
+                      & = (-1)^\frac{5^2-1}{8}                                         & \text{二次互反律的补充}         \\
+                      & = -1
+\end{aligned}
+$$
+
+## 10.3
+
+求解$\lim_{n\rightarrow\infty}\int_{0}^{\pi}\frac{x}{1+3\cos^2nx}\,dx$
+
+### 拆分逐项计算
+
+把区间$[0,\pi]$分成$n$份，每个部分分段积分，每个分段的积分记为$I_k=\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{x}{1+3\cos^2nx}\,dx$，其中$k=0,1,2,3,\ldots,n-1$。那么
+
+$$
+\begin{aligned}
+    I_{k+1} & =\int_{\frac{(k+1)\pi}{n}}^{\frac{(k+2)\pi}{n}}\frac{x}{1+3\cos^2nx}\,dx                                                                                  \\
+            & \xlongequal{\text{令$t+\frac{\pi}{n}=x$}}\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{t+\frac{\pi}{n}}{1+3\cos^2n(t+\frac{\pi}{n})}\,d(t+\frac{\pi}{n}) \\
+            & =\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{t+\frac{\pi}{n}}{1+3\cos^2nt}\,dt                                                                        \\
+            & =\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{t}{1+3\cos^2nt}\,dt+\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{\frac{\pi}{n}}{1+3\cos^2nt}\,dt      \\
+            & =I_k+\frac{\pi}{n}\int_{\frac{k\pi}{n}}^{\frac{(k+1)\pi}{n}}\frac{1}{1+3\cos^2nt}\,dt                                                                     \\
+            & \xlongequal{\text{令$s+\frac{k\pi}{n}=t$}}I_k+\frac{\pi}{n}\int_{0}^{\frac{\pi}{n}}\frac{1}{1+3\cos^2n(s+\frac{k\pi}{n})}\,d(s+\frac{k\pi}{n})             \\
+            & =I_k+I_{const} \quad(I_{const}=\frac{\pi}{n}\int_{0}^{\frac{\pi}{n}}\frac{1}{1+3\cos^2nx}\,dx)
+\end{aligned}
+$$
+
+可见$I_k$形成了等差数列，先计算$I_{const}$的值，考虑如下不定积分
+
+$$
+\begin{aligned}
+    \int\frac{1}{1+3\cos^2nx}\,dx & =\int\frac{1}{1+3\cdot\frac{1+\cos2nx}{2}}\,dx                                                     \\
+                                  & =\int\frac{2}{5+3\cos2nx}\,dx                                                                      \\
+                                  & \xlongequal{\text{令$t=\tan nx$}}\int\frac{2}{5+3\cdot\frac{1-t^2}{1+t^2}}\,d(\frac{1}{n}\arctan t) \\
+                                  & =\frac{1}{n}\int\frac{2(1+t^2)}{5(1+t^2)+3\cdot(1-t^2)}\frac{1}{1+t^2}\,dt                         \\
+                                  & =\frac{1}{n}\int\frac{2}{8+2t^2}\,dt                                                               \\
+                                  & =\frac{1}{n}\int\frac{1}{4+t^2}\,dt                                                                \\
+                                  & =\frac{1}{2n}\arctan \frac{t}{2}                                                                   \\
+                                  & =\frac{1}{2n}\arctan \frac{\tan nx}{2}                                                             \\
+\end{aligned}
+$$
+
+那么
+
+$$
+\begin{aligned}
+    I_{const} & =\frac{\pi}{n}\int_{0}^{\frac{\pi}{n}}\frac{1}{1+3\cos^2nx}\,dx                                                      \\
+              & \xlongequal{\text{令$t=nx$}}\frac{\pi}{n^2}\int_{0}^{\pi}\frac{1}{1+3\cos^2t}\,dt                                     \\
+              & =\frac{\pi}{n^2}\cdot2\cdot\int_{0}^{\frac{\pi}{2}}\frac{1}{1+3\cos^2t}\,dt \quad\text{$\cos^2t$关于$\frac{\pi}{2}$对称} \\
+& =\frac{2\pi}{n^2}\cdot\frac{1}{2}\arctan \frac{\tan t}{2}\Big|\_{0}^{\frac{\pi}{2}} \\
+& =\frac{\pi^2}{2n^2}
+\end{aligned}
+$$
+
+公差$I_{const}$已求出，下面计算首项$I_0$
+
+$$
+\begin{aligned}
+    I_0 & =\int_{0}^{\frac{\pi}{n}}\frac{x}{1+3\cos^2nx}\,dx                                                         \\
+        & \xlongequal{\text{令$t=nx$}}\frac{1}{n^2}\int_{0}^{\pi}\frac{t}{1+3\cos^2t}\,dt                             \\
+        & \xlongequal{\text{令$s=\pi-t$}}\frac{1}{n^2}\int*{\pi}^{0}\frac{\pi-s}{1+3\cos^2(\pi-s)}\,d(\pi-s) \\
+        & \xlongequal{\text{倒转积分限}}\frac{1}{n^2}\int*{0}^{\pi}\frac{\pi-s}{1+3\cos^2s}\,ds \\
+        & =\frac{1}{n^2}\int*{0}^{\pi}\frac{\pi}{1+3\cos^2s}\,ds-\frac{1}{n^2}\int*{0}^{\pi}\frac{s}{1+3\cos^2s}\,ds \\
+        & =\frac{1}{n^2}\int*{0}^{\pi}\frac{\pi}{1+3\cos^2s}\,ds-I_0 \\
+        & =\frac{1}{2}\cdot\frac{\pi}{n^2}\int*{0}^{\pi}\frac{1}{1+3\cos^2s}\,ds \\
+        & =\frac{1}{2}I\_{const} \\
+        & =\frac{\pi^2}{4n^2}
+\end{aligned}
+$$
+
+下面开始计算所有区间积分的和
+
+$$
+\begin{aligned}
+I & = I*0+I_1+I_2+\cdots+I*{n-1} \\
+  & = nI*0+\frac{n(n-1)}{2}I*{const} \\
+  & = n\frac{\pi^2}{4n^2}+\frac{n(n-1)}{2}\frac{\pi^2}{2n^2} \\
+  & = \frac{\pi^2}{4} \\
+\end{aligned}
+$$
+
+原极限与$I$相等，和 n 无关，所以$\lim_{n\rightarrow\infty}\int_{0}^{\pi}\frac{x}{1+3\cos^2nx}\,dx=\frac{\pi^2}{4}$。
+
+# 11.
+
+sin5x/x 极限
+
+此题求解以重要极限$\lim_{x\rightarrow0}\frac{\sin x}{x}=1$为基础。
+
+## 方法一：按比例代换
+
+$$
+\begin{aligned}
+\lim*{x\rightarrow0}\frac{\sin5x}{x} & =\lim*{x\rightarrow0}5\cdot\frac{\sin5x}{5x} \\
+& =5\lim*{x\rightarrow0}\cdot\frac{\sin5x}{5x} \\
+& \xlongequal{\text{以$t$代换$5x$}} 5\lim*{t\rightarrow0}\frac{\sin t}{t} \\
+& \xlongequal{\text{代入重要极限}}5
+\end{aligned}
+$$
+
+## 方法二：五倍角公式
+
+$$
+\begin{aligned}
+\lim*{x\rightarrow0}\frac{\sin5x}{x} & =\lim*{x\rightarrow0}\frac{\sin^5x-10\sin^3x\cos^2x+5\sin x\cos^4x}{x} \\
+& =\lim*{x\rightarrow0}\frac{\sin^5x}{x}-\lim*{x\rightarrow0}\frac{10\sin^3x\cos^2x}{x}+\lim*{x\rightarrow0}\frac{5\sin x\cos^4x}{x} \\
+& \xlongequal{\text{连续性拆分}}(\lim*{x\rightarrow0}\frac{\sin x}{x})(\lim*{x\rightarrow0}\sin^4x)-(\lim*{x\rightarrow0}\frac{\sin x}{x})\cdot10\cdot(\lim*{x\rightarrow0}\sin^2x\cos^2x)+5\cdot(\lim*{x\rightarrow0}\frac{\sin x}{x})(\lim\_{x\rightarrow0}\cos^4x) \\
+& \xlongequal{\text{代入重要极限}}1\cdot0-1\cdot10\cdot0+5\cdot1\cdot1 \\
+& =5
+\end{aligned}
+$$

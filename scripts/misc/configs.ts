@@ -7,12 +7,12 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { i } from './locale';
-import { formatDatetime, load, splitPath } from './utils';
-import { log, lflag, lbgRed, lgrey, lyellow, lerr, table, lgreen } from './logger';
-import { argv } from './argv';
 import stringWidth from 'string-width';
+import { i } from './locale';
+import { argv } from './argv';
+import { splitPath } from './utils';
 import { cb, cb1, ck } from './color';
+import { log, lflag, lbgRed, lgrey, lyellow, lerr, table } from './logger';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 const createConfigManager = () => {
   // * 定义私有变量
