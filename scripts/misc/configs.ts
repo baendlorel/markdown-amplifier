@@ -8,28 +8,34 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import stringWidth from 'string-width';
-import { i } from './locale';
-import { argv } from './argv';
+import { i, setLocale } from './locale';
 import { splitPath } from './utils';
 import { cb, cb1, ck } from './color';
 import { log, lflag, lbgRed, lgrey, lyellow, lerr, table } from './logger';
+import { PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE } from './consts';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
-const createConfigManager = () => {
+
+export const configs = (() => {
   // * 定义私有变量
   /**
-   * 保存历史
+   * akasha文件名 \
+   * akasha file name
    */
   const _akasha = '.cryption-akasha.json' as const;
 
   /**
-   * 根目录，递归向上查找package.json所在的文件夹
+   * 根目录，层层向上查找package.json所在的文件夹 \
+   * Root directory, located by recursively searching parent directories that contains package.json
    */
   let _root = '';
 
   // 以下是参数里读取来的
-  let _key = argv.key;
+  // Loaded from argv
+  let _key = '';
+  let _action = '';
 
   // 以下是package.json读取出来的
+  // Loaded from package.json
   let _encryptFileName = true;
   let _encryptFolderName = true;
   let _exclude = [] as string[];
@@ -39,8 +45,8 @@ const createConfigManager = () => {
   };
 
   // * 定义私有函数
-
-  const locateRoot = () => {
+  // * Private functions
+  const _locateRoot = () => {
     const paths = splitPath(__dirname);
     lgrey('寻找package.json的目录作为root目录', 'Locating package.json as root directory');
     for (let i = paths.length; i >= 1; i--) {
@@ -59,9 +65,9 @@ const createConfigManager = () => {
     throw new Error(i('找不到package.json', 'Cannot find package.json'));
   };
 
-  const loadPackageJsonConfigs = (rootPath: string) => {
+  const _loadPackageJsonConfigs = () => {
     lgrey('检测package.json中的配置', 'Checking configs in package.json');
-    const configs = require(path.join(rootPath, 'package.json')).cryption;
+    const configs = require(path.join(_root, 'package.json')).cryption;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
@@ -111,7 +117,7 @@ const createConfigManager = () => {
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
       lflag('package.json中的配置例子如下：', 'An example in package.json should be like this :');
-      argv.showPackageJsonConfigExample();
+      console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
       throw new Error(i('package.json中的cryption配置无效', 'Invalid cryption in package.json'));
     }
 
@@ -119,10 +125,12 @@ const createConfigManager = () => {
   };
 
   /**
-   * .gitignore文件必须包含待加密的文件夹、keys历史
-   * 不能包含加密后的文件夹
+   * .gitignore文件必须包含待加密的文件夹、akasha文件，且不能包含加密后的文件夹 \
+   *  如果不满足会自动调整 \
+   * .gitignore must contain the folder to be encrypted, akasha file, and must not contain the encrypted folder \
+   * If not, it will be adjusted automatically
    */
-  const checkGitIgnore = () => {
+  const _ensureGitIgnore = () => {
     lgrey('检测.gitignore中的必要配置', 'Checking necessary items in .gitignore');
     const gitigorePath = path.join(_root, '.gitignore');
     if (fs.existsSync(gitigorePath)) {
@@ -176,32 +184,38 @@ const createConfigManager = () => {
     }
   };
 
-  // * 开始加载配置
-  lflag('加载配置表', 'Loading Configuration Table');
-  log.incrIndent();
+  /**
+   * 初始化 \
+   * Initialize
+   */
+  const _init = () => {
+    // * 开始加载配置
+    // * Start loading configuration
+    lflag('加载配置表', 'Loading Configuration Table');
+    log.incrIndent();
 
-  // 以package.json的目录定为root
-  _root = locateRoot();
-  const config = loadPackageJsonConfigs(_root);
+    _root = _locateRoot();
+    const config = _loadPackageJsonConfigs();
+    _encryptFileName = config.encryptFileName;
+    _encryptFolderName = config.encryptFolderName;
+    _exclude = config.exclude;
+    _directory.decrypted = config.directory.decrypted;
+    _directory.encrypted = config.directory.encrypted;
+    _ensureGitIgnore();
 
-  _encryptFileName = config.encryptFileName;
-  _encryptFolderName = config.encryptFolderName;
-  _exclude = config.exclude;
-  _directory.decrypted = config.directory.decrypted;
-  _directory.encrypted = config.directory.encrypted;
-  checkGitIgnore();
+    log.decrIndent();
+  };
 
-  log.decrIndent();
-
-  const conf = {
+  return {
+    init: _init,
+    setKey(key: string) {
+      _key = key;
+    },
+    setLocale(locale: string) {
+      setLocale(locale);
+    },
     get key() {
       return _key;
-    },
-    get action() {
-      return {
-        isEncrypt: argv.isEncrypt,
-        isDecrypt: argv.isDecrypt,
-      };
     },
     get akashaPath() {
       return path.join(_root, _akasha);
@@ -271,7 +285,7 @@ const createConfigManager = () => {
         {
           key: 'action',
           label: i('操作', 'action'),
-          value: argv.action,
+          value: _action,
           comment: i(
             '会清空目标文件夹，' + chalk.underline('注意备份!'),
             'Will clear the target folder. ' + chalk.underline('Backup first!')
@@ -280,7 +294,7 @@ const createConfigManager = () => {
         {
           key: 'key',
           label: i('密钥', 'key'),
-          value: argv.key,
+          value: _key,
           comment: i(
             chalk.bold.underline('请记住') + '密钥',
             'Promise you will ' + chalk.bold.underline('remember it')
@@ -338,25 +352,5 @@ const createConfigManager = () => {
         ]
       );
     },
-    /**
-     * 把使用的key保存在.history-keys文件中
-     */
-    // saveHistoryKey() {
-    //   lflag('保存key到历史文件', 'Save key to history file');
-    //   log.incrIndent();
-    //   const newKey = `[${formatDatetime(new Date())}] ${argv.action} key=${argv.key}\n`;
-    //   lgrey('添加key到' + configs.historyKeysPath, 'Appending key to ' + configs.historyKeysPath);
-    //   if (fs.existsSync(conf.historyKeysPath)) {
-    //     const head = load(conf.historyKeysPath).endsWith('\n') ? '' : '\n';
-    //     fs.appendFileSync(conf.historyKeysPath, head + newKey);
-    //   } else {
-    //     fs.writeFileSync(conf.historyKeysPath, newKey);
-    //   }
-    //   lgreen('添加完成', 'Key added successfully');
-    //   log.decrIndent();
-    // },
   };
-  return conf;
-};
-
-export const configs = createConfigManager();
+})();

@@ -230,4 +230,4 @@ ${y(`}`)}`;
   return resolved;
 };
 
-export const argv = resolveArgV();
+const argv = resolveArgV();
