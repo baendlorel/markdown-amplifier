@@ -29,10 +29,9 @@ export const configs = (() => {
    */
   let _root = '';
 
-  // 以下是参数里读取来的
-  // Loaded from argv
+  // 以下是commander里读取来的
+  // Loaded from commander
   let _key = '';
-  let _action = '';
 
   // 以下是package.json读取出来的
   // Loaded from package.json
@@ -223,15 +222,6 @@ export const configs = (() => {
           'Folders in decrypted directory will not be encrypted'
         ),
       },
-      {
-        key: 'key',
-        label: i('密钥', 'key'),
-        value: _key,
-        comment: i(
-          chalk.bold.underline('请记住') + '密钥',
-          'Promise you will ' + chalk.bold.underline('remember it')
-        ),
-      },
     ];
 
     // coloredValue
@@ -294,7 +284,6 @@ export const configs = (() => {
     // * Start loading configuration
     lflag('加载配置表', 'Loading Configuration Table');
     log.incrIndent();
-
     _root = _locateRoot();
     const config = _loadPackageJsonConfigs();
     _encryptFileName = config.encryptFileName;
@@ -308,17 +297,23 @@ export const configs = (() => {
   };
 
   return {
-    init(key: string) {
+    // * 初始化用
+    init: _init,
+    setKey(key: string) {
       _key = key;
-      _init();
+      lflag('设置密钥', 'Setting key');
+      log.incrIndent();
+      lgrey(`密钥为 ${key}`, `Key is set to '${key}'`);
+      log.decrIndent();
     },
     setLocale(locale: string) {
       const localeText = setLocale(locale) === 'zh' ? '中文' : 'English';
       lflag('加载语言设置', 'Load locale setting');
       log.incrIndent();
-      lgrey('设置语言为' + localeText, 'Set locale to ' + localeText);
+      lgrey('设置语言为' + localeText, 'Locale is set to ' + localeText);
       log.decrIndent();
     },
+    // * 配置表
     get key() {
       return _key;
     },
@@ -340,6 +335,7 @@ export const configs = (() => {
         encrypted: _directory.encrypted,
       };
     },
+    // * 工具函数
     excludes(dir: string, fileName: string) {
       return _exclude.includes(fileName);
     },

@@ -34,7 +34,8 @@ export const padAlign = (text: string, length: number, direction: 'left' | 'righ
 };
 
 /**
- * 递归获取文件夹下的所有文件
+ * 递归获取文件夹下的所有文件 \
+ * Recursively get all files in the folder
  * @param dir 目标文件夹路径
  * @param excludes 用于判断是否不包含这个文件，返回true则跳过该文件
  * @returns 文件路径数组

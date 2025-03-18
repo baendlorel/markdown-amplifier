@@ -4,8 +4,7 @@
  * 依赖于configs、memoize
  */
 import crypto from 'crypto';
-import { configs } from './configs';
-import { memoize } from './utils';
+import { configs, memoize } from '../misc';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 
 const deriveKey = (): Buffer => {

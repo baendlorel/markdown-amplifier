@@ -5,7 +5,7 @@
  */
 
 import path from 'path';
-import { configs, i, lerr, splitPath } from './misc';
+import { configs, i, lerr, splitPath } from '../misc';
 
 const init = (origin: string, from: string, to: string) => {
   const paths = splitPath(origin);

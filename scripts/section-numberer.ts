@@ -4,7 +4,7 @@
  */
 import { load, save } from './misc';
 
-export const numberingHead = (filePath: string) => {
+export const numberFile = (filePath: string) => {
   // 编号处理
   const no = [0, 0, 0, 0, 0, 0];
   const findIndex = (line: string) => {

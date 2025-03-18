@@ -1,19 +1,8 @@
 import fs from 'fs';
-import {
-  configs,
-  load,
-  save,
-  getAllFiles,
-  lbgRed,
-  log,
-  lflag,
-  lgrey,
-  xor,
-  aes,
-  lgreen,
-} from './misc';
-import { cryptPath, relaPath } from './crypt-path';
 import path from 'path';
+import { configs, load, save, getAllFiles, lbgRed, log, lflag, lgrey, lgreen, br } from '../misc';
+import { cryptPath, relaPath } from './crypt-path';
+import { xor, aes } from './cryptor';
 
 const { decrypted, encrypted } = configs.directory;
 
@@ -30,7 +19,10 @@ const decryptFile = (originPath: string) => {
   save(decryptedContent, decryptedPath);
 };
 
-export const decryption = () => {
+export const decryption = (key: string) => {
+  configs.setKey(key);
+  br();
+
   lflag('开始解密', 'Start Decrypting');
   log.incrIndent();
 
