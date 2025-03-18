@@ -40,6 +40,7 @@ export const { i, setLocale } = (() => {
         _locale = 'en';
         break;
     }
+    return _locale;
   };
 
   return { i, setLocale };

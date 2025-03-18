@@ -2,7 +2,7 @@ import { ck, cv, cb1, cb2, cb3, ccms } from './color';
 
 /**
  * 获取Cryption在package.json配置示例，需要注入语言切换器  \
- * Get the example of Cryption configuration in package.json, need to inject the language switcher
+ * Get the example of Note configuration in package.json, need to inject the language switcher
  * @param i 语言切换器 language switcher
  * @returns
  */
@@ -13,7 +13,7 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
   const p = cb2;
   const b = cb3;
 
-  const _cryption = i('Cryption配置，以下为默认值', 'Cryption config, default values');
+  const _cryption = i('Cryption配置，以下为默认值', 'Note config, default values');
   const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
   const _encryptFolderName = i('是否加密文件夹名', 'Whether to encrypt folder names');
   const _exclude = i('排除的文件或文件夹', 'Excluded files or folders');
@@ -23,7 +23,7 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
 
   return `${y(`{`)}
     ...other configs,
-    ${k(`"cryption"`)}: ${p(`{`)}                 ${ccms(_cryption)}
+    ${k(`"note"`)}: ${p(`{`)}                 ${ccms(_cryption)}
       ${k(`"encryptFileName"`)}: ${b(`true`)},    ${ccms(_encryptFileName)}
       ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${ccms(_encryptFolderName)}
       ${k(`"exclude"`)}: ${b(`[]`)},              ${ccms(_exclude)}
@@ -33,4 +33,23 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
       ${b(`}`)}
     ${p(`}`)}
   ${y(`}`)}`;
+};
+
+export const HELP = {
+  decrypt: {
+    example: [
+      {
+        cmd: 'note decrypt 123456',
+        comment: 'Decrypt with key 123456, language is same as system',
+      },
+      {
+        cmd: 'note decrypt 123456 -z',
+        comment: 'Decrypt with key 123456, language is set to Chinese',
+      },
+      {
+        cmd: 'note decrypt 123456 --en',
+        comment: 'Decrypt with key 123456, language is set to English',
+      },
+    ],
+  },
 };

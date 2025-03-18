@@ -1,5 +1,10 @@
 import chalk from 'chalk';
 /**
+ * color command
+ */
+export const ccmd = chalk.rgb(98, 217, 0);
+
+/**
  * color comment
  */
 export const ccm = chalk.rgb(122, 154, 96);

@@ -21,7 +21,7 @@ export const configs = (() => {
    * akasha文件名 \
    * akasha file name
    */
-  const _akasha = '.cryption-akasha.json' as const;
+  const _akasha = '.note-akasha.json' as const;
 
   /**
    * 根目录，层层向上查找package.json所在的文件夹 \
@@ -67,46 +67,37 @@ export const configs = (() => {
 
   const _loadPackageJsonConfigs = () => {
     lgrey('检测package.json中的配置', 'Checking configs in package.json');
-    const configs = require(path.join(_root, 'package.json')).cryption;
+    const configs = require(path.join(_root, 'package.json')).note;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
 
     if (!configs) {
-      mi('在package.json中找不到cryption配置', 'Cannot find cryption in package.json');
+      mi('在package.json中找不到cryption配置', 'Cannot find note in package.json');
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
-        mi(
-          'cryption.encryptFileName 应该是boolean型',
-          'cryption.encryptFileName should be a boolean'
-        );
+        mi('note.encryptFileName 应该是boolean型', 'note.encryptFileName should be a boolean');
       }
 
       if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
-        mi(
-          'cryption.encryptFolderName 应该是boolean型',
-          'cryption.encryptFolderName should be a boolean'
-        );
+        mi('note.encryptFolderName 应该是boolean型', 'note.encryptFolderName should be a boolean');
       }
       if (!configs.exclude) {
-        mi(
-          'cryption.exclude 未设置，需设置为字符串数组',
-          'cryption.exclude should be an string array'
-        );
+        mi('note.exclude 未设置，需设置为字符串数组', 'note.exclude should be an string array');
       }
       if (!configs.directory) {
-        mi('cryption.directory 未设置', 'cryption.directory is not set');
+        mi('note.directory 未设置', 'note.directory is not set');
       } else {
         if (!configs.directory.decrypted) {
           mi(
-            'cryption.directory.decrypted 未设置，需设置为字符串',
-            'cryption.directory.decrypted should be a string'
+            'note.directory.decrypted 未设置，需设置为字符串',
+            'note.directory.decrypted should be a string'
           );
         }
         if (!configs.directory.encrypted) {
           mi(
-            'cryption.directory.encrypted 未设置，需设置为字符串',
-            'cryption.directory.encrypted should be a string'
+            'note.directory.encrypted 未设置，需设置为字符串',
+            'note.directory.encrypted should be a string'
           );
         }
       }
@@ -118,7 +109,7 @@ export const configs = (() => {
       lerr(messages.join('\n'));
       lflag('package.json中的配置例子如下：', 'An example in package.json should be like this :');
       console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
-      throw new Error(i('package.json中的cryption配置无效', 'Invalid cryption in package.json'));
+      throw new Error(i('package.json中的cryption配置无效', 'Invalid note in package.json'));
     }
 
     return configs;
@@ -160,7 +151,7 @@ export const configs = (() => {
       //   lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
       // }
 
-      // 确认是否忽略了.cryption.json文件，没有则加入
+      // 确认是否忽略了.note.json文件，没有则加入
       if (!lines.some((p) => p === _akasha)) {
         lgrey(
           `.gitignore文件并未包含'${_akasha}'，添加中...`,
@@ -185,6 +176,116 @@ export const configs = (() => {
   };
 
   /**
+   * 展示已加载好的配置 \
+   * Display loaded configurations
+   */
+  const _display = () => {
+    const entries = [
+      {
+        key: 'encryptFileName',
+        label: i('加密文件名', 'encryptFileName'),
+        value: _encryptFileName,
+        comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
+      },
+      {
+        key: 'encryptFolderName',
+        label: i('加密文件夹名', 'encryptFolderName'),
+        value: _encryptFolderName,
+        comment: i(
+          '是否加密文件夹名，默认为true',
+          'Whether to encrypt folder name, default is true'
+        ),
+      },
+      {
+        key: 'root',
+        label: i(`根目录`, `root`),
+        value: _root,
+        comment: i('笔记的根目录', 'Root directory of the note'),
+      },
+      {
+        key: 'decrypted',
+        label: i(`加密前`, `decrypted`),
+        value: _directory.decrypted,
+        comment: i('要加密的文件夹', 'The folder to be encrypted'),
+      },
+      {
+        key: 'encrypted',
+        label: i(`加密后`, `encrypted`),
+        value: _directory.encrypted,
+        comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
+      },
+      {
+        key: 'exclude',
+        label: i('忽略', 'exclude'),
+        value: _exclude,
+        comment: i(
+          '要加密的文件夹下，不加密的文件/文件夹',
+          'Folders in decrypted directory will not be encrypted'
+        ),
+      },
+      {
+        key: 'key',
+        label: i('密钥', 'key'),
+        value: _key,
+        comment: i(
+          chalk.bold.underline('请记住') + '密钥',
+          'Promise you will ' + chalk.bold.underline('remember it')
+        ),
+      },
+    ];
+
+    // coloredValue
+    const cv = (value: any) => {
+      switch (typeof value) {
+        case 'undefined':
+        case 'boolean':
+          return cb(String(value));
+        case 'number':
+          return chalk.cyan(String(value));
+        case 'string':
+          return chalk.gray(value);
+        case 'object':
+          if (Array.isArray(value)) {
+            if (value.length === 0) {
+              return cb1('[]');
+            }
+
+            let width = 0;
+            for (let i = 0; i < Math.min(15, value.length); i++) {
+              width += stringWidth(value[i]);
+            }
+
+            if (width <= 15) {
+              const v = chalk.grey(`"${value.join(`", "`)}"`);
+              return `${cb1('[')}${v}${cb1(']')}`;
+            } else {
+              const TAB = '  ';
+              const v = chalk.grey(`"${value.join(`",\n${TAB}"`)}"`);
+              return `${cb1('[\n')}${TAB}${v}${cb1('\n]')}`;
+            }
+          } else {
+            return cb1(String(value));
+          }
+        default:
+          return value;
+      }
+    };
+
+    table(
+      entries.map((e) => ({
+        label: ck(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
+        value: e.key === 'key' ? chalk.red.underline(e.value) : cv(e.value),
+        comment: chalk.rgb(122, 154, 96)(e.comment),
+      })),
+      [
+        { index: 'label', alias: chalk.white(i('配置项', 'ConfigItem')) },
+        { index: 'value', alias: chalk.white(i('值', 'Value')) },
+        { index: 'comment', alias: chalk.white(i('注释', 'Comment')) },
+      ]
+    );
+  };
+
+  /**
    * 初始化 \
    * Initialize
    */
@@ -202,17 +303,21 @@ export const configs = (() => {
     _directory.decrypted = config.directory.decrypted;
     _directory.encrypted = config.directory.encrypted;
     _ensureGitIgnore();
-
+    _display();
     log.decrIndent();
   };
 
   return {
-    init: _init,
-    setKey(key: string) {
+    init(key: string) {
       _key = key;
+      _init();
     },
     setLocale(locale: string) {
-      setLocale(locale);
+      const localeText = setLocale(locale) === 'zh' ? '中文' : 'English';
+      lflag('加载语言设置', 'Load locale setting');
+      log.incrIndent();
+      lgrey('设置语言为' + localeText, 'Set locale to ' + localeText);
+      log.decrIndent();
     },
     get key() {
       return _key;
@@ -237,120 +342,6 @@ export const configs = (() => {
     },
     excludes(dir: string, fileName: string) {
       return _exclude.includes(fileName);
-    },
-    display() {
-      const entries = [
-        {
-          key: 'encryptFileName',
-          label: i('加密文件名', 'encryptFileName'),
-          value: _encryptFileName,
-          comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
-        },
-        {
-          key: 'encryptFolderName',
-          label: i('加密文件夹名', 'encryptFolderName'),
-          value: _encryptFolderName,
-          comment: i(
-            '是否加密文件夹名，默认为true',
-            'Whether to encrypt folder name, default is true'
-          ),
-        },
-        {
-          key: 'root',
-          label: i(`根目录`, `root`),
-          value: _root,
-          comment: i('笔记的根目录', 'Root directory of the note'),
-        },
-        {
-          key: 'decrypted',
-          label: i(`加密前`, `decrypted`),
-          value: _directory.decrypted,
-          comment: i('要加密的文件夹', 'The folder to be encrypted'),
-        },
-        {
-          key: 'encrypted',
-          label: i(`加密后`, `encrypted`),
-          value: _directory.encrypted,
-          comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
-        },
-        {
-          key: 'exclude',
-          label: i('忽略', 'exclude'),
-          value: _exclude,
-          comment: i(
-            '要加密的文件夹下，不加密的文件/文件夹',
-            'Folders in decrypted directory will not be encrypted'
-          ),
-        },
-        {
-          key: 'action',
-          label: i('操作', 'action'),
-          value: _action,
-          comment: i(
-            '会清空目标文件夹，' + chalk.underline('注意备份!'),
-            'Will clear the target folder. ' + chalk.underline('Backup first!')
-          ),
-        },
-        {
-          key: 'key',
-          label: i('密钥', 'key'),
-          value: _key,
-          comment: i(
-            chalk.bold.underline('请记住') + '密钥',
-            'Promise you will ' + chalk.bold.underline('remember it')
-          ),
-        },
-      ];
-
-      // coloredValue
-      const cv = (value: any) => {
-        switch (typeof value) {
-          case 'undefined':
-          case 'boolean':
-            return cb(String(value));
-          case 'number':
-            return chalk.cyan(String(value));
-          case 'string':
-            return chalk.gray(value);
-          case 'object':
-            if (Array.isArray(value)) {
-              if (value.length === 0) {
-                return cb1('[]');
-              }
-
-              let width = 0;
-              for (let i = 0; i < Math.min(15, value.length); i++) {
-                width += stringWidth(value[i]);
-              }
-
-              if (width <= 15) {
-                const v = chalk.grey(`"${value.join(`", "`)}"`);
-                return `${cb1('[')}${v}${cb1(']')}`;
-              } else {
-                const TAB = '  ';
-                const v = chalk.grey(`"${value.join(`",\n${TAB}"`)}"`);
-                return `${cb1('[\n')}${TAB}${v}${cb1('\n]')}`;
-              }
-            } else {
-              return cb1(String(value));
-            }
-          default:
-            return value;
-        }
-      };
-
-      table(
-        entries.map((e) => ({
-          label: ck(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
-          value: e.key === 'key' ? chalk.red.underline(e.value) : cv(e.value),
-          comment: chalk.rgb(122, 154, 96)(e.comment),
-        })),
-        [
-          { index: 'label', alias: chalk.white(i('配置项', 'ConfigItem')) },
-          { index: 'value', alias: chalk.white(i('值', 'Value')) },
-          { index: 'comment', alias: chalk.white(i('注释', 'Comment')) },
-        ]
-      );
     },
   };
 })();

@@ -39,7 +39,7 @@ const resolveArgV = () => {
     const p = cb2;
     const b = cb3;
 
-    const _cryption = i('Cryption配置，以下为默认值', 'Cryption config, default values');
+    const _cryption = i('Cryption配置，以下为默认值', 'Note config, default values');
     const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
     const _encryptFolderName = i('是否加密文件夹名', 'Whether to encrypt folder names');
     const _exclude = i('排除的文件或文件夹', 'Excluded files or folders');
@@ -49,7 +49,7 @@ const resolveArgV = () => {
 
     const packageJsonConfigExample = `${y(`{`)}
   ...other configs,
-  ${k(`"cryption"`)}: ${p(`{`)}                 ${ccms(_cryption)}
+  ${k(`"note"`)}: ${p(`{`)}                 ${ccms(_cryption)}
     ${k(`"encryptFileName"`)}: ${b(`true`)},    ${ccms(_encryptFileName)}
     ${k(`"encryptFolderName"`)}: ${b(`true`)},  ${ccms(_encryptFolderName)}
     ${k(`"exclude"`)}: ${b(`[]`)},              ${ccms(_exclude)}
@@ -100,10 +100,10 @@ ${y(`}`)}`;
   - 您可以在package.json中设置要加密、解密的文件夹（其他配置见下方例子）
   - 解密文件夹就是在本地编写秘密信息的文件夹，Cryption会自动将其纳入.gitignore中
   - 加密、解密时，会清空对应的目标文件夹，请注意备份`,
-      `Cryption is designed to enhance the security of personal notes and knowledge bases managed by Git by providing encryption and decryption capabilities.
+      `Note is designed to enhance the security of personal notes and knowledge bases managed by Git by providing encryption and decryption capabilities.
   - The program will start from the script directory and search upward through parent directories for a package.json file. Once found, that directory will be identified as the root of your notes project.
   - You can configure the folders to be encrypted and decrypted directly within the package.json file (see example configuration below).
-  - The decryption folder is where you write and manage your secret information locally. Cryption will automatically add this folder to .gitignore to prevent it from being committed to your repository.
+  - The decryption folder is where you write and manage your secret information locally. Note will automatically add this folder to .gitignore to prevent it from being committed to your repository.
   - Warning: When encrypting or decrypting, the corresponding target folder will be cleared. Please ensure you have backups before proceeding.
 `
     );

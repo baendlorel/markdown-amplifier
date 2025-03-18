@@ -43,7 +43,7 @@ Object.defineProperties(log, {
   },
 });
 
-export const br = () => l();
+export const br = l;
 
 // # 彩色日志
 export const lred = (zh: string, en?: string) => l(indent + chalk.red(pdi(zh, en)));
@@ -67,10 +67,10 @@ export const lbgBlue = (zh: string, en?: string) => l(indent + chalk.bgBlue(pdi(
 
 // # 功能日志
 export const lflag = (zh: string, en?: string) =>
-  l(chalk.bgWhiteBright.black(' Cryption ') + chalk.bgBlue(pdi(zh, en)));
+  l(chalk.bgRgb(65, 65, 65).white(' Note ') + chalk.bgRgb(23, 53, 137)(pdi(zh, en)));
 
 export const lerr = (zh: string, en?: string, title?: string) => {
-  const header = ` ${title ?? 'Cryption Error'} `;
+  const header = ` ${title ?? 'Note Error'} `;
   const content = i(zh, en ?? zh);
   l(
     chalk.bgRed(header) +
