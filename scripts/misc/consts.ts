@@ -1,4 +1,4 @@
-import { ck, cv, cb1, cb2, cb3, ccms } from './color';
+import { ck, cv, cb1, cb2, cb3, ccms, ccmd } from './color';
 
 /**
  * 获取Cryption在package.json配置示例，需要注入语言切换器  \
@@ -36,19 +36,55 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
 };
 
 export const HELP = {
+  number: {
+    example: [
+      {
+        cmd: `${ccmd('$')} note number math`,
+        comment: ccms(`Numbering all h element in the markdown files in 'math' folder`),
+      },
+      {
+        cmd: `${ccmd('$')} note number myfolder --anchor`,
+        comment: ccms(
+          `Numbering all h element in the markdown files in 'myfolder' folder and add anchor`
+        ),
+      },
+      {
+        cmd: `${ccmd('$')} note number mathstudy --math`,
+        comment: ccms(
+          `Numbering all h elements, theorems, collaries and cases in the markdown files in 'mathstudy' folder`
+        ),
+      },
+    ],
+  },
+  encrypt: {
+    example: [
+      {
+        cmd: `${ccmd('$')} note encrypt 123456`,
+        comment: ccms(`Encrypt with key 123456, log language is same as system`),
+      },
+      {
+        cmd: `${ccmd('$')} note encrypt 123456 -z`,
+        comment: ccms(`Encrypt with key 123456, log language is Chinese`),
+      },
+      {
+        cmd: `${ccmd('$')} note encrypt 123456 --en`,
+        comment: ccms(`Encrypt with key 123456, log language is English`),
+      },
+    ],
+  },
   decrypt: {
     example: [
       {
-        cmd: 'note decrypt 123456',
-        comment: 'Decrypt with key 123456, language is same as system',
+        cmd: `${ccmd('$')} note decrypt 123456`,
+        comment: ccms(`Decrypt with key 123456, log language is same as system`),
       },
       {
-        cmd: 'note decrypt 123456 -z',
-        comment: 'Decrypt with key 123456, language is set to Chinese',
+        cmd: `${ccmd('$')} note decrypt 123456 -z`,
+        comment: ccms(`Decrypt with key 123456, log language is Chinese`),
       },
       {
-        cmd: 'note decrypt 123456 --en',
-        comment: 'Decrypt with key 123456, language is set to English',
+        cmd: `${ccmd('$')} note decrypt 123456 --en`,
+        comment: ccms(`Decrypt with key 123456, log language is English`),
       },
     ],
   },

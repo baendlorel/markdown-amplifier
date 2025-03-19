@@ -7,7 +7,7 @@
  */
 
 import { Command, Option } from 'commander';
-import { configs, ccmd, ccms, br } from './misc';
+import { configs, br, aligned } from './misc';
 import { encryption, decryption } from './cryption';
 import { HELP } from './misc';
 
@@ -27,8 +27,8 @@ const COMMANDS = [] as Command[];
 const addCommand = (name: string, argument: string) => {
   const newCommand = new Command(name)
     .argument(argument)
-    .addOption(new Option('-z, --zh', 'Language set to Chinese').conflicts('en'))
-    .addOption(new Option('-e, --en', 'Language set to English').conflicts('zh'))
+    .addOption(new Option('-z, --zh', 'Log language set to Chinese').conflicts('en'))
+    .addOption(new Option('-e, --en', 'Log language set to English').conflicts('zh'))
     .hook('preAction', (thisCommand, actionCommand) => {
       configs.setLocale(actionCommand.opts().zh ? 'zh' : 'en');
       br();
@@ -39,38 +39,28 @@ const addCommand = (name: string, argument: string) => {
   return newCommand;
 };
 
+const showExample = (command: string) => {
+  console.log(`\nExample:`);
+  aligned(HELP[command].example);
+};
+
 addCommand('encrypt', '<key>')
+  .aliases(['en', 'e'])
   .description(`Encrypt files with <key> in 'decrypted' folder(set in package.json)`)
   .action(encryption)
-  .on('--help', () => {
-    console.log('Examples:');
-    HELP.decrypt.example.forEach((o) => {
-      console.log(`  ${ccmd('$')} ${o.cmd} ${ccms(o.comment)}`);
-    });
-  });
+  .on('--help', () => showExample('encrypt'));
 
 addCommand('decrypt', '<key>')
+  .aliases(['de', 'd'])
   .description(`Decrypt files with <key> in 'encrypted' folder(set in package.json)`)
   .action(decryption)
-  .on('--help', () => {
-    console.log('Examples:');
-    HELP.decrypt.example.forEach((o) => {
-      console.log(`  ${ccmd('$')} ${o.cmd} ${ccms(o.comment)}`);
-    });
-  });
+  .on('--help', () => showExample('decrypt'));
 
-addCommand('sn', '<directory>')
-  .description(`Numbering all h element in the markdown files`)
-  .action((directory, options) => {
-    configs.init();
-    // decryption();
-  })
-  .on('--help', () => {
-    console.log('Examples:');
-    HELP.decrypt.example.forEach((o) => {
-      console.log(`  ${ccmd('$')} ${o.cmd} ${ccms(o.comment)}`);
-    });
-  });
+addCommand('number', '<directory>')
+  .aliases(['no', 'n'])
+  .description(`Numbering all h element or other tags in the markdown files`)
+  .action((directory, options) => {})
+  .on('--help', () => showExample('number'));
 
 COMMANDS.forEach((cmd) => program.addCommand(cmd));
 program.parse();

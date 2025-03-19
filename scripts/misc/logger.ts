@@ -78,33 +78,56 @@ export const lerr = (zh: string, en?: string, title?: string) => {
   );
 };
 
-export const table = (data: any[], props: { index: string; alias?: string }[]) => {
-  const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
-  const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
-  const joinRow = (row: string[], colWidth: number[]) => {
-    if (row.some((t) => t.includes('\n'))) {
-      // 把本行每一列按换行符分割
-      const linedRow = row.map((t) => t.split('\n'));
-      // 找出最大行数
-      const maxLineCount = Math.max(...linedRow.map((lr) => lr.length));
+// # 表格函数
+const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
+const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
+const joinRow = (row: string[], colWidth: number[]) => {
+  if (row.some((t) => t.includes('\n'))) {
+    // 把本行每一列按换行符分割
+    const linedRow = row.map((t) => t.split('\n'));
+    // 找出最大行数
+    const maxLineCount = Math.max(...linedRow.map((lr) => lr.length));
 
-      let inlineRows = [] as string[];
-      for (let i = 0; i < maxLineCount; i++) {
-        // linedRow[0-length][i] pad to colWidth
-        const curInlineRow = linedRow.map((lr, colIndex) => pad(lr[i] ?? '', colWidth[colIndex]));
-        inlineRows.push(`${padLeft}${curInlineRow.join(gap)}${padRight}`);
+    let inlineRows = [] as string[];
+    for (let i = 0; i < maxLineCount; i++) {
+      // linedRow[0-length][i] pad to colWidth
+      const curInlineRow = linedRow.map((lr, colIndex) => pad(lr[i] ?? '', colWidth[colIndex]));
+      inlineRows.push(`${padLeft}${curInlineRow.join(gap)}${padRight}`);
+    }
+    return inlineRows.join('\n');
+  }
+  // 如果r的每一项都没有换行符，那么直接如下操作
+  else {
+    const paddedRow = row.map((r, i) => pad(r, colWidth[i]));
+    return `${padLeft}${paddedRow.join(gap)}${padRight}`;
+  }
+};
+const initTableData = (
+  data: any[],
+  properties?: { index: string; alias?: string }[] | string[]
+) => {
+  // 归一化props
+  let props: { index: string; alias: string }[];
+  if (properties) {
+    props = properties.map((p) => {
+      if (typeof p === 'string') {
+        return { index: p, alias: p };
       }
-      return inlineRows.join('\n');
-    }
-    // 如果r的每一项都没有换行符，那么直接如下操作
-    else {
-      const paddedRow = row.map((r, i) => pad(r, colWidth[i]));
-      return `${padLeft}${paddedRow.join(gap)}${padRight}`;
-    }
-  };
-  const logRow0 = (row: string[], colWidth: number[]) => l(joinRow(row, colWidth));
-  const logRow1 = (row: string[], colWidth: number[]) =>
-    l(chalk.bgRgb(44, 44, 54)(joinRow(row, colWidth)));
+      if (p.index && !p.alias) {
+        return { index: p.index, alias: p.index };
+      }
+      return { index: p.index, alias: p.alias };
+    }) as { index: string; alias: string }[];
+  } else {
+    props = data.reduce((prev, cur) => {
+      for (const key in cur) {
+        if (!prev.find((o) => o.index === key)) {
+          prev.push({ index: key, alias: key });
+        }
+      }
+      return prev;
+    }, [] as { index: string; alias: string }[]);
+  }
 
   // 以表头文字宽度为初值，用reduce求出每列的最大宽度
   const max = data.reduce(
@@ -123,19 +146,38 @@ export const table = (data: any[], props: { index: string; alias?: string }[]) =
     props.reduce((prev, cur) => ((prev[cur.index] = stringWidth(nm(cur))), prev), {})
   );
 
+  return { data, props, max };
+};
+
+export const table = (data: any[], properties?: { index: string; alias?: string }[] | string[]) => {
+  const logRow0 = (row: string[], colWidth: number[]) => l(joinRow(row, colWidth));
+  const logRow1 = (row: string[], colWidth: number[]) =>
+    l(chalk.bgRgb(44, 44, 54)(joinRow(row, colWidth)));
+
+  const { max, props } = initTableData(data, properties);
+
   // 由max计算列宽
   const colWidth = props.map((p) => max[p.index]);
 
   const header = props.map((p) => pad(nm(p), max[p.index]));
   logRow1(header, colWidth);
   for (let i = 0; i < data.length; i++) {
-    const d = data[i];
-    const row = props.map((p) => d[p.index]);
-    // const row = props.map((p) => pad(d[p.index], colWidth[p.index]));
-    if (i % 2 === 0) {
-      logRow0(row, colWidth);
-    } else {
-      logRow1(row, colWidth);
-    }
+    const row = props.map((p) => data[i][p.index]);
+    i % 2 === 0 ? logRow0(row, colWidth) : logRow1(row, colWidth);
+  }
+};
+
+export const aligned = (
+  data: any[],
+  properties?: { index: string; alias?: string }[] | string[]
+) => {
+  const logRow = (row: string[], colWidth: number[]) => l(padLeft + joinRow(row, colWidth));
+  const { max, props } = initTableData(data, properties);
+
+  // 由max计算列宽
+  const colWidth = props.map((p) => max[p.index]);
+  for (let i = 0; i < data.length; i++) {
+    const row = props.map((p) => data[i][p.index]);
+    logRow(row, colWidth);
   }
 };

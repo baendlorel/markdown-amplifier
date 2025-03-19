@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { configs, load, save, getAllFiles, lbgRed, log, lgrey, lgreen, lflag, br } from '../misc';
+import { configs, load, save, getAllFiles, log, lgrey, lgreen, lflag, br, lerr } from '../misc';
 import { cryptPath, relaPath } from './crypt-path';
 import { aes, xor } from './cryptor';
 
@@ -37,7 +37,7 @@ export const encryption = (key: string) => {
     }
   } catch (error) {
     if (error) {
-      lbgRed(`清空${encrypted}文件夹出错`, `Error when clearing ${encrypted}`);
+      lerr(`清空${encrypted}文件夹出错`, `Error when clearing ${encrypted}`);
       throw error;
     }
   }
