@@ -276,7 +276,7 @@ export const configs = (() => {
    * 初始化 \
    * Initialize
    */
-  const _init = () => {
+  const _init = (displayConfigTable: boolean = false) => {
     // * 开始加载配置
     // * Start loading configuration
     lflag('加载配置表', 'Loading Configuration Table');
@@ -289,7 +289,7 @@ export const configs = (() => {
     _directory.decrypted = config.directory.decrypted;
     _directory.encrypted = config.directory.encrypted;
     _ensureGitIgnore();
-    _display();
+    displayConfigTable && _display();
     log.decrIndent();
   };
 
