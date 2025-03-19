@@ -1,8 +1,8 @@
 import { ck, cv, cb1, cb2, cb3, ccms, ccmd } from './color';
 
 /**
- * 获取Cryption在package.json配置示例，需要注入语言切换器  \
- * Get the example of Note configuration in package.json, need to inject the language switcher
+ * 获取Cryption在note.json配置示例，需要注入语言切换器  \
+ * Get the example of Note configuration in note.json, need to inject the language switcher
  * @param i 语言切换器 language switcher
  * @returns
  */
@@ -35,8 +35,22 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
   ${y(`}`)}`;
 };
 
+const WORDS_SUPPORTED_BY_NUMBERER = [
+  'definition',
+  'theorem',
+  'corollary',
+  'proposition',
+  'lemma',
+  'case',
+  'proof',
+  'remark',
+  'assumption',
+  'summary',
+  'conclusion',
+];
 export const HELP = {
   number: {
+    supportedWords: WORDS_SUPPORTED_BY_NUMBERER,
     example: [
       {
         cmd: `${ccmd('$')} note number math`,
@@ -51,7 +65,9 @@ export const HELP = {
       {
         cmd: `${ccmd('$')} note number mathstudy --math`,
         comment: ccms(
-          `Numbering all h elements, theorems, collaries and cases in the markdown files in 'mathstudy' folder`
+          `Numbering all h elements, ${WORDS_SUPPORTED_BY_NUMBERER.join(
+            ', '
+          )} in the markdown files in 'mathstudy' folder`
         ),
       },
     ],

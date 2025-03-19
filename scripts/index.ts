@@ -29,6 +29,10 @@ const addCommand = (name: string, argument: string) => {
     .argument(argument)
     .addOption(new Option('-z, --zh', 'Log language set to Chinese').conflicts('en'))
     .addOption(new Option('-e, --en', 'Log language set to English').conflicts('zh'))
+    .on('--help', () => {
+      console.log(`\nExample:`);
+      aligned(HELP[name].example);
+    })
     .hook('preAction', (thisCommand, actionCommand) => {
       configs.setLocale(actionCommand.opts().zh ? 'zh' : 'en');
       br();
@@ -39,28 +43,28 @@ const addCommand = (name: string, argument: string) => {
   return newCommand;
 };
 
-const showExample = (command: string) => {
-  console.log(`\nExample:`);
-  aligned(HELP[command].example);
-};
-
 addCommand('encrypt', '<key>')
   .aliases(['en', 'e'])
-  .description(`Encrypt files with <key> in 'decrypted' folder(set in package.json)`)
-  .action(encryption)
-  .on('--help', () => showExample('encrypt'));
+  .description(`Encrypt files with <key> in 'decrypted' folder(set in note.json)`)
+  .action(encryption);
 
 addCommand('decrypt', '<key>')
   .aliases(['de', 'd'])
-  .description(`Decrypt files with <key> in 'encrypted' folder(set in package.json)`)
-  .action(decryption)
-  .on('--help', () => showExample('decrypt'));
+  .description(`Decrypt files with <key> in 'encrypted' folder(set in note.json)`)
+  .action(decryption);
 
 addCommand('number', '<directory>')
   .aliases(['no', 'n'])
+  .option('-a, --anchor', 'Create anchor to make h element directable')
+  .option('-m, --math', `Also number the ${HELP.number.supportedWords.join(', ')}.`)
+  .addOption(
+    new Option(
+      '-c, --clear-anchor',
+      'Remove anchor of h element that created by this tool. Can only be used independently'
+    ).conflicts(['anchor', 'math'])
+  )
   .description(`Numbering all h element or other tags in the markdown files`)
-  .action((directory, options) => {})
-  .on('--help', () => showExample('number'));
+  .action((directory, options) => {});
 
 COMMANDS.forEach((cmd) => program.addCommand(cmd));
 program.parse();

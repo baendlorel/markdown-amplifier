@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { configs } from './misc';
 
-const createAkasha = () => {
+export const { save, record, isUpdated } = (() => {
   type Akasha = {
     historyKeys: string[];
     mtime: {
@@ -28,6 +28,4 @@ const createAkasha = () => {
   };
 
   return { save, record, isUpdated };
-};
-
-export const { save, record, isUpdated } = createAkasha();
+})();

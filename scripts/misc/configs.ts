@@ -24,8 +24,8 @@ export const configs = (() => {
   const _akasha = '.note-akasha.json' as const;
 
   /**
-   * 根目录，层层向上查找package.json所在的文件夹 \
-   * Root directory, located by recursively searching parent directories that contains package.json
+   * 根目录，层层向上查找note.json所在的文件夹 \
+   * Root directory, located by recursively searching parent directories that contains note.json
    */
   let _root = '';
 
@@ -33,8 +33,8 @@ export const configs = (() => {
   // Loaded from commander
   let _key = '';
 
-  // 以下是package.json读取出来的
-  // Loaded from package.json
+  // 以下是note.json读取出来的
+  // Loaded from note.json
   let _encryptFileName = true;
   let _encryptFolderName = true;
   let _exclude = [] as string[];
@@ -47,32 +47,29 @@ export const configs = (() => {
   // * Private functions
   const _locateRoot = () => {
     const paths = splitPath(__dirname);
-    lgrey('寻找package.json的目录作为root目录', 'Locating package.json as root directory');
+    lgrey('寻找note.json的目录作为root目录', 'Locating note.json as root directory');
     for (let i = paths.length; i >= 1; i--) {
       const root = path.join(...paths.slice(0, i));
-      const p = path.join(root, 'package.json');
+      const p = path.join(root, 'note.json');
       if (fs.existsSync(p)) {
         return root;
       }
     }
 
-    lbgRed(
-      '加载配置失败。找不到package.json',
-      'Load Configuration Failed. Cannot find package.json'
-    );
+    lbgRed('加载配置失败。找不到note.json', 'Load Configuration Failed. Cannot find note.json');
 
-    throw new Error(i('找不到package.json', 'Cannot find package.json'));
+    throw new Error(i('找不到note.json', 'Cannot find note.json'));
   };
 
-  const _loadPackageJsonConfigs = () => {
-    lgrey('检测package.json中的配置', 'Checking configs in package.json');
-    const configs = require(path.join(_root, 'package.json')).note;
+  const _loadJsonConfigs = () => {
+    lgrey('检测note.json中的配置', 'Checking configs in note.json');
+    const configs = require(path.join(_root, 'note.json')).note;
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
 
     if (!configs) {
-      mi('在package.json中找不到cryption配置', 'Cannot find note in package.json');
+      mi('在note.json中找不到cryption配置', 'Cannot find note in note.json');
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
         mi('note.encryptFileName 应该是boolean型', 'note.encryptFileName should be a boolean');
@@ -106,9 +103,9 @@ export const configs = (() => {
     if (messages.length > 0) {
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
-      lflag('package.json中的配置例子如下：', 'An example in package.json should be like this :');
+      lflag('note.json中的配置例子如下：', 'An example in note.json should be like this :');
       console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
-      throw new Error(i('package.json中的cryption配置无效', 'Invalid note in package.json'));
+      throw new Error(i('note.json中的cryption配置无效', 'Invalid note in note.json'));
     }
 
     return configs;
@@ -285,7 +282,7 @@ export const configs = (() => {
     lflag('加载配置表', 'Loading Configuration Table');
     log.incrIndent();
     _root = _locateRoot();
-    const config = _loadPackageJsonConfigs();
+    const config = _loadJsonConfigs();
     _encryptFileName = config.encryptFileName;
     _encryptFolderName = config.encryptFolderName;
     _exclude = config.exclude;

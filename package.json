@@ -16,14 +16,5 @@
 		"chalk": "^5.4.1",
 		"commander": "^13.1.0",
 		"string-width": "^7.2.0"
-	},
-	"note": {
-		"encryptFileName": true,
-		"encryptFolderName": true,
-		"exclude": [],
-		"directory": {
-			"decrypted": "decrypted",
-			"encrypted": "encrypted"
-		}
 	}
 }

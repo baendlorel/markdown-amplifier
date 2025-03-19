@@ -2,7 +2,7 @@
  * @name HeadingNumbering
  * @description 为markdown的h元素添加自动的编号
  */
-import { load, save } from './misc';
+import { load, save } from '../misc';
 
 export const numberFile = (filePath: string) => {
   // 编号处理
