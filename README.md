@@ -1,8 +1,10 @@
-# Appuldore
+# Markdown Note Amplifier
 
-此为个人知识库
+This program aims to amplify your markdown notes by encrypting secrets, numbering sections and other functions.
 
-note.json 中配置了加密要忽略的文件夹，可以手动修改。
+Use VSCode + Foam + git + Markdown Amplifier to build your own appuldore.
+
+note.json - configurations for this script.
 
 ```json
 {
