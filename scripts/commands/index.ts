@@ -5,15 +5,21 @@
 import { Command, Option } from 'commander';
 import { configs, br, aligned, cb1, grey, table } from '../misc';
 import { encryption, decryption } from '../cryption';
-import { HELP } from './meta';
+import { HELP as HELP_CRYPTION } from '../cryption/meta';
+import { HELP as HELP_NUMBERER } from '../numberer/meta';
 
 export const createCommander = () => {
+  const HELP = Object.assign(HELP_CRYPTION, HELP_NUMBERER);
+
   const COMMANDS = [] as Command[];
 
   const program = new Command();
   program.name('note').description('A markdown note enhance tool.').version('1.0.0');
 
-  const showExample = (examples: { cmd: string; comment: string }[]) => {
+  const showExample = (examples?: { cmd: string; comment: string }[]) => {
+    if (!examples) {
+      return;
+    }
     console.log(`\nExample:`);
     aligned(examples);
   };
@@ -25,36 +31,34 @@ export const createCommander = () => {
    * @param argument 命令参数
    * @returns
    */
-  const addCommand = (name: string, argument?: string) => {
+  const add = (name: string, argument?: string) => {
     const newCommand = new Command(name);
     if (argument) {
       newCommand.argument(argument);
     }
-    newCommand
-      .addOption(new Option('-z, --zh', 'Log language set to Chinese').conflicts('en'))
-      .addOption(new Option('-e, --en', 'Log language set to English').conflicts('zh'))
-      .on('--help', () => showExample(HELP[name].example))
-      .hook('preAction', (thisCommand, actionCommand) => {
-        configs.setLocale(actionCommand.opts().zh ? 'zh' : 'en');
-        br();
-        configs.init();
-        br();
-      });
+    newCommand.on('--help', () => showExample(HELP[name]?.example));
     COMMANDS.push(newCommand);
     return newCommand;
   };
 
-  addCommand('encrypt', '<key>')
+  add('config')
+    .aliases(['con'])
+    .description('Show the configuration of MA')
+    .action(() => {
+      console.log(configs.raw);
+    });
+
+  add('encrypt', '<key>')
     .aliases(['en'])
     .description(`Encrypt files with <key> in 'decrypted' folder(set in note.json)`)
     .action(encryption);
 
-  addCommand('decrypt', '<key>')
+  add('decrypt', '<key>')
     .aliases(['de'])
     .description(`Decrypt files with <key> in 'encrypted' folder(set in note.json)`)
     .action(decryption);
 
-  addCommand('number')
+  add('number')
     .aliases(['no'])
     .description(`Numbering titles or other tags, only affect *.md files`)
     .option('-d, --dir <directory>', 'Numbering files in <directory>, only for *.md files.')

@@ -42,6 +42,7 @@ export const configs = (() => {
     decrypted: '',
     encrypted: '',
   };
+  let _raw = {} as any;
 
   // * 定义私有函数
   // * Private functions
@@ -276,26 +277,19 @@ export const configs = (() => {
    * 初始化 \
    * Initialize
    */
-  const _init = (displayConfigTable: boolean = false) => {
-    // * 开始加载配置
-    // * Start loading configuration
-    lflag('加载配置表', 'Loading Configuration Table');
-    log.incrIndent();
-    _root = _locateRoot();
-    const config = _loadJsonConfigs();
-    _encryptFileName = config.encryptFileName;
-    _encryptFolderName = config.encryptFolderName;
-    _exclude = config.exclude;
-    _directory.decrypted = config.directory.decrypted;
-    _directory.encrypted = config.directory.encrypted;
-    _ensureGitIgnore();
-    displayConfigTable && _display();
-    log.decrIndent();
-  };
+  // * 开始加载配置
+  // * Start loading configuration
+  _root = _locateRoot();
+  _raw = _loadJsonConfigs();
+  _encryptFileName = _raw.encryptFileName;
+  _encryptFolderName = _raw.encryptFolderName;
+  _exclude = _raw.exclude;
+  _directory.decrypted = _raw.directory.decrypted;
+  _directory.encrypted = _raw.directory.encrypted;
+  _ensureGitIgnore();
 
   return {
     // * 初始化用
-    init: _init,
     setKey(key: string) {
       _key = key;
       lflag('设置密钥', 'Setting key');
@@ -311,6 +305,9 @@ export const configs = (() => {
       log.decrIndent();
     },
     // * 配置表
+    get raw() {
+      return _raw;
+    },
     get key() {
       return _key;
     },
