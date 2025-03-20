@@ -18,8 +18,8 @@ type Logger = ((zh: string, en?: string) => void) & {
 };
 
 let indent = '';
-let padLeft = ' ';
-let padRight = ' ';
+let padLeft = '';
+let padRight = '';
 let gap = ' ';
 
 // padding i18n

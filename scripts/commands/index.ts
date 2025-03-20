@@ -50,12 +50,12 @@ export const createCommander = () => {
 
   add('encrypt', '<key>')
     .aliases(['en'])
-    .description(`Encrypt files with <key> in 'decrypted' folder(set in note.json)`)
+    .description(`Encrypt files with <key> in 'decrypted' folder(set in markdown-amplifier.json)`)
     .action(encryption);
 
   add('decrypt', '<key>')
     .aliases(['de'])
-    .description(`Decrypt files with <key> in 'encrypted' folder(set in note.json)`)
+    .description(`Decrypt files with <key> in 'encrypted' folder(set in markdown-amplifier.json)`)
     .action(decryption);
 
   add('number')

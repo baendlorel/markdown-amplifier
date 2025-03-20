@@ -17,15 +17,18 @@ import { PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE } from './consts';
 
 export const configs = (() => {
   // * 定义私有变量
+
+  const _maJson = '.markdown-amplifier.json';
+
   /**
    * akasha文件名 \
    * akasha file name
    */
-  const _akasha = '.note-akasha.json' as const;
+  const _akashaJson = '.note-akasha.json' as const;
 
   /**
-   * 根目录，层层向上查找note.json所在的文件夹 \
-   * Root directory, located by recursively searching parent directories that contains note.json
+   * 根目录，层层向上查找.markdown-amplifier.json所在的文件夹 \
+   * Root directory, located by recursively searching parent directories that contains .markdown-amplifier.json
    */
   let _root = '';
 
@@ -33,8 +36,8 @@ export const configs = (() => {
   // Loaded from commander
   let _key = '';
 
-  // 以下是note.json读取出来的
-  // Loaded from note.json
+  // 以下是markdown-amplifier.json读取出来的
+  // Loaded from markdown-amplifier.json
   let _encryptFileName = true;
   let _encryptFolderName = true;
   let _exclude = [] as string[];
@@ -47,35 +50,32 @@ export const configs = (() => {
   // * 定义私有函数
   // * Private functions
   const _locateRoot = () => {
-    const paths = splitPath(__dirname);
-    lgrey('寻找note.json的目录作为root目录', 'Locating note.json as root directory');
-    for (let i = paths.length; i >= 1; i--) {
-      const root = path.join(...paths.slice(0, i));
-      const p = path.join(root, 'note.json');
-      if (fs.existsSync(p)) {
-        return root;
+    let dir = __dirname;
+    let father = path.dirname(dir);
+    while (father !== dir) {
+      if (fs.existsSync(path.join(dir, _maJson))) {
+        return dir;
       }
+      dir = father;
+      father = path.dirname(dir);
     }
-
-    lbgRed('加载配置失败。找不到note.json', 'Load Configuration Failed. Cannot find note.json');
-
-    throw new Error(i('找不到note.json', 'Cannot find note.json'));
+    lbgRed(`加载配置失败。找不到${_maJson}`, `Load Configuration Failed. Cannot find ${_maJson}`);
+    throw new Error(i(`找不到${_maJson}`, `Cannot find ${_maJson}`));
   };
 
-  const _loadJsonConfigs = () => {
-    lgrey('检测note.json中的配置', 'Checking configs in note.json');
-    const configs = require(path.join(_root, 'note.json')).note;
+  const _loadJson = () => {
+    lgrey(`检测${_maJson}中的配置`, `Checking configs in ${_maJson}`);
+    const configs = require(path.join(_root, _maJson));
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
 
     if (!configs) {
-      mi('在note.json中找不到cryption配置', 'Cannot find note in note.json');
+      mi(`在${_maJson}中找不到cryption配置`, `Cannot find note in ${_maJson}`);
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
         mi('note.encryptFileName 应该是boolean型', 'note.encryptFileName should be a boolean');
       }
-
       if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
         mi('note.encryptFolderName 应该是boolean型', 'note.encryptFolderName should be a boolean');
       }
@@ -104,9 +104,9 @@ export const configs = (() => {
     if (messages.length > 0) {
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
-      lflag('note.json中的配置例子如下：', 'An example in note.json should be like this :');
+      lflag(`${_maJson}中的配置例子如下：`, `An example in ${_maJson} should be like this :`);
       console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
-      throw new Error(i('note.json中的cryption配置无效', 'Invalid note in note.json'));
+      throw new Error(i(`${_maJson}中的cryption配置无效`, `Invalid note in ${_maJson}`));
     }
 
     return configs;
@@ -148,14 +148,14 @@ export const configs = (() => {
       //   lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
       // }
 
-      // 确认是否忽略了.note.json文件，没有则加入
-      if (!lines.some((p) => p === _akasha)) {
+      // 确认是否忽略了.markdown-amplifier.json文件，没有则加入
+      if (!lines.some((p) => p === _akashaJson)) {
         lgrey(
-          `.gitignore文件并未包含'${_akasha}'，添加中...`,
-          `It seems .gitignore does not contain '${_akasha}'. Adding...`
+          `.gitignore文件并未包含'${_akashaJson}'，添加中...`,
+          `It seems .gitignore does not contain '${_akashaJson}'. Adding...`
         );
-        fs.appendFileSync(gitigorePath, `\n${_akasha}`);
-        lgrey(`.gitignore已添加'${_akasha}'`, `'${_akasha}' is added to .gitignore`);
+        fs.appendFileSync(gitigorePath, `\n${_akashaJson}`);
+        lgrey(`.gitignore已添加'${_akashaJson}'`, `'${_akashaJson}' is added to .gitignore`);
       }
 
       // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
@@ -280,12 +280,14 @@ export const configs = (() => {
   // * 开始加载配置
   // * Start loading configuration
   _root = _locateRoot();
-  _raw = _loadJsonConfigs();
+  _raw = _loadJson();
   _encryptFileName = _raw.encryptFileName;
   _encryptFolderName = _raw.encryptFolderName;
   _exclude = _raw.exclude;
   _directory.decrypted = _raw.directory.decrypted;
   _directory.encrypted = _raw.directory.encrypted;
+  const localeText = setLocale(_raw.locale) === 'zh' ? '中文' : 'English';
+  lgrey('设置语言为' + localeText, 'Locale is set to ' + localeText);
   _ensureGitIgnore();
 
   return {
@@ -297,13 +299,6 @@ export const configs = (() => {
       lgrey(`密钥为 ${key}`, `Key is set to '${key}'`);
       log.decrIndent();
     },
-    setLocale(locale: string) {
-      const localeText = setLocale(locale) === 'zh' ? '中文' : 'English';
-      lflag('加载语言设置', 'Load locale setting');
-      log.incrIndent();
-      lgrey('设置语言为' + localeText, 'Locale is set to ' + localeText);
-      log.decrIndent();
-    },
     // * 配置表
     get raw() {
       return _raw;
@@ -312,7 +307,7 @@ export const configs = (() => {
       return _key;
     },
     get akashaPath() {
-      return path.join(_root, _akasha);
+      return path.join(_root, _akashaJson);
     },
     get encryptFileName() {
       return _encryptFileName;

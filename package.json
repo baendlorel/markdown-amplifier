@@ -1,12 +1,10 @@
 {
-	"name": "apulldore",
+	"name": "markdown-amplifier",
 	"scripts": {
-		"encrypt": "tsx scripts/index.ts --encrypt",
-		"decrypt": "tsx scripts/index.ts --decrypt",
 		"test": "tsx scripts/test.ts"
 	},
 	"bin": {
-		"note": "scripts/index.ts"
+		"ma": "scripts/index.ts"
 	},
 	"devDependencies": {
 		"@types/node": "^22.13.10",

@@ -1,8 +1,8 @@
 import { ck, cv, cb1, cb2, cb3, ccms, ccmd } from './color';
 
 /**
- * 获取Cryption在note.json配置示例，需要注入语言切换器  \
- * Get the example of Note configuration in note.json, need to inject the language switcher
+ * 获取MA在markdown-amplifier.json配置示例，需要注入语言切换器  \
+ * Get the example of Note configuration in markdown-amplifier.json, need to inject the language switcher
  * @param i 语言切换器 language switcher
  * @returns
  */
@@ -13,7 +13,7 @@ export const PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE = (i: any) => {
   const p = cb2;
   const b = cb3;
 
-  const _cryption = i('Cryption配置，以下为默认值', 'Note config, default values');
+  const _cryption = i('Markdown Ampifier配置，以下为默认值', 'Note config, default values');
   const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
   const _encryptFolderName = i('是否加密文件夹名', 'Whether to encrypt folder names');
   const _exclude = i('排除的文件或文件夹', 'Excluded files or folders');
