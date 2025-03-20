@@ -7,6 +7,7 @@
 import { log as l } from 'console';
 import chalk from 'chalk';
 import stringWidth from 'string-width';
+import wrapAnsi from 'wrap-ansi';
 import { i } from './locale';
 
 type Logger = ((zh: string, en?: string) => void) & {
@@ -118,7 +119,6 @@ const wrap = (str: string, maxLength: number) => {
     if (char === '\n') {
       // 如果上一个字符不是换行符，那么正常加上
       if (!lastEolIsManuallyAdded) {
-        lred(`i=${i} r:${result.replaceAll('\n', '_')}`);
         result += currentLine + '\n';
         currentLine = '';
       }
@@ -126,16 +126,21 @@ const wrap = (str: string, maxLength: number) => {
       lastEolIsManuallyAdded = false;
       continue;
     }
+
+    // 先加上这个字母
     currentLine += char;
     if (stringWidth(currentLine) >= maxLength) {
-      // 已经是最后一个字，那么不用加了
+      // 已经是最后一个字，那么无所谓了，退出
       if (i === str.length - 1) {
-        continue;
+        break;
       }
+
       result += currentLine + '\n';
       currentLine = '';
+      lastEolIsManuallyAdded = true;
+      continue;
     }
-    lastEolIsManuallyAdded = true;
+    lastEolIsManuallyAdded = false;
   }
 
   // 添加剩余的字符
@@ -143,9 +148,9 @@ const wrap = (str: string, maxLength: number) => {
     result += currentLine;
   }
 
-  lgreen(`result:${result.replaceAll('\n', '_')}`);
   return result;
 };
+
 const initTableData = (
   data: any[],
   properties?: { index: string; alias?: string; maxWidth?: number }[] | string[]
@@ -186,7 +191,7 @@ const initTableData = (
         }
         // 如果超过了最大行数，那么要对本行进行分割
         if (prev[p.index] > p.maxWidth) {
-          cur[p.index] = wrap(text, p.maxWidth); // 这里添加换行符的行为实际上改动了data
+          cur[p.index] = wrapAnsi(text, p.maxWidth, { hard: true }); // 这里添加换行符的行为实际上改动了data
           prev[p.index] = p.maxWidth;
         }
       }

@@ -3,7 +3,7 @@
  */
 
 import { Command, Option } from 'commander';
-import { configs, br, aligned, cb1, grey } from '../misc';
+import { configs, br, aligned, cb1, grey, table } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP } from './meta';
 
@@ -79,13 +79,13 @@ export const createCommander = () => {
           noun: r.noun,
           description: r.rule + (r.detail === '' ? '' : '\n' + cb1(`Detail: ${grey(r.detail)}`)),
         }));
-        aligned(ruleTable, [{ index: 'noun' }, { index: 'description', maxWidth: 60 }]);
+        table(ruleTable, [{ index: 'noun' }, { index: 'description', maxWidth: 50 }]);
         return;
       }
       // 如果写了--math但写了其他的参数，就报错
       else if (options.math !== true && options.math !== undefined) {
         console.log(
-          'Error: --math can only be used as an option to number mathematical keywords or with argument "rule"'
+          `Error: --math can only be used as an option to number mathematical keywords or with argument 'rule'`
         );
         showExample([HELP.number.exampleMathRule]);
         return;

@@ -26,7 +26,7 @@ export const HELP = {
         rule: `Follow the serial of sections. If current section is '1.2', theorems will be numbered as '1.2.x'`,
         detail: `Share the same serial with lemma, corollary, proposition. Like 'Theorem 1.1', then 'Lemma 1.2', 'Lemma 1.3', 'Corollary 1.4'`,
       },
-      { noun: 'lemma', rule: `Same as theorem. And share serial with it`, detail: `` },
+      { noun: 'lemma', rule: `Share the same serial with theorem`, detail: `` },
       { noun: 'corollary', rule: `Same as theorem. And share serial with it`, detail: `` },
       { noun: 'proposition', rule: `Same as theorem. And share serial with it`, detail: `` },
       { noun: 'definition', rule: `Same as theorem. Numbered independently`, detail: `` },
