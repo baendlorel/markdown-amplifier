@@ -23,18 +23,18 @@ export const HELP = {
     mathRule: [
       {
         noun: 'theorem',
-        rule: `Follow the serial of sections. If the serial of current section is '1.2', the theorems would be numbered as '1.2.x'`,
+        rule: `Follow the serial of sections. If current section is '1.2', theorems will be numbered as '1.2.x'`,
         detail: `Share the same serial with lemma, corollary, proposition. Like 'Theorem 1.1', then 'Lemma 1.2', 'Lemma 1.3', 'Corollary 1.4'`,
       },
-      { noun: 'lemma', rule: `Same as theorem. And share serial with theorem`, detail: `` },
-      { noun: 'corollary', rule: `Same as theorem. And share serial with theorem`, detail: `` },
-      { noun: 'proposition', rule: `Same as theorem. And share serial with theorem`, detail: `` },
+      { noun: 'lemma', rule: `Same as theorem. And share serial with it`, detail: `` },
+      { noun: 'corollary', rule: `Same as theorem. And share serial with it`, detail: `` },
+      { noun: 'proposition', rule: `Same as theorem. And share serial with it`, detail: `` },
       { noun: 'definition', rule: `Same as theorem. Numbered independently`, detail: `` },
       { noun: 'axiom', rule: `Same as theorem. Numbered independently`, detail: `` },
       {
         noun: 'case',
         rule: `Same as theorem. Numbered independently in section and proof`,
-        detail: `When in proof, it will be numbered independently in proof. Begin of a proof will be matched by '*proof*' or '_proof_', and end of a proof will be matched by 'Q.E.D.' or '$\\square$'`,
+        detail: `When in a proof block, the numbering will be independent of external contents. Begin of a proof will be matched by '*proof*' or '_proof_', and end of a proof will be matched by 'Q.E.D.' or '$\\square$'`,
       },
     ],
     exampleMathRule: {
@@ -43,15 +43,15 @@ export const HELP = {
     },
     example: [
       {
-        cmd: `${ccmd('$')} note number myfolder`,
+        cmd: `${ccmd('$')} note number --dir myfolder`,
         comment: ccms(`Numbering titles of files in myfolder`),
       },
       {
-        cmd: `${ccmd('$')} note number myfolder --anchor`,
+        cmd: `${ccmd('$')} note number --dir myfolder --anchor`,
         comment: ccms(`Numbering titles of files in 'myfolder'`),
       },
       {
-        cmd: `${ccmd('$')} note number mathstudy --math`,
+        cmd: `${ccmd('$')} note number --dir mathstudy --math`,
         comment: ccms(
           `Numbering titles, ${WORDS_SUPPORTED_BY_NUMBERER.slice(0, 2).join(
             ', '

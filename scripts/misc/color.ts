@@ -5,6 +5,11 @@ import chalk from 'chalk';
 export const ccmd = chalk.rgb(98, 217, 0);
 
 /**
+ * color command
+ */
+export const grey = chalk.grey;
+
+/**
  * color comment
  */
 export const ccm = chalk.rgb(122, 154, 96);

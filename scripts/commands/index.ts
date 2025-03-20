@@ -3,7 +3,7 @@
  */
 
 import { Command, Option } from 'commander';
-import { configs, br, aligned } from '../misc';
+import { configs, br, aligned, cb1, grey } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP } from './meta';
 
@@ -77,9 +77,9 @@ export const createCommander = () => {
       if (options.math === 'rule' || options.math === 'rules') {
         const ruleTable = HELP.number.mathRule.map((r) => ({
           noun: r.noun,
-          description: r.rule + (r.detail === '' ? '' : `\nDetail: ${r.detail}`),
+          description: r.rule + (r.detail === '' ? '' : '\n' + cb1(`Detail: ${grey(r.detail)}`)),
         }));
-        aligned(ruleTable);
+        aligned(ruleTable, [{ index: 'noun' }, { index: 'description', maxWidth: 60 }]);
         return;
       }
       // 如果写了--math但写了其他的参数，就报错
@@ -92,6 +92,11 @@ export const createCommander = () => {
       }
 
       // 其他情形则必须拥有dir选项和目录
+      if (typeof options.dir !== 'string') {
+        console.log('Error: --dir <directory> is required.');
+      }
+      showExample(HELP.number.example);
+      return;
     });
 
   COMMANDS.forEach((cmd) => program.addCommand(cmd));

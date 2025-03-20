@@ -102,31 +102,75 @@ const joinRow = (row: string[], colWidth: number[]) => {
     return `${padLeft}${paddedRow.join(gap)}${padRight}`;
   }
 };
+/**
+ * 将字符串按指定长度自动添加换行符
+ * @param str 要处理的字符串
+ * @param maxLength 每行的最大长度
+ * @returns 添加换行符后的字符串
+ */
+const wrap = (str: string, maxLength: number) => {
+  let result = '';
+  let currentLine = '';
+  let lastEolIsManuallyAdded = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '\n') {
+      // 如果上一个字符不是换行符，那么正常加上
+      if (!lastEolIsManuallyAdded) {
+        lred(`i=${i} r:${result.replaceAll('\n', '_')}`);
+        result += currentLine + '\n';
+        currentLine = '';
+      }
+      // 如果上一个字符是换行符，而且是手动加的，说明重复了，这里跳过
+      lastEolIsManuallyAdded = false;
+      continue;
+    }
+    currentLine += char;
+    if (stringWidth(currentLine) >= maxLength) {
+      // 已经是最后一个字，那么不用加了
+      if (i === str.length - 1) {
+        continue;
+      }
+      result += currentLine + '\n';
+      currentLine = '';
+    }
+    lastEolIsManuallyAdded = true;
+  }
+
+  // 添加剩余的字符
+  if (currentLine) {
+    result += currentLine;
+  }
+
+  lgreen(`result:${result.replaceAll('\n', '_')}`);
+  return result;
+};
 const initTableData = (
   data: any[],
-  properties?: { index: string; alias?: string }[] | string[]
+  properties?: { index: string; alias?: string; maxWidth?: number }[] | string[]
 ) => {
   // 归一化props
-  let props: { index: string; alias: string }[];
+  let props: { index: string; alias: string; maxWidth: number }[];
   if (properties) {
     props = properties.map((p) => {
       if (typeof p === 'string') {
-        return { index: p, alias: p };
+        return { index: p, alias: p, maxWidth: Infinity };
       }
       if (p.index && !p.alias) {
-        return { index: p.index, alias: p.index };
+        return { index: p.index, alias: p.index, maxWidth: p.maxWidth ?? Infinity };
       }
-      return { index: p.index, alias: p.alias };
-    }) as { index: string; alias: string }[];
+      return { index: p.index, alias: p.alias, maxWidth: p.maxWidth ?? Infinity };
+    }) as { index: string; alias: string; maxWidth: number }[];
   } else {
     props = data.reduce((prev, cur) => {
       for (const key in cur) {
         if (!prev.find((o) => o.index === key)) {
-          prev.push({ index: key, alias: key });
+          prev.push({ index: key, alias: key, maxWidth: Infinity });
         }
       }
       return prev;
-    }, [] as { index: string; alias: string }[]);
+    }, [] as { index: string; alias: string; maxWidth: number }[]);
   }
 
   // 以表头文字宽度为初值，用reduce求出每列的最大宽度
@@ -140,6 +184,11 @@ const initTableData = (
         } else {
           prev[p.index] = Math.max(prev[p.index], stringWidth(cur[p.index]));
         }
+        // 如果超过了最大行数，那么要对本行进行分割
+        if (prev[p.index] > p.maxWidth) {
+          cur[p.index] = wrap(text, p.maxWidth); // 这里添加换行符的行为实际上改动了data
+          prev[p.index] = p.maxWidth;
+        }
       }
       return prev;
     },
@@ -149,7 +198,10 @@ const initTableData = (
   return { data, props, max };
 };
 
-export const table = (data: any[], properties?: { index: string; alias?: string }[] | string[]) => {
+export const table = (
+  data: any[],
+  properties?: { index: string; alias?: string; maxWidth?: number }[] | string[]
+) => {
   const logRow0 = (row: string[], colWidth: number[]) => l(joinRow(row, colWidth));
   const logRow1 = (row: string[], colWidth: number[]) =>
     l(chalk.bgRgb(44, 44, 54)(joinRow(row, colWidth)));
@@ -169,9 +221,9 @@ export const table = (data: any[], properties?: { index: string; alias?: string 
 
 export const aligned = (
   data: any[],
-  properties?: { index: string; alias?: string }[] | string[]
+  properties?: { index: string; alias?: string; maxWidth?: number }[] | string[]
 ) => {
-  const logRow = (row: string[], colWidth: number[]) => l(padLeft + joinRow(row, colWidth));
+  const logRow = (row: string[], colWidth: number[]) => l(joinRow(row, colWidth));
   const { max, props } = initTableData(data, properties);
 
   // 由max计算列宽
