@@ -51,18 +51,25 @@ export const createCommander = () => {
 
   add('encrypt', '<key>')
     .aliases(['en'])
-    .description(`Encrypt files with <key> in 'decrypted' folder(set in markdown-amplifier.json)`)
+    .description(
+      `Encrypt files with <key> in 'decrypted' folder(set in markdown-amplifier.json)`
+    )
     .action(encryption);
 
   add('decrypt', '<key>')
     .aliases(['de'])
-    .description(`Decrypt files with <key> in 'encrypted' folder(set in markdown-amplifier.json)`)
+    .description(
+      `Decrypt files with <key> in 'encrypted' folder(set in markdown-amplifier.json)`
+    )
     .action(decryption);
 
   add('number')
     .aliases(['no'])
     .description(`Numbering titles or other tags, only affect *.md files`)
-    .option('-d, --dir <directory>', 'Numbering files in <directory>, only for *.md files.')
+    .option(
+      '-d, --dir <directory>',
+      'Numbering files in <directory>, only for *.md files.'
+    )
     .option('-a, --anchor', 'Create anchor to make h element directable')
     .option(
       '-m, --math [rule]',
@@ -82,7 +89,8 @@ export const createCommander = () => {
       if (options.math === 'rule' || options.math === 'rules') {
         const ruleTable = HELP.number.mathRule.map((r) => ({
           noun: r.noun,
-          description: r.rule + (r.detail === '' ? '' : '\n' + cb1(`Detail: ${grey(r.detail)}`)),
+          description:
+            r.rule + (r.detail === '' ? '' : '\n' + cb1(`Detail: ${grey(r.detail)}`)),
         }));
         table(ruleTable, [{ index: 'noun' }, { index: 'description', maxWidth: 50 }]);
         return;
@@ -122,12 +130,16 @@ export const createCommander = () => {
         `   <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
       ];
       LINES.forEach((l) => {
-        const w = findMatch(l, MATCH_RULES);
+        const w = findMatch(l);
+        if (!w) {
+          console.log('No match', l);
+          return;
+        }
         console.log(
-          l === w.value ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
+          l === w.str ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
           chalk.red(`[${w.index}] ${w.keyword}`),
           l,
-          chalk.green(w.value)
+          chalk.green(w.str)
         );
       });
     });

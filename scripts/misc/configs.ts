@@ -18,7 +18,7 @@ import { PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE } from './consts';
 export const configs = (() => {
   // * 定义私有变量
 
-  const _maJson = '.markdown-amplifier.json';
+  const _maJson = '.marc.json';
 
   /**
    * akasha文件名 \
@@ -27,8 +27,8 @@ export const configs = (() => {
   const _akashaJson = '.note-akasha.json' as const;
 
   /**
-   * 根目录，层层向上查找.markdown-amplifier.json所在的文件夹 \
-   * Root directory, located by recursively searching parent directories that contains .markdown-amplifier.json
+   * 根目录，层层向上查找.marc.json所在的文件夹 \
+   * Root directory, located by recursively searching parent directories that contains .marc.json
    */
   let _root = '';
 
@@ -59,7 +59,10 @@ export const configs = (() => {
       dir = father;
       father = path.dirname(dir);
     }
-    lbgRed(`加载配置失败。找不到${_maJson}`, `Load Configuration Failed. Cannot find ${_maJson}`);
+    lbgRed(
+      `加载配置失败。找不到${_maJson}`,
+      `Load Configuration Failed. Cannot find ${_maJson}`
+    );
     throw new Error(i(`找不到${_maJson}`, `Cannot find ${_maJson}`));
   };
 
@@ -74,13 +77,22 @@ export const configs = (() => {
       mi(`在${_maJson}中找不到cryption配置`, `Cannot find note in ${_maJson}`);
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
-        mi('note.encryptFileName 应该是boolean型', 'note.encryptFileName should be a boolean');
+        mi(
+          'note.encryptFileName 应该是boolean型',
+          'note.encryptFileName should be a boolean'
+        );
       }
       if (configs.encryptFolderName !== true && configs.encryptFolderName !== false) {
-        mi('note.encryptFolderName 应该是boolean型', 'note.encryptFolderName should be a boolean');
+        mi(
+          'note.encryptFolderName 应该是boolean型',
+          'note.encryptFolderName should be a boolean'
+        );
       }
       if (!configs.exclude) {
-        mi('note.exclude 未设置，需设置为字符串数组', 'note.exclude should be an string array');
+        mi(
+          'note.exclude 未设置，需设置为字符串数组',
+          'note.exclude should be an string array'
+        );
       }
       if (!configs.directory) {
         mi('note.directory 未设置', 'note.directory is not set');
@@ -104,7 +116,10 @@ export const configs = (() => {
     if (messages.length > 0) {
       lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
-      lflag(`${_maJson}中的配置例子如下：`, `An example in ${_maJson} should be like this :`);
+      lflag(
+        `${_maJson}中的配置例子如下：`,
+        `An example in ${_maJson} should be like this :`
+      );
       console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
       throw new Error(i(`${_maJson}中的cryption配置无效`, `Invalid note in ${_maJson}`));
     }
@@ -148,14 +163,17 @@ export const configs = (() => {
       //   lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
       // }
 
-      // 确认是否忽略了.markdown-amplifier.json文件，没有则加入
+      // 确认是否忽略了.marc.json文件，没有则加入
       if (!lines.some((p) => p === _akashaJson)) {
         lgrey(
           `.gitignore文件并未包含'${_akashaJson}'，添加中...`,
           `It seems .gitignore does not contain '${_akashaJson}'. Adding...`
         );
         fs.appendFileSync(gitigorePath, `\n${_akashaJson}`);
-        lgrey(`.gitignore已添加'${_akashaJson}'`, `'${_akashaJson}' is added to .gitignore`);
+        lgrey(
+          `.gitignore已添加'${_akashaJson}'`,
+          `'${_akashaJson}' is added to .gitignore`
+        );
       }
 
       // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
@@ -182,7 +200,10 @@ export const configs = (() => {
         key: 'encryptFileName',
         label: i('加密文件名', 'encryptFileName'),
         value: _encryptFileName,
-        comment: i('是否加密文件名，默认为true', 'Whether to encrypt file name, default is true'),
+        comment: i(
+          '是否加密文件名，默认为true',
+          'Whether to encrypt file name, default is true'
+        ),
       },
       {
         key: 'encryptFolderName',
@@ -209,7 +230,10 @@ export const configs = (() => {
         key: 'encrypted',
         label: i(`加密后`, `encrypted`),
         value: _directory.encrypted,
-        comment: i('加密后的文件将放在这个文件夹', 'Encrypted files will be put in this folder'),
+        comment: i(
+          '加密后的文件将放在这个文件夹',
+          'Encrypted files will be put in this folder'
+        ),
       },
       {
         key: 'exclude',
