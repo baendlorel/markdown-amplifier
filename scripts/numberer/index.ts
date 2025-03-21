@@ -4,14 +4,22 @@
  */
 import { load, save } from '../misc';
 
+const MAX_H_LEVEL = 6;
+const createNo = (length: number) => Array.from({ length }, () => 0);
 export const numberFile = (filePath: string) => {
   // 编号处理
-  const no = [0, 0, 0, 0, 0, 0];
+  const no = {
+    h: createNo(MAX_H_LEVEL),
+    theorem: createNo(MAX_H_LEVEL + 1),
+    definition: createNo(MAX_H_LEVEL + 1),
+    axiom: createNo(MAX_H_LEVEL + 1),
+    case: createNo(MAX_H_LEVEL + 1),
+  };
   const findIndex = (line: string) => {
     const match = line.match(/^[#]+[\s]{0,}/);
     return match ? match[0].length - 2 : null;
   };
-  const getNo = () => no.join('.').replace(/[0\.]+$/, '');
+  const getNo = () => no.h.join('.').replace(/[0\.]+$/, '');
 
   const lines = load(filePath).split('\n');
   let lastIndex = 0;
@@ -23,14 +31,14 @@ export const numberFile = (filePath: string) => {
     }
     // 根据lastIndex和index的关系，控制编号增减
     if (lastIndex === index) {
-      no[index]++;
+      no.h[index]++;
     }
     if (lastIndex > index) {
-      no[index]++;
-      no.fill(0, index + 1);
+      no.h[index]++;
+      no.h.fill(0, index + 1);
     }
     if (lastIndex < index) {
-      no[index]++;
+      no.h[index]++;
     }
     lastIndex = index;
 

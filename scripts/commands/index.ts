@@ -6,7 +6,8 @@ import { Command, Option } from 'commander';
 import { configs, br, aligned, cb1, grey, table } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
-import { HELP as HELP_NUMBERER } from '../numberer/meta';
+import { findMatch, HELP as HELP_NUMBERER, MATH_KEYWORD_REGEX } from '../numberer/meta';
+import chalk from 'chalk';
 
 export const createCommander = () => {
   const HELP = Object.assign(HELP_CRYPTION, HELP_NUMBERER);
@@ -14,7 +15,7 @@ export const createCommander = () => {
   const COMMANDS = [] as Command[];
 
   const program = new Command();
-  program.name('note').description('A markdown note enhance tool.').version('1.0.0');
+  program.name('ma').description('A markdown note enhance tool.').version('1.0.0');
 
   const showExample = (examples?: { cmd: string; comment: string }[]) => {
     if (!examples) {
@@ -102,6 +103,28 @@ export const createCommander = () => {
       showExample(HELP.number.example);
       return;
     });
+
+  add('test').action(() => {
+    const LINES = [
+      `   theorem`,
+      `   theorem 1.1.2`,
+      `   theorem 1.1.2.`,
+      `   **theorem 1.1.2**`,
+      `   **theorem 1.1.2.**`,
+      `   <theorem id="theorem1.1.2">theorem 1.1.2.</theorem>`,
+      `   **<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**`,
+      `   <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
+    ];
+    LINES.forEach((l) => {
+      const w = findMatch(l, MATH_KEYWORD_REGEX.theorem);
+      console.log(
+        l === w.value ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
+        chalk.red(`[${w.index}]`),
+        l,
+        chalk.green(w.value)
+      );
+    });
+  });
 
   COMMANDS.forEach((cmd) => program.addCommand(cmd));
   program.parse();

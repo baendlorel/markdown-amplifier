@@ -1,13 +1,25 @@
 import { ccmd, ccms } from '../misc';
 
-const MATH_KEYWORD = {
-  theorem: { regex: /^theorem/i },
-  lemma: { regex: /^lemma/i },
-  corollary: { regex: /^corollary/i },
-  proposition: { regex: /^proposition/i },
-  definition: { regex: /^definition/i },
-  axiom: { regex: /^axiom/i },
-  case: { regex: /^case/i },
+export const findMatch = (str: string, regexes: RegExp[]) => {
+  for (let i = 0; i < regexes.length; i++) {
+    const m = str.match(regexes[i]);
+    if (m) {
+      return { value: m[0], index: i };
+    }
+  }
+  return { value: null, index: -1 };
+};
+
+export const MATH_KEYWORD_REGEX = {
+  theorem: [
+    // 历史最高： /(?:\*\*|__)?(?:<theorem[^>]*>)?\**\btheorem\b\**(?:\s+\d+(?:\.\d+)*\.?|\.\**)?(?:<\/theorem>)?(?:\*\*|__)?/i,
+
+    /^[\s]{0,}(?:\*\*|__)?<theorem[^>]*>\**\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.\**)?\**<\/theorem>(?:\*\*|__)?/i,
+    /^[\s]{0,}(?:\*\*|__)?\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.)?(?:\*\*|__)?/i,
+  ],
+  definition: [],
+  axiom: [],
+  case: [],
   // 'proof',
   // 'remark',
   // 'assumption',
@@ -15,11 +27,19 @@ const MATH_KEYWORD = {
   // 'conclusion',
 };
 
-const WORDS_SUPPORTED_BY_NUMBERER = Object.keys(MATH_KEYWORD);
+const MATH_KEYWORD = [
+  'theorem',
+  'lemma',
+  'corollary',
+  'proposition',
+  'definition',
+  'axiom',
+  'case',
+];
 
 export const HELP = {
   number: {
-    supportedWords: WORDS_SUPPORTED_BY_NUMBERER,
+    supportedWords: MATH_KEYWORD,
     mathRule: [
       {
         noun: 'theorem',
@@ -38,24 +58,22 @@ export const HELP = {
       },
     ],
     exampleMathRule: {
-      cmd: `${ccmd('$')} note number --math rule `,
+      cmd: `${ccmd('$')} ma number --math rule `,
       comment: ccms(`Display detailed rules of numbering mathematical keywords`),
     },
     example: [
       {
-        cmd: `${ccmd('$')} note number --dir myfolder`,
+        cmd: `${ccmd('$')} ma number --dir myfolder`,
         comment: ccms(`Numbering titles of files in myfolder`),
       },
       {
-        cmd: `${ccmd('$')} note number --dir myfolder --anchor`,
+        cmd: `${ccmd('$')} ma number --dir myfolder --anchor`,
         comment: ccms(`Numbering titles of files in 'myfolder'`),
       },
       {
-        cmd: `${ccmd('$')} note number --dir mathstudy --math`,
+        cmd: `${ccmd('$')} ma number --dir mathstudy --math`,
         comment: ccms(
-          `Numbering titles, ${WORDS_SUPPORTED_BY_NUMBERER.slice(0, 2).join(
-            ', '
-          )}... of files in 'mathstudy'`
+          `Numbering titles, ${MATH_KEYWORD.slice(0, 2).join(', ')}... of files in 'mathstudy'`
         ),
       },
     ],
