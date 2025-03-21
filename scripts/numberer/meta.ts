@@ -1,18 +1,42 @@
 import { ccmd, ccms } from '../misc';
 
-export const findMatch = (str: string, regexGroup: { keyword: string; regex: RegExp }[]) => {
-  for (let i = 0; i < regexGroup.length; i++) {
-    const m = str.match(regexGroup[i].regex);
-    if (m) {
-      return { value: m[0], index: i, keyword: regexGroup[i].keyword };
-    }
-  }
-  return { value: undefined, index: -1, keyword: undefined };
+type MatchRule = {
+  keyword: string;
+  regex: RegExp;
 };
 
-// /^[\s]{0,}(?:\*\*|__)?<theorem[^>]*>\**\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.\**)?\**<\/theorem>(?:\*\*|__)?/i,
-// /^[\s]{0,}(?:\*\*|__)?\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.)?(?:\*\*|__)?/i,
-const createRegex = (keyword: string) => [
+type MatchResult = {
+  /**
+   * 正则匹配得到的第一个匹配项 \
+   * The first matched item obtained by regular matching
+   */
+  value: string;
+  /**
+   * 是匹配的项的下标 \
+   * Index of the matched rule
+   */
+  index: number;
+  /**
+   * 本次匹配的是哪个关键字 \
+   * Which keyword is matched this time
+   */
+  keyword: string;
+};
+
+/**
+ * 最大标题级别 \
+ * Maximum heading level
+ */
+export const MAX_H_LEVEL = 6;
+
+/**
+ * 创建正则和关键字的组合对象，专用于数学关键字 \
+ * 需注意，含有标签的在前，不含标签的在后 \
+ * Create a combination of regex and keyword objects, specifically for mathematical keywords \
+ * Note that those with tags come first, and those without tags come second
+ * @param keyword 关键词
+ */
+const createRegex = (keyword: string): [MatchRule, MatchRule] => [
   {
     keyword,
     regex: new RegExp(
@@ -29,22 +53,45 @@ const createRegex = (keyword: string) => [
   },
 ];
 
-export const MATH_KEYWORD_REGEX = {
-  theorem: [
-    ...createRegex('Theorem'),
-    ...createRegex('Lemma'),
-    ...createRegex('Corollary'),
-    ...createRegex('Proposition'),
-  ],
-  definition: createRegex('definition'),
-  axiom: createRegex('axiom'),
-  case: createRegex('case'),
-  // 'proof',
-  // 'remark',
-  // 'assumption',
-  // 'summary',
-  // 'conclusion',
+export const MATCH_RULES = [
+  ...Array.from(
+    { length: MAX_H_LEVEL },
+    (_, i) =>
+      ({
+        keyword: '#'.repeat(i + 1),
+        regex: new RegExp(`^[\\s]{0,}#{${i + 1}}[\\s]{0,}`, 'i'),
+      } as MatchRule)
+  ),
+  ...createRegex('Theorem'),
+  ...createRegex('Lemma'),
+  ...createRegex('Corollary'),
+  ...createRegex('Proposition'),
+  ...createRegex('definition'),
+  ...createRegex('axiom'),
+  ...createRegex('case'),
+];
+
+/**
+ * 从上方的规则组查找可匹配的项 \
+ * Find a matched item from the rules above
+ * @param str 待匹配字符串
+ * @returns
+ */
+export const findMatch = (str: string): MatchResult | undefined => {
+  for (let i = 0; i < MATCH_RULES.length; i++) {
+    const m = str.match(MATCH_RULES[i].regex);
+    if (m) {
+      return { value: m[0], index: i, keyword: MATCH_RULES[i].keyword };
+    }
+  }
+  return undefined;
 };
+
+// 'proof',
+// 'remark',
+// 'assumption',
+// 'summary',
+// 'conclusion',
 
 const MATH_KEYWORD = [
   'theorem',

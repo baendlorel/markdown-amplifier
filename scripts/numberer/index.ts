@@ -3,9 +3,11 @@
  * @description 为markdown的h元素添加自动的编号
  */
 import { load, save } from '../misc';
+import { findMatch, MATCH_RULES, MAX_H_LEVEL } from './meta';
 
-const MAX_H_LEVEL = 6;
 const createNo = (length: number) => Array.from({ length }, () => 0);
+const getNo = (arr: number[]) => arr.join('.').replace(/[0\.]+$/, '');
+
 export const numberFile = (filePath: string) => {
   // 编号处理
   const no = {
@@ -15,20 +17,16 @@ export const numberFile = (filePath: string) => {
     axiom: createNo(MAX_H_LEVEL + 1),
     case: createNo(MAX_H_LEVEL + 1),
   };
-  const findIndex = (line: string) => {
-    const match = line.match(/^[#]+[\s]{0,}/);
-    return match ? match[0].length - 2 : null;
-  };
-  const getNo = () => no.h.join('.').replace(/[0\.]+$/, '');
 
   const lines = load(filePath).split('\n');
   let lastIndex = 0;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const index = findIndex(line);
-    if (index === null) {
+    const match = findMatch(line, MATCH_RULES.h);
+    if (!match) {
       continue;
     }
+    const { index } = match;
     // 根据lastIndex和index的关系，控制编号增减
     if (lastIndex === index) {
       no.h[index]++;

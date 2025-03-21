@@ -6,7 +6,7 @@ import { Command, Option } from 'commander';
 import { configs, br, aligned, cb1, grey, table } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
-import { findMatch, HELP as HELP_NUMBERER, MATH_KEYWORD_REGEX } from '../numberer/meta';
+import { findMatch, HELP as HELP_NUMBERER, MATCH_RULES } from '../numberer/meta';
 import chalk from 'chalk';
 
 export const createCommander = () => {
@@ -99,33 +99,38 @@ export const createCommander = () => {
       // 其他情形则必须拥有dir选项和目录
       if (typeof options.dir !== 'string') {
         console.log('Error: --dir <directory> is required.');
+        showExample(HELP.number.example);
       }
-      showExample(HELP.number.example);
+
+      // 正式工作
+
       return;
     });
 
-  add('test').action(() => {
-    const LINES = [
-      `   theorem`,
-      `   Theorem 1.1.2`,
-      `   lemma 1.1.2`,
-      `   theorem 1.1.2.`,
-      `   **theorem 1.1.2**`,
-      `   **theorem 1.1.2.**`,
-      `   <theorem id="theorem1.1.2">theorem 1.1.2.</theorem>`,
-      `   **<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**`,
-      `   <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
-    ];
-    LINES.forEach((l) => {
-      const w = findMatch(l, MATH_KEYWORD_REGEX.theorem);
-      console.log(
-        l === w.value ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
-        chalk.red(`[${w.index}] ${w.keyword}`),
-        l,
-        chalk.green(w.value)
-      );
+  add('test')
+    .description(`Some internal tests`)
+    .action(() => {
+      const LINES = [
+        `   theorem`,
+        `   Theorem 1.1.2`,
+        `   lemma 1.1.2`,
+        `   theorem 1.1.2.`,
+        `   **theorem 1.1.2**`,
+        `   **theorem 1.1.2.**`,
+        `   <theorem id="theorem1.1.2">theorem 1.1.2.</theorem>`,
+        `   **<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**`,
+        `   <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
+      ];
+      LINES.forEach((l) => {
+        const w = findMatch(l, MATCH_RULES);
+        console.log(
+          l === w.value ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
+          chalk.red(`[${w.index}] ${w.keyword}`),
+          l,
+          chalk.green(w.value)
+        );
+      });
     });
-  });
 
   COMMANDS.forEach((cmd) => program.addCommand(cmd));
   program.parse();
