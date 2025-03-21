@@ -1,25 +1,44 @@
 import { ccmd, ccms } from '../misc';
 
-export const findMatch = (str: string, regexes: RegExp[]) => {
-  for (let i = 0; i < regexes.length; i++) {
-    const m = str.match(regexes[i]);
+export const findMatch = (str: string, regexGroup: { keyword: string; regex: RegExp }[]) => {
+  for (let i = 0; i < regexGroup.length; i++) {
+    const m = str.match(regexGroup[i].regex);
     if (m) {
-      return { value: m[0], index: i };
+      return { value: m[0], index: i, keyword: regexGroup[i].keyword };
     }
   }
-  return { value: null, index: -1 };
+  return { value: undefined, index: -1, keyword: undefined };
 };
+
+// /^[\s]{0,}(?:\*\*|__)?<theorem[^>]*>\**\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.\**)?\**<\/theorem>(?:\*\*|__)?/i,
+// /^[\s]{0,}(?:\*\*|__)?\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.)?(?:\*\*|__)?/i,
+const createRegex = (keyword: string) => [
+  {
+    keyword,
+    regex: new RegExp(
+      `^[\\s]{0,}(?:\\*\\*|__)?<${keyword}[^>]*>\\**\\b${keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${keyword}>(?:\\*\\*|__)?`,
+      'i'
+    ),
+  },
+  {
+    keyword,
+    regex: new RegExp(
+      `^[\\s]{0,}(?:\\*\\*|__)?\\b${keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+      'i'
+    ),
+  },
+];
 
 export const MATH_KEYWORD_REGEX = {
   theorem: [
-    // 历史最高： /(?:\*\*|__)?(?:<theorem[^>]*>)?\**\btheorem\b\**(?:\s+\d+(?:\.\d+)*\.?|\.\**)?(?:<\/theorem>)?(?:\*\*|__)?/i,
-
-    /^[\s]{0,}(?:\*\*|__)?<theorem[^>]*>\**\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.\**)?\**<\/theorem>(?:\*\*|__)?/i,
-    /^[\s]{0,}(?:\*\*|__)?\btheorem\b(?:\s+\d+(?:\.\d+)*\.?|\.)?(?:\*\*|__)?/i,
+    ...createRegex('Theorem'),
+    ...createRegex('Lemma'),
+    ...createRegex('Corollary'),
+    ...createRegex('Proposition'),
   ],
-  definition: [],
-  axiom: [],
-  case: [],
+  definition: createRegex('definition'),
+  axiom: createRegex('axiom'),
+  case: createRegex('case'),
   // 'proof',
   // 'remark',
   // 'assumption',

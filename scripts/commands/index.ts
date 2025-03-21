@@ -107,7 +107,8 @@ export const createCommander = () => {
   add('test').action(() => {
     const LINES = [
       `   theorem`,
-      `   theorem 1.1.2`,
+      `   Theorem 1.1.2`,
+      `   lemma 1.1.2`,
       `   theorem 1.1.2.`,
       `   **theorem 1.1.2**`,
       `   **theorem 1.1.2.**`,
@@ -119,7 +120,7 @@ export const createCommander = () => {
       const w = findMatch(l, MATH_KEYWORD_REGEX.theorem);
       console.log(
         l === w.value ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
-        chalk.red(`[${w.index}]`),
+        chalk.red(`[${w.index}] ${w.keyword}`),
         l,
         chalk.green(w.value)
       );
