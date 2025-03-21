@@ -1,5 +1,9 @@
 import { ccmd, ccms } from '../misc';
 
+/**
+ * HELP对象写在里面是为了方便和其他HELP对象Assign在一起 \
+ * The HELP object is written inside to facilitate assignment with other HELP objects
+ */
 export const HELP = {
   encrypt: {
     example: [

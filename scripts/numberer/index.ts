@@ -3,7 +3,7 @@
  * @description 为markdown的h元素添加自动的编号
  */
 import { load, save } from '../misc';
-import { findMatch, MAX_H_LEVEL, RuleName } from './meta';
+import { findMatch, MAX_H_LEVEL, RuleTagName } from './meta';
 
 const createNo = (length: number) => new Array<number>(length).fill(0);
 const getNo = (arr: number[]) => arr.join('.').replace(/[0\.]+$/, '');
@@ -16,7 +16,7 @@ export const numberFile = (filePath: string) => {
     definition: createNo(MAX_H_LEVEL + 1),
     axiom: createNo(MAX_H_LEVEL + 1),
     case: createNo(MAX_H_LEVEL + 1),
-  } as { [key in RuleName]: number[] };
+  } as { [key in RuleTagName]: number[] };
 
   const lines = load(filePath).split('\n');
   let lastDigitIndex = 0;

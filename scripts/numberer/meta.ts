@@ -1,9 +1,33 @@
 import { ccmd, ccms } from '../misc';
 
-export type RuleName = 'definition' | 'axiom' | 'case' | 'h' | 'theorem';
+export type RuleTagName =
+  | 'definition'
+  | 'axiom'
+  | 'case'
+  | 'h'
+  | 'theorem'
+  | 'lemma'
+  | 'corollary'
+  | 'proposition';
 
 type MatchRule = {
+  /**
+   * 关键字，可能是中文或英文 \
+   * Keyword, may be Chinese or English
+   */
   keyword: string;
+
+  /**
+   * 用于html标签的名称 \
+   * Name for html tag
+   */
+  tag: RuleTagName;
+
+  /**
+   * 规则组，一般和tag相同，但theorem、lemma、corollary、proposition是都属于theorem \
+   * Rule name. Usually the same as keyword, but theorem, lemma, corollary, proposition are all belong to 'theorem'
+   */
+  group: RuleTagName;
 
   /**
    * 用于匹配的关键字的正则表达式 \
@@ -12,12 +36,10 @@ type MatchRule = {
   regex: RegExp;
 
   /**
-   * 规则名称 \
-   * 一般和keyword相同，但theorem、lemma、corollary、proposition是一个规则 \
-   * Rule name \
-   * Usually the same as keyword, but theorem, lemma, corollary, proposition share the name ruleName of 'theorem'
+   * 用于匹配HTML元素中id内容的正则表达式 \
+   * Regular expression used to match the id content in HTML elements
    */
-  ruleName: RuleName;
+  idRegex: RegExp;
 };
 
 type MatchResult = {
@@ -51,42 +73,58 @@ export const MAX_H_LEVEL = 6;
  * 需注意，含有标签的在前，不含标签的在后 \
  * Create a combination of regex and keyword objects, specifically for mathematical keywords \
  * Note that those with tags come first, and those without tags come second
- * @param keyword 关键词
+ * @param keyword 关键词，中文或英文
  */
-const createRegex = (keyword: string): [MatchRule, MatchRule] => [
+const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex'>): [MatchRule, MatchRule] => [
   {
-    keyword,
-    ruleName: keyword.toLowerCase() as RuleName,
-    regex: new RegExp(
-      `^[\\s]{0,}(?:\\*\\*|__)?<${keyword}[^>]*>\\**\\b${keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${keyword}>(?:\\*\\*|__)?`,
-      'i'
-    ),
+    ...o,
+    regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
+      ? new RegExp(
+          `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+          'i'
+        )
+      : new RegExp(
+          `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+          'i'
+        ),
+    idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
   },
   {
-    keyword,
-    ruleName: keyword.toLowerCase() as RuleName,
-    regex: new RegExp(
-      `^[\\s]{0,}(?:\\*\\*|__)?\\b${keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
-      'i'
-    ),
+    ...o,
+    regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
+      ? new RegExp(
+          `^[\\s]{0,}(?:\\*\\*|__)?\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+          'i'
+        )
+      : new RegExp(
+          `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+          'i'
+        ),
+    idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
   },
 ];
 
-export const MATCH_RULES = new Array(MAX_H_LEVEL)
-  .map((v, i) => ({
-    keyword: '#'.repeat(i + 1),
-    regex: new RegExp(`^[\\s]{0,}#{${i + 1}}[\\s]{0,}[0-9.]{0,}`, 'i'),
-    ruleName: 'h',
-  }))
-  .concat(
-    createRegex('Theorem'),
-    createRegex('Lemma'),
-    createRegex('Corollary'),
-    createRegex('Proposition'),
-    createRegex('Definition'),
-    createRegex('Axiom'),
-    createRegex('Case')
-  ) as MatchRule[];
+export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
+  keyword: '#'.repeat(i + 1),
+  tag: 'h',
+  group: 'h',
+  regex: new RegExp(`^[\\s]{0,}#{${i + 1}}[\\s]{0,}[0-9.]{0,}`, 'i'),
+  idRegex: new RegExp(`<h[1-${MAX_H_LEVEL}][^>]*id="([^"]+)"[^>]*>`, 'i'),
+})).concat(
+  createRegex({ keyword: 'Theorem', tag: 'theorem', group: 'theorem' }),
+  createRegex({ keyword: '定理', tag: 'theorem', group: 'theorem' }),
+  createRegex({ keyword: 'Lemma', tag: 'lemma', group: 'theorem' }),
+  createRegex({ keyword: '引理', tag: 'lemma', group: 'theorem' }),
+  createRegex({ keyword: 'Corollary', tag: 'corollary', group: 'theorem' }),
+  createRegex({ keyword: '推论', tag: 'corollary', group: 'theorem' }),
+  createRegex({ keyword: 'Proposition', tag: 'proposition', group: 'theorem' }),
+  createRegex({ keyword: '命题', tag: 'proposition', group: 'theorem' }),
+  createRegex({ keyword: 'Definition', tag: 'definition', group: 'definition' }),
+  createRegex({ keyword: '定义', tag: 'definition', group: 'definition' }),
+  createRegex({ keyword: 'Axiom', tag: 'axiom', group: 'axiom' }),
+  createRegex({ keyword: '公理', tag: 'axiom', group: 'axiom' }),
+  createRegex({ keyword: 'Case', tag: 'case', group: 'case' })
+) as MatchRule[];
 
 /**
  * 从上方的规则组查找可匹配的项 \
@@ -109,40 +147,27 @@ export const findMatch = (str: string): MatchResult | undefined => {
   return undefined;
 };
 
-// 'proof',
-// 'remark',
-// 'assumption',
-// 'summary',
-// 'conclusion',
-
-const MATH_KEYWORD = [
-  'theorem',
-  'lemma',
-  'corollary',
-  'proposition',
-  'definition',
-  'axiom',
-  'case',
-];
-
+/**
+ * HELP对象写在里面是为了方便和其他HELP对象Assign在一起 \
+ * The HELP object is written inside to facilitate assignment with other HELP objects
+ */
 export const HELP = {
   number: {
-    supportedWords: MATH_KEYWORD,
     mathRule: [
       {
         noun: 'theorem',
         rule: `Follow the serial of sections. If current section is '1.2', theorems will be numbered as '1.2.x'`,
         detail: `Share the same serial with lemma, corollary, proposition. Like 'Theorem 1.1', then 'Lemma 1.2', 'Lemma 1.3', 'Corollary 1.4'`,
       },
-      { noun: 'lemma', rule: `Share the same serial with theorem`, detail: `` },
+      { noun: 'lemma', rule: `Uses the same numbering scheme as theorem`, detail: `` },
       {
         noun: 'corollary',
-        rule: `Same as theorem. And share serial with it`,
+        rule: `Uses the same numbering scheme as theorem`,
         detail: ``,
       },
       {
         noun: 'proposition',
-        rule: `Same as theorem. And share serial with it`,
+        rule: `Uses the same numbering scheme as theorem`,
         detail: ``,
       },
       { noun: 'definition', rule: `Same as theorem. Numbered independently`, detail: `` },
@@ -169,9 +194,7 @@ export const HELP = {
       {
         cmd: `${ccmd('$')} ma number --dir mathstudy --math`,
         comment: ccms(
-          `Numbering titles, ${MATH_KEYWORD.slice(0, 2).join(
-            ', '
-          )}... of files in 'mathstudy'`
+          `Numbering titles, theorems, axioms and other mathematical keywords of files in 'mathstudy'`
         ),
       },
     ],

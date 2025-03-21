@@ -3,13 +3,15 @@
  */
 
 import { Command, Option } from 'commander';
-import { configs, br, aligned, cb1, grey, table } from '../misc';
+import { configs, aligned, cb1, grey } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
-import { findMatch, HELP as HELP_NUMBERER, MATCH_RULES } from '../numberer/meta';
+import { findMatch, HELP as HELP_NUMBERER } from '../numberer/meta';
 import chalk from 'chalk';
 
 export const createCommander = () => {
+  const MAX_WIDTH = 52;
+
   const HELP = Object.assign(HELP_CRYPTION, HELP_NUMBERER);
 
   const COMMANDS = [] as Command[];
@@ -22,7 +24,7 @@ export const createCommander = () => {
       return;
     }
     console.log(`\nExample:`);
-    aligned(examples);
+    aligned(examples, [{ index: 'cmd' }, { index: 'comment', maxWidth: MAX_WIDTH }]);
   };
 
   /**
@@ -73,9 +75,7 @@ export const createCommander = () => {
     .option('-a, --anchor', 'Create anchor to make h element directable')
     .option(
       '-m, --math [rule]',
-      `Also number the ${HELP.number.supportedWords
-        .slice(0, 2)
-        .join(', ')}, etc. Use '--math rule' to see the detailed numbering rule`
+      `Also number the theorems, axioms and other keywords. Use '--math rule' to see detailed numbering rules`
     )
     .addOption(
       new Option(
@@ -92,7 +92,11 @@ export const createCommander = () => {
           description:
             r.rule + (r.detail === '' ? '' : '\n' + cb1(`Detail: ${grey(r.detail)}`)),
         }));
-        table(ruleTable, [{ index: 'noun' }, { index: 'description', maxWidth: 50 }]);
+
+        aligned(ruleTable, [
+          { index: 'noun' },
+          { index: 'description', maxWidth: MAX_WIDTH },
+        ]);
         return;
       }
       // 如果写了--math但写了其他的参数，就报错
@@ -119,15 +123,32 @@ export const createCommander = () => {
     .description(`Some internal tests`)
     .action(() => {
       const LINES = [
-        `   theorem`,
-        `   Theorem 1.1.2`,
-        `   lemma 1.1.2`,
-        `   theorem 1.1.2.`,
-        `   **theorem 1.1.2**`,
-        `   **theorem 1.1.2.**`,
-        `   <theorem id="theorem1.1.2">theorem 1.1.2.</theorem>`,
-        `   **<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**`,
-        `   <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
+        ` theorem`,
+        ` Theorem   1.1.2`,
+        ` lemma   1.1.2`,
+        ` theorem 1.1.2.`,
+        ` **theorem 1.1.2**`,
+        ` **theorem 1.1.2.**`,
+        ` <lemma id="lemma1.1.2">引理 1.1.2.</lemma>`,
+        ` <theorem id="theorem1.1.2">theorem 1.1.2.</theorem>`,
+        ` **<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**`,
+        ` <theorem id="theorem1.1.2">**theorem 1.1.2.**</theorem>`,
+        '定理 1.2.3', // 应匹配
+        ' 定理 1.2.3', // 应匹配（前导空格）
+        '**定理 1.2.3**', // 应匹配（加粗语法）
+        '定理.', // 应匹配（仅有句号）
+        '定理', // 不应匹配（没有编号或句号）
+        ' 定理', // 不应匹配（没有编号或句号）
+        '定理 1', // 应匹配（单个数字）
+        '定理 1.2', // 应匹配（两级编号）
+        '定理 1.2.3.', // 应匹配（编号后有句号）
+        '**定理 1.2.3.**', // 应匹配（加粗语法包裹编号和句号）
+        '**<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>**', // 英文关键词
+        '<theorem id="theorem1.1.2">theorem 1.1.2.</theorem>', // 英文关键词
+        '**<theorem id="theorem1.1.2">定理 1.1.2.</theorem>**', // 中文关键词
+        '<theorem id="theorem1.1.2">定理 1.1.2.</theorem>', // 中文关键词
+        '<theorem id="theorem1.1.2">定理.</theorem>', // 中文关键词，仅句号
+        '<theorem id="theorem1.1.2">theorem.</theorem>', // 英文关键词，仅句号
       ];
       LINES.forEach((l) => {
         const w = findMatch(l);
@@ -135,11 +156,13 @@ export const createCommander = () => {
           console.log('No match', l);
           return;
         }
+
+        const matchedId = w.str.match(w.rule.idRegex);
         console.log(
           l === w.str ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
-          chalk.red(`[${w.index}] ${w.keyword}`),
+          chalk.red(`[${w.index}] ${w.rule.tag}`),
           l,
-          chalk.green(w.str)
+          chalk.green(matchedId?.[1] || matchedId?.[0] || '无')
         );
       });
     });
