@@ -161,7 +161,7 @@ export const createCommander = () => {
         const matchedId = w.str.match(w.rule.idRegex);
         console.log(
           l === w.str ? chalk.yellow(`[true] `) : chalk.magenta(`[false]`),
-          chalk.red(`[${w.index}] ${w.rule.tag}`),
+          chalk.red(`[${w.index}] ${w.rule.flag}`),
           l,
           chalk.green(matchedId?.[1] || matchedId?.[0] || '无')
         );

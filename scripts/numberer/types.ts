@@ -1,4 +1,4 @@
-export type RuleTag =
+export type RuleFlag =
   | 'h'
   | 'theorem'
   | 'lemma'
@@ -14,16 +14,16 @@ export type GroupName = 'h' | 'theorem' | 'definition' | 'axiom' | 'case';
 
 export type MatchRule = {
   /**
+   * 表示本规则匹配了什么 \
+   * Indicates what this rule matches
+   */
+  flag: RuleFlag;
+
+  /**
    * 关键字，可能是中文或英文 \
    * Keyword, may be Chinese or English
    */
   keyword: string;
-
-  /**
-   * 用于html标签的名称 \
-   * Name for html tag
-   */
-  tag: RuleTag;
 
   /**
    * 规则组，一般和tag相同，但theorem、lemma、corollary、proposition是都属于theorem \

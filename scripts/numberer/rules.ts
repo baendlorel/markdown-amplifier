@@ -30,17 +30,17 @@ const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex' | 'format'>) =>
       ...o,
       regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
         ? new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?[\\s]{0,}`,
+            `^[\\s]{0,}(?:\\*\\*|__)?<b[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/b>(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           )
         : new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?[\\s]{0,}`,
+            `^[\\s]{0,}(?:\\*\\*|__)?<b[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/b>(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           ),
-      idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
+      idRegex: new RegExp(`<b[^>]*id="([^"]+)"[^>]*>`, 'i'),
       format: (no: number[]) => {
         const _no = no.join('.').replace(/[0\.]+$/, '');
-        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}>`;
+        return `<b id="${o.flag}${_no}">${o.keyword} ${_no}.</b>`;
       },
     },
     {
@@ -54,17 +54,17 @@ const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex' | 'format'>) =>
             `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           ),
-      idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
+      idRegex: new RegExp(`<b[^>]*id="([^"]+)"[^>]*>`, 'i'),
       format: (no: number[]) => {
         const _no = no.join('.').replace(/[0\.]+$/, '');
-        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}> `;
+        return `<b id="${o.flag}${_no}">${o.keyword} ${_no}.</b> `;
       },
     },
   ] as MatchRule[];
 
 export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
   keyword: '#'.repeat(MAX_H_LEVEL - i),
-  tag: 'h',
+  flag: 'h',
   group: 'h',
   regex: new RegExp(`^[\\s]{0,}#{${MAX_H_LEVEL - i}}[\\s]{0,}[0-9.]{0,}[\\s]{0,}`, 'i'),
   idRegex: new RegExp(`<h[1-${MAX_H_LEVEL}][^>]*id="([^"]+)"[^>]*>`, 'i'),
@@ -73,21 +73,21 @@ export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
     return `${'#'.repeat(MAX_H_LEVEL - i)} ${_no}`;
   },
 })).concat(
-  createRegex({ keyword: 'Theorem', tag: 'theorem', group: 'theorem' }),
-  createRegex({ keyword: '定理', tag: 'theorem', group: 'theorem' }),
-  createRegex({ keyword: 'Lemma', tag: 'lemma', group: 'theorem' }),
-  createRegex({ keyword: '引理', tag: 'lemma', group: 'theorem' }),
-  createRegex({ keyword: 'Corollary', tag: 'corollary', group: 'theorem' }),
-  createRegex({ keyword: '推论', tag: 'corollary', group: 'theorem' }),
-  createRegex({ keyword: 'Proposition', tag: 'proposition', group: 'theorem' }),
-  createRegex({ keyword: '命题', tag: 'proposition', group: 'theorem' }),
-  createRegex({ keyword: 'Definition', tag: 'definition', group: 'definition' }),
-  createRegex({ keyword: '定义', tag: 'definition', group: 'definition' }),
-  createRegex({ keyword: 'Axiom', tag: 'axiom', group: 'axiom' }),
-  createRegex({ keyword: '公理', tag: 'axiom', group: 'axiom' }),
-  createRegex({ keyword: 'Case', tag: 'case', group: 'case' }),
-  createRegex({ keyword: 'Subcase', tag: 'subcase', group: 'case' }),
-  createRegex({ keyword: 'Subsubcase', tag: 'subsubcase', group: 'case' })
+  createRegex({ keyword: 'Theorem', flag: 'theorem', group: 'theorem' }),
+  createRegex({ keyword: '定理', flag: 'theorem', group: 'theorem' }),
+  createRegex({ keyword: 'Lemma', flag: 'lemma', group: 'theorem' }),
+  createRegex({ keyword: '引理', flag: 'lemma', group: 'theorem' }),
+  createRegex({ keyword: 'Corollary', flag: 'corollary', group: 'theorem' }),
+  createRegex({ keyword: '推论', flag: 'corollary', group: 'theorem' }),
+  createRegex({ keyword: 'Proposition', flag: 'proposition', group: 'theorem' }),
+  createRegex({ keyword: '命题', flag: 'proposition', group: 'theorem' }),
+  createRegex({ keyword: 'Definition', flag: 'definition', group: 'definition' }),
+  createRegex({ keyword: '定义', flag: 'definition', group: 'definition' }),
+  createRegex({ keyword: 'Axiom', flag: 'axiom', group: 'axiom' }),
+  createRegex({ keyword: '公理', flag: 'axiom', group: 'axiom' }),
+  createRegex({ keyword: 'Case', flag: 'case', group: 'case' }),
+  createRegex({ keyword: 'Subcase', flag: 'subcase', group: 'case' }),
+  createRegex({ keyword: 'Subsubcase', flag: 'subsubcase', group: 'case' })
 ) as MatchRule[];
 
 /**

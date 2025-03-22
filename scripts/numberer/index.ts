@@ -57,7 +57,7 @@ export const numberFile = (filePath: string) => {
     const { rule } = matched;
     let currentLevel = 0;
 
-    console.log(`detected: [${rule.tag}] ${rule.keyword}`);
+    console.log(`detected: [${rule.flag}] ${rule.keyword}`);
 
     // * 根据lastIndex和index的关系，控制编号增减
     switch (rule.group) {
@@ -91,7 +91,7 @@ export const numberFile = (filePath: string) => {
         if (inProof) {
           break;
         }
-        switch (rule.tag) {
+        switch (rule.flag) {
           case 'case':
             if (lastLevel.case === LEVEL_SUBCASE || lastLevel.case === LEVEL_SUBSUBCASE) {
               no.case[LEVEL_SUBCASE] = 0;
@@ -130,7 +130,7 @@ export const numberFile = (filePath: string) => {
     lastLevel[rule.group] = currentLevel;
 
     // 更新编号
-    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + '. ');
+    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + ' ');
     console.log('更新后 ', i, ':', lines[i]);
   }
   lines.push('干过了' + new Date().toLocaleString());
