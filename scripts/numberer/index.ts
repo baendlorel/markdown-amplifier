@@ -21,12 +21,10 @@ export const numberFile = (filePath: string) => {
     theorem: createNo(MAX_H_LEVEL + 1),
     definition: createNo(MAX_H_LEVEL + 1),
     axiom: createNo(MAX_H_LEVEL + 1),
-    case: [0],
-    subcase: [0],
-    subsubcase: [0],
+    case: [0, 0, 0],
   } as { [key in GroupName]: number[] };
 
-  const level = {
+  const lastLevel = {
     h: 0,
     theorem: 0,
     definition: 0,
@@ -73,7 +71,7 @@ export const numberFile = (filePath: string) => {
         no.axiom.fill(0);
         no.case.fill(0);
         // 退出本层级h， h元素的后续编号清零
-        if (level.h > currentLevel) {
+        if (lastLevel.h > currentLevel) {
           // h元素的后续编号清零
           no.h.fill(0, currentLevel + 1);
         }
@@ -86,7 +84,7 @@ export const numberFile = (filePath: string) => {
           initSubGroup(rule.group);
         }
         // '四理'的level永远比h的level深1层
-        no[rule.group][level.h + 1]++;
+        no[rule.group][lastLevel.h + 1]++;
         break;
       case 'case':
         // 如果是proof下的，那么单独编号
@@ -95,14 +93,23 @@ export const numberFile = (filePath: string) => {
         }
         switch (rule.tag) {
           case 'case':
+            if (lastLevel.case === LEVEL_SUBCASE || lastLevel.case === LEVEL_SUBSUBCASE) {
+              no.case[LEVEL_SUBCASE] = 0;
+              no.case[LEVEL_SUBSUBCASE] = 0;
+            }
             no.case[LEVEL_CASE]++;
+            currentLevel = LEVEL_CASE;
             break;
           case 'subcase':
             // 如果没有用过case就直接打了subcase，那么忽略
             if (no.case[LEVEL_CASE] === 0) {
               continue;
             }
+            if (lastLevel.case === LEVEL_SUBSUBCASE) {
+              no.case[LEVEL_SUBSUBCASE] = 0;
+            }
             no.case[LEVEL_SUBCASE]++;
+            currentLevel = LEVEL_SUBCASE;
             break;
           case 'subsubcase':
             // 如果没有用过case或subcase就直接打了subsubcase，那么忽略
@@ -110,6 +117,7 @@ export const numberFile = (filePath: string) => {
               continue;
             }
             no.case[LEVEL_SUBSUBCASE]++;
+            currentLevel = LEVEL_SUBSUBCASE;
             break;
         }
         break;
@@ -119,10 +127,10 @@ export const numberFile = (filePath: string) => {
     }
 
     lastGroup = rule.group;
-    level[rule.group] = currentLevel;
+    lastLevel[rule.group] = currentLevel;
 
     // 更新编号
-    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + ' ');
+    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + '. ');
     console.log('更新后 ', i, ':', lines[i]);
   }
   lines.push('干过了' + new Date().toLocaleString());

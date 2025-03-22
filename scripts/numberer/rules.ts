@@ -14,8 +14,8 @@ export const MAX_H_LEVEL = 6;
 export const MAX_CASE_LEVEL = 3;
 
 export const LEVEL_CASE = 0;
-export const LEVEL_SUBCASE = 0;
-export const LEVEL_SUBSUBCASE = 0;
+export const LEVEL_SUBCASE = 1;
+export const LEVEL_SUBSUBCASE = 2;
 
 /**
  * 创建正则和关键字的组合对象，专用于创建数学关键字 \
