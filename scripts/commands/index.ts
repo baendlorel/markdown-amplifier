@@ -6,8 +6,9 @@ import { Command, Option } from 'commander';
 import { configs, aligned, cb1, grey } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
-import { findMatch, HELP as HELP_NUMBERER } from '../numberer/meta';
+import { findMatch, HELP as HELP_NUMBERER } from '../numberer/rules';
 import chalk from 'chalk';
+import { numberFile } from '../numberer';
 
 export const createCommander = () => {
   const MAX_WIDTH = 52;
@@ -115,7 +116,7 @@ export const createCommander = () => {
       }
 
       // 正式工作
-
+      numberFile(options.dir);
       return;
     });
 

@@ -3,7 +3,14 @@
  * @description 为markdown的h元素添加自动的编号
  */
 import { load, save } from '../misc';
-import { findMatch, MAX_H_LEVEL, RuleGroupName, RuleTagName } from './meta';
+import { GroupName } from './types';
+import {
+  findMatch,
+  LEVEL_CASE,
+  LEVEL_SUBCASE,
+  LEVEL_SUBSUBCASE,
+  MAX_H_LEVEL,
+} from './rules';
 
 const createNo = (length: number) => new Array<number>(length).fill(0);
 
@@ -14,18 +21,20 @@ export const numberFile = (filePath: string) => {
     theorem: createNo(MAX_H_LEVEL + 1),
     definition: createNo(MAX_H_LEVEL + 1),
     axiom: createNo(MAX_H_LEVEL + 1),
-    case: createNo(MAX_H_LEVEL + 1),
-  } as { [key in RuleGroupName]: number[] };
+    case: [0],
+    subcase: [0],
+    subsubcase: [0],
+  } as { [key in GroupName]: number[] };
 
-  const lastDigitIndex = {
+  const level = {
     h: 0,
     theorem: 0,
     definition: 0,
     axiom: 0,
     case: 0,
-  } as { [key in RuleGroupName]: number };
+  } as { [key in GroupName]: number };
 
-  const initSubGroup = (group: RuleGroupName) => {
+  const initSubGroup = (group: GroupName) => {
     const g = no[group];
     for (let i = 0; i < no.h.length; i++) {
       g[i] = no.h[i];
@@ -38,7 +47,7 @@ export const numberFile = (filePath: string) => {
    * Whether in the proof process, if so, 'case' shall be numbered independently from outer section
    */
   let inProof = false;
-  let lastGroup = 'h' as RuleGroupName;
+  let lastGroup = 'h' as GroupName;
 
   const lines = load(filePath).split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -48,22 +57,25 @@ export const numberFile = (filePath: string) => {
       continue;
     }
     const { rule } = matched;
-    const digitIndex = rule.keyword.length;
+    let currentLevel = 0;
+
+    console.log(`detected: [${rule.tag}] ${rule.keyword}`);
 
     // * 根据lastIndex和index的关系，控制编号增减
     switch (rule.group) {
       case 'h':
-        // 对于h元素而言
-        no.h[digitIndex]++;
-        // 基于section的编号则完全清零
+        // 对于h元素而言，层级就是有多少个#号
+        currentLevel = rule.keyword.length - 1;
+        no.h[currentLevel]++;
+        // 基于h的编号则完全清零
         no.theorem.fill(0);
         no.definition.fill(0);
         no.axiom.fill(0);
         no.case.fill(0);
-        // 退出本层级section， h元素的后续编号清零
-        if (lastDigitIndex.h > digitIndex) {
+        // 退出本层级h， h元素的后续编号清零
+        if (level.h > currentLevel) {
           // h元素的后续编号清零
-          no.h.fill(0, digitIndex + 1);
+          no.h.fill(0, currentLevel + 1);
         }
         break;
 
@@ -73,27 +85,46 @@ export const numberFile = (filePath: string) => {
         if (lastGroup === 'h') {
           initSubGroup(rule.group);
         }
-        // '四理'的位索引永远比section的位索引大1
-        no[rule.group][lastDigitIndex.h + 1]++;
+        // '四理'的level永远比h的level深1层
+        no[rule.group][level.h + 1]++;
         break;
       case 'case':
         // 如果是proof下的，那么单独编号
         if (inProof) {
           break;
         }
+        switch (rule.tag) {
+          case 'case':
+            no.case[LEVEL_CASE]++;
+            break;
+          case 'subcase':
+            // 如果没有用过case就直接打了subcase，那么忽略
+            if (no.case[LEVEL_CASE] === 0) {
+              continue;
+            }
+            no.case[LEVEL_SUBCASE]++;
+            break;
+          case 'subsubcase':
+            // 如果没有用过case或subcase就直接打了subsubcase，那么忽略
+            if (no.case[LEVEL_CASE] === 0 || no.case[LEVEL_SUBCASE] === 0) {
+              continue;
+            }
+            no.case[LEVEL_SUBSUBCASE]++;
+            break;
+        }
         break;
       default:
-        const n: never = rule.group;
-        break;
+        const x: never = rule.group;
+        throw new Error(`Unexpected group: ${x}`);
     }
 
     lastGroup = rule.group;
-    lastDigitIndex[rule.group] = digitIndex;
+    level[rule.group] = currentLevel;
 
     // 更新编号
-    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]));
+    lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + ' ');
     console.log('更新后 ', i, ':', lines[i]);
   }
-
+  lines.push('干过了' + new Date().toLocaleString());
   save(lines.join('\n'), filePath);
 };

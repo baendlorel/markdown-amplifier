@@ -1,81 +1,21 @@
 import { ccmd, ccms } from '../misc';
-
-export type RuleTagName =
-  | 'definition'
-  | 'axiom'
-  | 'case'
-  | 'h'
-  | 'theorem'
-  | 'lemma'
-  | 'corollary'
-  | 'proposition';
-
-export type RuleGroupName = 'h' | 'theorem' | 'definition' | 'axiom' | 'case';
-
-type MatchRule = {
-  /**
-   * 关键字，可能是中文或英文 \
-   * Keyword, may be Chinese or English
-   */
-  keyword: string;
-
-  /**
-   * 用于html标签的名称 \
-   * Name for html tag
-   */
-  tag: RuleTagName;
-
-  /**
-   * 规则组，一般和tag相同，但theorem、lemma、corollary、proposition是都属于theorem \
-   * Rule name. Usually the same as keyword, but theorem, lemma, corollary, proposition are all belong to 'theorem'
-   */
-  group: RuleGroupName;
-
-  /**
-   * 用于匹配的关键字的正则表达式 \
-   * Regular expression used for keyword matching
-   */
-  regex: RegExp;
-
-  /**
-   * 用于匹配HTML元素中id内容的正则表达式 \
-   * Regular expression used to match the id content in HTML elements
-   */
-  idRegex: RegExp;
-
-  /**
-   * 将编号数组格式化为标准的字符串 \
-   * @param no 编号数组
-   * @returns 格式化后的字符串，将会替换原有的关键字
-   */
-  format: (no: number[]) => string;
-};
-
-type MatchResult = {
-  /**
-   * 正则匹配得到的第一个匹配项 \
-   * The first matched string obtained by regular matching
-   */
-  str: string;
-
-  /**
-   * 是匹配的项的下标 \
-   * Index of the matched rule
-   */
-  index: number;
-
-  /**
-   * 使用的规则 \
-   * Rule used
-   */
-  rule: MatchRule;
-};
+import { MatchRule, MatchResult } from './types';
 
 /**
  * 最大标题级别，markdown支持的最大标题级别为6 \
  * Maximum heading level, the maximum heading level supported by markdown is 6
  */
 export const MAX_H_LEVEL = 6;
+
+/**
+ * 最大case级别 \
+ * Maximum case level
+ */
+export const MAX_CASE_LEVEL = 3;
+
+export const LEVEL_CASE = 0;
+export const LEVEL_SUBCASE = 0;
+export const LEVEL_SUBSUBCASE = 0;
 
 /**
  * 创建正则和关键字的组合对象，专用于创建数学关键字 \
@@ -90,11 +30,11 @@ const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex' | 'format'>) =>
       ...o,
       regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
         ? new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           )
         : new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           ),
       idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
@@ -107,30 +47,30 @@ const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex' | 'format'>) =>
       ...o,
       regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
         ? new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+            `^[\\s]{0,}(?:\\*\\*|__)?\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           )
         : new RegExp(
-            `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+            `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?[\\s]{0,}`,
             'i'
           ),
       idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
       format: (no: number[]) => {
         const _no = no.join('.').replace(/[0\.]+$/, '');
-        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}>`;
+        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}> `;
       },
     },
   ] as MatchRule[];
 
 export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
-  keyword: '#'.repeat(i + 1),
+  keyword: '#'.repeat(MAX_H_LEVEL - i),
   tag: 'h',
   group: 'h',
-  regex: new RegExp(`^[\\s]{0,}#{${i + 1}}[\\s]{0,}[0-9.]{0,}`, 'i'),
+  regex: new RegExp(`^[\\s]{0,}#{${MAX_H_LEVEL - i}}[\\s]{0,}[0-9.]{0,}[\\s]{0,}`, 'i'),
   idRegex: new RegExp(`<h[1-${MAX_H_LEVEL}][^>]*id="([^"]+)"[^>]*>`, 'i'),
   format: (no: number[]) => {
     const _no = no.join('.').replace(/[0\.]+$/, '');
-    return `${'#'.repeat(i + 1)} ${_no}`;
+    return `${'#'.repeat(MAX_H_LEVEL - i)} ${_no}`;
   },
 })).concat(
   createRegex({ keyword: 'Theorem', tag: 'theorem', group: 'theorem' }),
@@ -145,7 +85,9 @@ export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
   createRegex({ keyword: '定义', tag: 'definition', group: 'definition' }),
   createRegex({ keyword: 'Axiom', tag: 'axiom', group: 'axiom' }),
   createRegex({ keyword: '公理', tag: 'axiom', group: 'axiom' }),
-  createRegex({ keyword: 'Case', tag: 'case', group: 'case' })
+  createRegex({ keyword: 'Case', tag: 'case', group: 'case' }),
+  createRegex({ keyword: 'Subcase', tag: 'subcase', group: 'case' }),
+  createRegex({ keyword: 'Subsubcase', tag: 'subsubcase', group: 'case' })
 ) as MatchRule[];
 
 /**
