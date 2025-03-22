@@ -10,6 +10,8 @@ export type RuleTagName =
   | 'corollary'
   | 'proposition';
 
+export type RuleGroupName = 'h' | 'theorem' | 'definition' | 'axiom' | 'case';
+
 type MatchRule = {
   /**
    * 关键字，可能是中文或英文 \
@@ -27,7 +29,7 @@ type MatchRule = {
    * 规则组，一般和tag相同，但theorem、lemma、corollary、proposition是都属于theorem \
    * Rule name. Usually the same as keyword, but theorem, lemma, corollary, proposition are all belong to 'theorem'
    */
-  group: RuleTagName;
+  group: RuleGroupName;
 
   /**
    * 用于匹配的关键字的正则表达式 \
@@ -40,6 +42,13 @@ type MatchRule = {
    * Regular expression used to match the id content in HTML elements
    */
   idRegex: RegExp;
+
+  /**
+   * 将编号数组格式化为标准的字符串 \
+   * @param no 编号数组
+   * @returns 格式化后的字符串，将会替换原有的关键字
+   */
+  format: (no: number[]) => string;
 };
 
 type MatchResult = {
@@ -75,34 +84,43 @@ export const MAX_H_LEVEL = 6;
  * Note that those with tags come first, and those without tags come second
  * @param keyword 关键词，中文或英文
  */
-const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex'>): [MatchRule, MatchRule] => [
-  {
-    ...o,
-    regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
-      ? new RegExp(
-          `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
-          'i'
-        )
-      : new RegExp(
-          `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
-          'i'
-        ),
-    idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
-  },
-  {
-    ...o,
-    regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
-      ? new RegExp(
-          `^[\\s]{0,}(?:\\*\\*|__)?\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
-          'i'
-        )
-      : new RegExp(
-          `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
-          'i'
-        ),
-    idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
-  },
-];
+const createRegex = (o: Omit<MatchRule, 'regex' | 'idRegex' | 'format'>) =>
+  [
+    {
+      ...o,
+      regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
+        ? new RegExp(
+            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+            'i'
+          )
+        : new RegExp(
+            `^[\\s]{0,}(?:\\*\\*|__)?<${o.tag}[^>]*>\\**${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.\\**)?\\**<\\/${o.tag}>(?:\\*\\*|__)?`,
+            'i'
+          ),
+      idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
+      format: (no: number[]) => {
+        const _no = no.join('.').replace(/[0\.]+$/, '');
+        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}>`;
+      },
+    },
+    {
+      ...o,
+      regex: o.keyword.match(/^[a-zA-Z]+$/) // 区分中英文，英文需要\b来匹配单词边界
+        ? new RegExp(
+            `^[\\s]{0,}(?:\\*\\*|__)?\\b${o.keyword}\\b(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+            'i'
+          )
+        : new RegExp(
+            `^[\\s]{0,}(?:\\*\\*|__)?${o.keyword}(?:\\s+\\d+(?:\\.\\d+)*\\.?|\\.)?(?:\\*\\*|__)?`,
+            'i'
+          ),
+      idRegex: new RegExp(`<${o.tag}[^>]*id="([^"]+)"[^>]*>`, 'i'),
+      format: (no: number[]) => {
+        const _no = no.join('.').replace(/[0\.]+$/, '');
+        return `<${o.tag} id="${o.tag}${_no}">${o.keyword} ${_no}</${o.tag}>`;
+      },
+    },
+  ] as MatchRule[];
 
 export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
   keyword: '#'.repeat(i + 1),
@@ -110,6 +128,10 @@ export const MATCH_RULES = Array.from({ length: MAX_H_LEVEL }, (v, i) => ({
   group: 'h',
   regex: new RegExp(`^[\\s]{0,}#{${i + 1}}[\\s]{0,}[0-9.]{0,}`, 'i'),
   idRegex: new RegExp(`<h[1-${MAX_H_LEVEL}][^>]*id="([^"]+)"[^>]*>`, 'i'),
+  format: (no: number[]) => {
+    const _no = no.join('.').replace(/[0\.]+$/, '');
+    return `${'#'.repeat(i + 1)} ${_no}`;
+  },
 })).concat(
   createRegex({ keyword: 'Theorem', tag: 'theorem', group: 'theorem' }),
   createRegex({ keyword: '定理', tag: 'theorem', group: 'theorem' }),
@@ -174,8 +196,8 @@ export const HELP = {
       { noun: 'axiom', rule: `Same as theorem. Numbered independently`, detail: `` },
       {
         noun: 'case',
-        rule: `Same as theorem. Numbered independently in section and proof`,
-        detail: `When in a proof block, the numbering will be independent of external contents. Begin of a proof will be matched by '*proof*' or '_proof_', and end of a proof will be matched by 'Q.E.D.' or '$\\square$'`,
+        rule: `Comes without prefix of section number. Numbered independently in proof`,
+        detail: `If now we enter 'section 2.3', 'case' will be numbered as 'case 1',not 'case 2.3.1'. When in a proof block, the numbering will be independent of external contents. Begin of a proof will be matched by '*proof*' or '_proof_', and end of a proof will be matched by 'Q.E.D.' or '$\\square$'`,
       },
     ],
     exampleMathRule: {
