@@ -47,6 +47,8 @@ export const numberFile = (filePath: string) => {
   let inProof = false;
   let lastGroup = 'h' as GroupName;
 
+  let modificationCount = 0;
+
   const lines = load(filePath).split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -132,7 +134,8 @@ export const numberFile = (filePath: string) => {
     // 更新编号
     lines[i] = line.replace(rule.regex, rule.format(no[rule.group]) + ' ');
     console.log('更新后 ', i, ':', lines[i]);
+    modificationCount++;
   }
-  lines.push('干过了' + new Date().toLocaleString());
+  console.log(`总共改动${modificationCount}处`);
   save(lines.join('\n'), filePath);
 };

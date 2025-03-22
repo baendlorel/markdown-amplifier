@@ -3,6 +3,7 @@
  * @description
  * 依赖于locale、logger
  */
+// TODO 发挥这个文件的文本内容作用，然后删除这个文件
 import chalk from 'chalk';
 import { i } from './locale';
 import { log, table, lflag, br, lerr } from './logger';
@@ -39,13 +40,19 @@ const resolveArgV = () => {
     const p = cb2;
     const b = cb3;
 
-    const _cryption = i('Markdown Ampifier配置，以下为默认值', 'Note config, default values');
+    const _cryption = i(
+      'Markdown Ampifier配置，以下为默认值',
+      'Note config, default values'
+    );
     const _encryptFileName = i('是否加密文件名', 'Whether to encrypt file names');
     const _encryptFolderName = i('是否加密文件夹名', 'Whether to encrypt folder names');
     const _exclude = i('排除的文件或文件夹', 'Excluded files or folders');
     const _directory = i('加解密文件夹', 'En/decrypt folder name');
     const _decrypted = i('包含秘密信息的文件夹', 'Folder that contains secret files');
-    const _encrypted = i('放置加密后文件的文件夹', 'Encrypted file will be put into them');
+    const _encrypted = i(
+      '放置加密后文件的文件夹',
+      'Encrypted file will be put into them'
+    );
 
     const packageJsonConfigExample = `${y(`{`)}
   ...other configs,

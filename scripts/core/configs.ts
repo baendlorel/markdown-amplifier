@@ -3,28 +3,30 @@
  * @description
  * 依赖于locale、utils、logger、argv
  */
-
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import stringWidth from 'string-width';
-import { i, setLocale } from './locale';
-import { splitPath } from './utils';
-import { cb, cb1, ck } from './color';
-import { log, lflag, lbgRed, lgrey, lyellow, lerr, table } from './logger';
-import { PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE } from './consts';
+import { i, setLocale } from '../misc/locale';
+import { cb, cb1, ck } from '../misc/color';
+import { lflag, lgrey, lyellow, lerr, table } from '../misc/logger';
+import { MARC_JSON_EXAMPLE } from '../misc/consts';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 
 export const configs = (() => {
   // * 定义私有变量
 
-  const _maJson = '.marc.json';
+  /**
+   * 核心文件夹名称 \
+   * Core folder name
+   */
+  const MA_DIR = '.ma';
 
   /**
-   * akasha文件名 \
-   * akasha file name
+   * 配置文件名 \
+   * config file name
    */
-  const _akashaJson = '.note-akasha.json' as const;
+  const MA_CONFIG = '.marc.json';
 
   /**
    * 根目录，层层向上查找.marc.json所在的文件夹 \
@@ -49,32 +51,38 @@ export const configs = (() => {
 
   // * 定义私有函数
   // * Private functions
+
+  /**
+   * 以核心文件夹MA_DIR来定位根目录 \
+   * Locate root directory by core folder MA_DIR
+   * @returns
+   */
   const _locateRoot = () => {
     let dir = __dirname;
     let father = path.dirname(dir);
     while (father !== dir) {
-      if (fs.existsSync(path.join(dir, _maJson))) {
-        return dir;
+      if (fs.existsSync(path.join(dir, MA_DIR))) {
+        const stat = fs.statSync(path.join(dir, MA_DIR));
+        if (stat.isDirectory()) {
+          return dir;
+        }
       }
       dir = father;
       father = path.dirname(dir);
     }
-    lbgRed(
-      `加载配置失败。找不到${_maJson}`,
-      `Load Configuration Failed. Cannot find ${_maJson}`
-    );
-    throw new Error(i(`找不到${_maJson}`, `Cannot find ${_maJson}`));
+    return '';
   };
 
   const _loadJson = () => {
-    lgrey(`检测${_maJson}中的配置`, `Checking configs in ${_maJson}`);
-    const configs = require(path.join(_root, _maJson));
+    lgrey(`检测${MA_CONFIG}中的配置`, `Checking configs in ${MA_CONFIG}`);
+    const configs = require(path.join(_root, MA_CONFIG));
     // 定义化简函数
     const messages = [] as string[];
     const mi = (zh: string, en: string) => messages.push(i(zh, en));
 
     if (!configs) {
-      mi(`在${_maJson}中找不到cryption配置`, `Cannot find note in ${_maJson}`);
+      lflag(`在${MA_CONFIG}中找不到cryption配置`, `Cannot find note in ${MA_CONFIG}`);
+      return undefined;
     } else {
       if (configs.encryptFileName !== true && configs.encryptFileName !== false) {
         mi(
@@ -114,14 +122,15 @@ export const configs = (() => {
 
     // 输出错误信息
     if (messages.length > 0) {
-      lbgRed('加载配置失败', 'Load Configuration Failed');
       lerr(messages.join('\n'));
       lflag(
-        `${_maJson}中的配置例子如下：`,
-        `An example in ${_maJson} should be like this :`
+        `${MA_CONFIG}中的配置例子如下：`,
+        `An example in ${MA_CONFIG} should be like this :`
       );
-      console.log(PACKAGEJSON_CRYPTION_CONFIG_EXAMPLE(i));
-      throw new Error(i(`${_maJson}中的cryption配置无效`, `Invalid note in ${_maJson}`));
+      console.log(MARC_JSON_EXAMPLE(i));
+      throw new Error(
+        i(`${MA_CONFIG}中的cryption配置无效`, `Invalid note in ${MA_CONFIG}`)
+      );
     }
 
     return configs;
@@ -153,29 +162,6 @@ export const configs = (() => {
         );
       }
 
-      // // 确认是否忽略了.history-keys文件，没有则加入
-      // if (!lines.some((p) => p === _historyKeys)) {
-      //   lgrey(
-      //     `.gitignore文件并未包含'${_historyKeys}'，添加中...`,
-      //     `It seems .gitignore does not contain '${_historyKeys}'. Adding...`
-      //   );
-      //   fs.appendFileSync(gitigorePath, `\n${_historyKeys}`);
-      //   lgrey(`.gitignore已添加'${_historyKeys}'`, `'${_historyKeys}' is added to .gitignore`);
-      // }
-
-      // 确认是否忽略了.marc.json文件，没有则加入
-      if (!lines.some((p) => p === _akashaJson)) {
-        lgrey(
-          `.gitignore文件并未包含'${_akashaJson}'，添加中...`,
-          `It seems .gitignore does not contain '${_akashaJson}'. Adding...`
-        );
-        fs.appendFileSync(gitigorePath, `\n${_akashaJson}`);
-        lgrey(
-          `.gitignore已添加'${_akashaJson}'`,
-          `'${_akashaJson}' is added to .gitignore`
-        );
-      }
-
       // 确认是否忽略了加密后的文件夹，如果忽略了则删掉
       if (lines.some((p) => p === _directory.encrypted)) {
         lyellow(
@@ -194,6 +180,7 @@ export const configs = (() => {
    * 展示已加载好的配置 \
    * Display loaded configurations
    */
+  // TODO 删除这个函数
   const _display = () => {
     const entries = [
       {
@@ -297,31 +284,52 @@ export const configs = (() => {
     );
   };
 
-  /**
-   * 初始化 \
-   * Initialize
-   */
-  // * 开始加载配置
-  // * Start loading configuration
-  _root = _locateRoot();
-  _raw = _loadJson();
-  _encryptFileName = _raw.encryptFileName;
-  _encryptFolderName = _raw.encryptFolderName;
-  _exclude = _raw.exclude;
-  _directory.decrypted = _raw.directory.decrypted;
-  _directory.encrypted = _raw.directory.encrypted;
-  const localeText = setLocale(_raw.locale) === 'zh' ? '中文' : 'English';
-  lgrey('设置语言为' + localeText, 'Locale is set to ' + localeText);
-  _ensureGitIgnore();
+  const _init = () => {
+    const notInited = () => {
+      lyellow(
+        `尚未初始化，请先在笔记目录下执行ma init`,
+        `Not initialized yet, please run 'ma init' in the note directory first`
+      );
+      process.exit(1);
+    };
+
+    _root = _locateRoot();
+    !_root && notInited();
+
+    _raw = _loadJson();
+    !_raw && notInited();
+
+    _encryptFileName = _raw.encryptFileName;
+    _encryptFolderName = _raw.encryptFolderName;
+    _exclude = _raw.exclude;
+    _directory.decrypted = _raw.directory.decrypted;
+    _directory.encrypted = _raw.directory.encrypted;
+    const localeText = setLocale(_raw.locale) === 'zh' ? '中文' : 'English';
+    lgrey('设置语言为' + localeText, 'Locale is set to ' + localeText);
+    _ensureGitIgnore();
+  };
+
+  _init();
 
   return {
     // * 初始化用
     setKey(key: string) {
       _key = key;
-      lflag('设置密钥', 'Setting key');
-      log.incrIndent();
       lgrey(`密钥为 ${key}`, `Key is set to '${key}'`);
-      log.decrIndent();
+    },
+    /**
+     * 核心文件夹名称 \
+     * Core folder name
+     */
+    get madir() {
+      return MA_DIR;
+    },
+    /**
+     * 配置文件名 \
+     * config file name
+     */
+    get marc() {
+      return MA_CONFIG;
     },
     // * 配置表
     get raw() {
@@ -329,9 +337,6 @@ export const configs = (() => {
     },
     get key() {
       return _key;
-    },
-    get akashaPath() {
-      return path.join(_root, _akashaJson);
     },
     get encryptFileName() {
       return _encryptFileName;
