@@ -37,3 +37,18 @@ export const MARC_JSON_EXAMPLE = (i: any) => {
     ${p(`}`)}
   ${y(`}`)}`;
 };
+
+const INTRODUCTION = (i: any) =>
+  i(
+    `Cryption是为了让git管理的个人笔记、知识库能够更安全地记录秘密信息而编写加密解密工具
+  - 程序会从脚本目录开始往上层逐级搜索markdown-amplifier.json，并将找到的目录定为笔记的根目录
+  - 您可以在markdown-amplifier.json中设置要加密、解密的文件夹（其他配置见下方例子）
+  - 解密文件夹就是在本地编写秘密信息的文件夹，Cryption会自动将其纳入.gitignore中
+  - 加密、解密时，会清空对应的目标文件夹，请注意备份`,
+    `Note is designed to enhance the security of personal notes and knowledge bases managed by Git by providing encryption and decryption capabilities.
+  - The program will start from the script directory and search upward through parent directories for a markdown-amplifier.json file. Once found, that directory will be identified as the root of your notes project.
+  - You can configure the folders to be encrypted and decrypted directly within the markdown-amplifier.json file (see example configuration below).
+  - The decryption folder is where you write and manage your secret information locally. Note will automatically add this folder to .gitignore to prevent it from being committed to your repository.
+  - Warning: When encrypting or decrypting, the corresponding target folder will be cleared. Please ensure you have backups before proceeding.
+`
+  );

@@ -3,16 +3,16 @@
  */
 
 import { Command, Option } from 'commander';
+import chalk from 'chalk';
 import { aligned, cb1, grey } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
 import { findMatch, HELP as HELP_NUMBERER } from '../numberer/rules';
-import chalk from 'chalk';
 import { numberFile } from '../numberer';
 import { configs } from '../core';
 
 export const createCommander = () => {
-  const MAX_WIDTH = 52;
+  const MAX_COL_WIDTH = 52;
 
   const HELP = Object.assign(HELP_CRYPTION, HELP_NUMBERER);
 
@@ -26,7 +26,7 @@ export const createCommander = () => {
       return;
     }
     console.log(`\nExample:`);
-    aligned(examples, [{ index: 'cmd' }, { index: 'comment', maxWidth: MAX_WIDTH }]);
+    aligned(examples, [{ index: 'cmd' }, { index: 'comment', maxWidth: MAX_COL_WIDTH }]);
   };
 
   /**
@@ -97,7 +97,7 @@ export const createCommander = () => {
 
         aligned(ruleTable, [
           { index: 'noun' },
-          { index: 'description', maxWidth: MAX_WIDTH },
+          { index: 'description', maxWidth: MAX_COL_WIDTH },
         ]);
         return;
       }

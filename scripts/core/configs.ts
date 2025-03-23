@@ -5,12 +5,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import chalk from 'chalk';
-import stringWidth from 'string-width';
-import { i, setLocale } from '../misc/locale';
-import { cb, cb1, ck } from '../misc/color';
-import { lflag, lgrey, lyellow, lerr, table } from '../misc/logger';
-import { MARC_JSON_EXAMPLE } from '../misc/consts';
+import { i, setLocale, lflag, lgrey, lyellow, lerr, MARC_JSON_EXAMPLE } from '../misc';
 //// console.log(global.idx === undefined ? (global.idx = 1) : ++global.idx, __filename);
 
 export const configs = (() => {
@@ -174,114 +169,6 @@ export const configs = (() => {
         i(`${_root}下未找到.gitignore文件！`, `Cannot find .gitignore file in ${_root}!`)
       );
     }
-  };
-
-  /**
-   * 展示已加载好的配置 \
-   * Display loaded configurations
-   */
-  // TODO 删除这个函数
-  const _display = () => {
-    const entries = [
-      {
-        key: 'encryptFileName',
-        label: i('加密文件名', 'encryptFileName'),
-        value: _encryptFileName,
-        comment: i(
-          '是否加密文件名，默认为true',
-          'Whether to encrypt file name, default is true'
-        ),
-      },
-      {
-        key: 'encryptFolderName',
-        label: i('加密文件夹名', 'encryptFolderName'),
-        value: _encryptFolderName,
-        comment: i(
-          '是否加密文件夹名，默认为true',
-          'Whether to encrypt folder name, default is true'
-        ),
-      },
-      {
-        key: 'root',
-        label: i(`根目录`, `root`),
-        value: _root,
-        comment: i('笔记的根目录', 'Root directory of the note'),
-      },
-      {
-        key: 'decrypted',
-        label: i(`加密前`, `decrypted`),
-        value: _directory.decrypted,
-        comment: i('要加密的文件夹', 'The folder to be encrypted'),
-      },
-      {
-        key: 'encrypted',
-        label: i(`加密后`, `encrypted`),
-        value: _directory.encrypted,
-        comment: i(
-          '加密后的文件将放在这个文件夹',
-          'Encrypted files will be put in this folder'
-        ),
-      },
-      {
-        key: 'exclude',
-        label: i('忽略', 'exclude'),
-        value: _exclude,
-        comment: i(
-          '要加密的文件夹下，不加密的文件/文件夹',
-          'Folders in decrypted directory will not be encrypted'
-        ),
-      },
-    ];
-
-    // coloredValue
-    const cv = (value: any) => {
-      switch (typeof value) {
-        case 'undefined':
-        case 'boolean':
-          return cb(String(value));
-        case 'number':
-          return chalk.cyan(String(value));
-        case 'string':
-          return chalk.gray(value);
-        case 'object':
-          if (Array.isArray(value)) {
-            if (value.length === 0) {
-              return cb1('[]');
-            }
-
-            let width = 0;
-            for (let i = 0; i < Math.min(15, value.length); i++) {
-              width += stringWidth(value[i]);
-            }
-
-            if (width <= 15) {
-              const v = chalk.grey(`"${value.join(`", "`)}"`);
-              return `${cb1('[')}${v}${cb1(']')}`;
-            } else {
-              const TAB = '  ';
-              const v = chalk.grey(`"${value.join(`",\n${TAB}"`)}"`);
-              return `${cb1('[\n')}${TAB}${v}${cb1('\n]')}`;
-            }
-          } else {
-            return cb1(String(value));
-          }
-        default:
-          return value;
-      }
-    };
-
-    table(
-      entries.map((e) => ({
-        label: ck(e.label.replace(/^[\w]/, (a) => a.toUpperCase())),
-        value: e.key === 'key' ? chalk.red.underline(e.value) : cv(e.value),
-        comment: chalk.rgb(122, 154, 96)(e.comment),
-      })),
-      [
-        { index: 'label', alias: chalk.white(i('配置项', 'ConfigItem')) },
-        { index: 'value', alias: chalk.white(i('值', 'Value')) },
-        { index: 'comment', alias: chalk.white(i('注释', 'Comment')) },
-      ]
-    );
   };
 
   const _init = () => {
