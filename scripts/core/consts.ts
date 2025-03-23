@@ -1,4 +1,16 @@
-import { ck, cv, cb1, cb2, cb3, ccms } from './color';
+import { ck, cv, cb1, cb2, cb3, ccms } from '../misc';
+
+/**
+ * 核心文件夹名称 \
+ * Core folder name
+ */
+export const MA_DIR = '.ma';
+
+/**
+ * 配置文件名 \
+ * config file name
+ */
+export const MA_RC = '.marc.json';
 
 /**
  * 获取MA在markdown-amplifier.json配置示例，需要注入语言切换器  \
