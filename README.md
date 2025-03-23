@@ -6,14 +6,16 @@
 
 ```json
 {
-  "note": {
+  "locale": "zh",
+  "crypt": {
     "encryptFileName": true,
     "encryptFolderName": true,
     "exclude": [],
-    "directory": {
+    "dir": {
       "decrypted": "decrypted",
       "encrypted": "encrypted"
     }
-  }
+  },
+  "number": {}
 }
 ```
