@@ -1,0 +1,13 @@
+{
+  "locale": "zh",
+  "crypt": {
+    "encryptFileName": true,
+    "encryptFolderName": true,
+    "exclude": [],
+    "dir": {
+      "decrypted": "decrypted",
+      "encrypted": "encrypted"
+    }
+  },
+  "number": {}
+}

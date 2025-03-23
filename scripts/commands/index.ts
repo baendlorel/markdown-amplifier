@@ -1,21 +1,19 @@
 /**
  * @name Command
  */
-
-import { Command, Option } from 'commander';
 import chalk from 'chalk';
-import { aligned, cb1, grey } from '../misc';
+import { Command, Option } from 'commander';
+import { aligned, cb1, grey, lgreen, lyellow } from '../misc';
 import { encryption, decryption } from '../cryption';
 import { HELP as HELP_CRYPTION } from '../cryption/meta';
 import { findMatch, HELP as HELP_NUMBERER } from '../numberer/rules';
 import { numberFile } from '../numberer';
 import { configs } from '../core';
+import { init } from '../init';
 
 export const createCommander = () => {
   const MAX_COL_WIDTH = 52;
-
   const HELP = Object.assign(HELP_CRYPTION, HELP_NUMBERER);
-
   const COMMANDS = [] as Command[];
 
   const program = new Command();
@@ -38,11 +36,24 @@ export const createCommander = () => {
    */
   const add = (name: string, argument?: string) => {
     const newCommand = new Command(name);
+    COMMANDS.push(newCommand);
     if (argument) {
       newCommand.argument(argument);
     }
-    newCommand.on('--help', () => showExample(HELP[name]?.example));
-    COMMANDS.push(newCommand);
+    newCommand
+      .hook('preAction', (thisCommand, actionCommand) => {
+        configs.init();
+
+        // 初始化失败的话，除了init、help以外所有命令不可使用
+        if (!configs.initialized && actionCommand.name() !== 'init') {
+          lyellow(
+            `尚未初始化，请先在笔记目录下运行 'ma init'`,
+            `Not initialized yet, please run 'ma init' in the note directory first`
+          );
+          process.exit(1);
+        }
+      })
+      .on('--help', () => showExample(HELP[name]?.example));
     return newCommand;
   };
 
@@ -119,6 +130,18 @@ export const createCommander = () => {
       // 正式工作
       numberFile(options.dir);
       return;
+    });
+
+  add('init')
+    .description('Initialize a markdown note directory')
+    .action(() => {
+      if (configs.initialized) {
+        lyellow('已初始化过，无需重复操作', 'Already initialized, no need to repeat');
+        return;
+      }
+      if (init()) {
+        lgreen('初始化完成', 'Initialization completed');
+      }
     });
 
   add('test')

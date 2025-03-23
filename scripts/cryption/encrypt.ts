@@ -1,17 +1,21 @@
 import fs from 'fs';
 import path from 'path';
-import { configs, load, save, getAllFiles, log, lgrey, lgreen, lflag, br, lerr } from '../misc';
+import { load, save, getAllFiles, log, lgrey, lgreen, lflag, br, lerr } from '../misc';
 import { cryptPath, relaPath } from './crypt-path';
 import { aes, xor } from './cryptor';
+import { configs } from '../core';
 
-const { decrypted, encrypted } = configs.directory;
+const { decrypted, encrypted } = configs.dir;
 
 const encryptFile = (originPath: string) => {
   const encryptedPath = cryptPath(originPath, decrypted, encrypted, xor.encrypt);
   // 日志用变量
   lgrey(
     `加密 ${relaPath(decrypted, originPath)} => ${relaPath(encrypted, encryptedPath)}`,
-    `Encrypting ${relaPath(decrypted, originPath)} => ${relaPath(encrypted, encryptedPath)}`
+    `Encrypting ${relaPath(decrypted, originPath)} => ${relaPath(
+      encrypted,
+      encryptedPath
+    )}`
   );
   // 加密并保存
   const origin = load(originPath);
@@ -27,7 +31,10 @@ export const encryption = (key: string) => {
   log.incrIndent();
 
   const files = getAllFiles(path.join(configs.root, decrypted), configs.excludes);
-  lgrey(`检测到${files.length}个待加密文件`, `Detected ${files.length} file(s) to be ecrypted`);
+  lgrey(
+    `检测到${files.length}个待加密文件`,
+    `Detected ${files.length} file(s) to be ecrypted`
+  );
 
   try {
     if (fs.existsSync(encrypted)) {

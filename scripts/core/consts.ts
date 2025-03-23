@@ -11,6 +11,11 @@ export const MA_DIR = '.ma';
  * config file name
  */
 export const MA_RC = '.marc.json';
+/**
+ * 初始化用的配置文件名 \
+ * Configuration file name for initialization
+ */
+export const MA_RC_DEFAULT = '.marc.default.json';
 
 /**
  * 获取MA在markdown-amplifier.json配置示例，需要注入语言切换器  \

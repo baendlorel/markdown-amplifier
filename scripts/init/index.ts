@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { lerr, lgrey, log } from '../misc';
-import { MA_RC, MA_DIR } from '../core';
+import { lerr, lgrey, load, save } from '../misc';
+import { MA_RC, MA_DIR, MA_RC_DEFAULT, loadRc } from '../core';
 
 // TODO 编写初始化脚本，创建文件夹、初始化数据库等
 /**
@@ -16,7 +16,9 @@ export const init = (): boolean => {
   const madir = path.join(cwd, MA_DIR);
   if (fs.existsSync(madir)) {
     const stat = fs.statSync(madir);
-    if (!stat.isDirectory()) {
+    if (stat.isDirectory()) {
+      lgrey(`.ma文件夹已存在`, `.ma folder already exists`);
+    } else {
       lerr(
         `已存在同名文件而非文件夹：${madir}，请重命名或删除它`,
         `A file with the same name already exists: ${madir}, please rename or delete it`
@@ -34,11 +36,19 @@ export const init = (): boolean => {
     const stat = fs.statSync(marc);
     if (stat.isDirectory()) {
       lerr(
-        `已存在同名文件而非文件夹：${madir}，请重命名或删除它`,
+        `已存在同名文件而非文件夹：${madir}，请将其重命名或删除`,
         `A file with the same name already exists: ${madir}, please rename or delete it`
       );
       return false;
+    } else if (loadRc(cwd)) {
+      lgrey(`配置文件校验成功：${marc}`, `Configuration validated: ${marc}`);
+    } else {
+      // 校验过程会自行输出错误内容，此处无需再输出，返回即可
+      return false;
     }
+  } else {
+    const defaultConfig = load(path.join(__dirname, MA_RC_DEFAULT));
+    save(defaultConfig, marc);
   }
   return true;
 };
