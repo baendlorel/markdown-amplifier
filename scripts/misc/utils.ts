@@ -8,9 +8,6 @@ import fs from 'fs';
 import path from 'path';
 import stringWidth from 'string-width';
 
-export const tab = (t: TemplateStringsArray, ...values: any[]) =>
-  values.reduce((result, str, i) => result + t[i] + String(str), '  ') + t[t.length - 1];
-
 /**
  * 按实际宽度补空格
  * @param text
@@ -18,19 +15,23 @@ export const tab = (t: TemplateStringsArray, ...values: any[]) =>
  * @param direction
  * @returns
  */
-export const padAlign = (text: string, length: number, direction: 'left' | 'right' = 'right') => {
+export const padAlign = (
+  text: string,
+  length: number,
+  direction: 'left' | 'right' = 'right'
+) => {
   const width = stringWidth(text);
   if (width > length) {
     console.log('padAlign exceed', { text, width, length });
     return text;
   }
-  if (direction === 'left') {
-    return ' '.repeat(length - width) + text; // 按实际宽度补空格
+  switch (direction) {
+    case 'left':
+      return ' '.repeat(length - width) + text; // 按实际宽度补空格
+    case 'right':
+    default:
+      return text + ' '.repeat(length - width); // 按实际宽度补空格
   }
-  if (direction === 'right') {
-    return text + ' '.repeat(length - width); // 按实际宽度补空格
-  }
-  throw new Error("direction should be 'left' or 'right'");
 };
 
 /**

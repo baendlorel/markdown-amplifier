@@ -18,8 +18,8 @@ type Logger = ((zh: string, en?: string) => void) & {
 };
 
 let indent = '';
-let padLeft = ' ';
-let padRight = ' ';
+let padLeft = '';
+let padRight = '';
 let gap = ' ';
 
 // padding i18n
@@ -51,14 +51,17 @@ export const lred = (zh: string, en?: string) => l(indent + chalk.red(pdi(zh, en
 export const lbgRed = (zh: string, en?: string) => l(indent + chalk.bgRed(pdi(zh, en)));
 
 export const lgreen = (zh: string, en?: string) => l(indent + chalk.green(pdi(zh, en)));
-export const lbgGreen = (zh: string, en?: string) => l(indent + chalk.bgGreen(pdi(zh, en)));
+export const lbgGreen = (zh: string, en?: string) =>
+  l(indent + chalk.bgGreen(pdi(zh, en)));
 
-export const lsucc = (zh: string, en?: string) => l(indent + chalk.rgb(25, 135, 84)(pdi(zh, en)));
+export const lsucc = (zh: string, en?: string) =>
+  l(indent + chalk.rgb(25, 135, 84)(pdi(zh, en)));
 export const lbgSucc = (zh: string, en?: string) =>
   l(indent + chalk.bgRgb(25, 135, 84).white(pdi(zh, en)));
 
 export const lyellow = (zh: string, en?: string) => l(indent + chalk.yellow(pdi(zh, en)));
-export const lbgYellow = (zh: string, en?: string) => l(indent + chalk.yellow(pdi(zh, en)));
+export const lbgYellow = (zh: string, en?: string) =>
+  l(indent + chalk.yellow(pdi(zh, en)));
 
 export const lgrey = (zh: string, en?: string) => l(indent + chalk.grey(pdi(zh, en)));
 export const lbgGrey = (zh: string, en?: string) => l(indent + chalk.bgGrey(pdi(zh, en)));
@@ -71,7 +74,7 @@ export const lflag = (zh: string, en?: string) =>
   l(chalk.bgRgb(65, 65, 65).white(' Note ') + chalk.bgRgb(23, 53, 137)(pdi(zh, en)));
 
 export const lerr = (zh: string, en?: string, title?: string) => {
-  const header = ` ${title ?? 'Note Error'} `;
+  const header = ` ${title ?? 'MA Error'} `;
   const content = i(zh, en ?? zh);
   l(
     chalk.bgRed(header) +
@@ -81,7 +84,8 @@ export const lerr = (zh: string, en?: string, title?: string) => {
 
 // # 表格函数
 const nm = (o: { index: string; alias?: string }) => o.alias ?? o.index;
-const pad = (text: string, length: number) => text + ' '.repeat(length - stringWidth(text));
+const pad = (text: string, length: number) =>
+  text + ' '.repeat(length - stringWidth(text));
 const joinRow = (row: string[], colWidth: number[]) => {
   if (row.some((t) => t.includes('\n'))) {
     // 把本行每一列按换行符分割
@@ -92,7 +96,9 @@ const joinRow = (row: string[], colWidth: number[]) => {
     let inlineRows = [] as string[];
     for (let i = 0; i < maxLineCount; i++) {
       // linedRow[0-length][i] pad to colWidth
-      const curInlineRow = linedRow.map((lr, colIndex) => pad(lr[i] ?? '', colWidth[colIndex]));
+      const curInlineRow = linedRow.map((lr, colIndex) =>
+        pad(lr[i] ?? '', colWidth[colIndex])
+      );
       inlineRows.push(`${padLeft}${curInlineRow.join(gap)}${padRight}`);
     }
     return inlineRows.join('\n');

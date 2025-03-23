@@ -1,4 +1,4 @@
-# Markdown Note Amplifier
+# Markdown Amplifier
 
 This program aims to amplify your markdown notes by encrypting secrets, numbering sections and other functions.
 
