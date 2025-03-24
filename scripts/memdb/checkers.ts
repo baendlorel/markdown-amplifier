@@ -14,9 +14,9 @@ export const assertValidTableName = (tableName: string) => {
  * Ensure that the field configuration array is valid
  * @param fieldOptions 待检测配置
  */
-export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
+export const assureFieldOptionArray = (fieldOptions: FieldOption[]) => {
   const fields = [] as string[];
-  const types = [] as string[];
+  const types = [] as FieldType[];
   const defaults = [] as DefaultGetter[];
   const nullables = [] as boolean[];
   const indexes = [] as string[];

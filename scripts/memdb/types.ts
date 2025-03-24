@@ -1,4 +1,4 @@
-export type Value = string | number | boolean | null | undefined;
+export type Value = string | number | boolean | Date | null;
 
 export const FILED_TYPE = ['string', 'number', 'boolean', 'Date'] as const;
 

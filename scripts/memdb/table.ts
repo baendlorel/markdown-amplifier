@@ -1,6 +1,13 @@
 import { decompressSync } from './brotli';
-import { assertValidFieldOptionArray, assertValidTableName } from './checkers';
-import { Value, Row, MemDBTableCreateOption, DefaultGetter, RowObject } from './types';
+import { assureFieldOptionArray, assertValidTableName } from './checkers';
+import {
+  Value,
+  Row,
+  MemDBTableCreateOption,
+  DefaultGetter,
+  RowObject,
+  FieldType,
+} from './types';
 
 export class DBTable {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
@@ -18,7 +25,7 @@ export class DBTable {
    * 字段类型，包含string、number、boolean、Date \
    * Field types, including string, number, boolean, Date
    */
-  private types: string[];
+  private types: FieldType[];
 
   /**
    * 标记是否可为空 \
@@ -77,7 +84,7 @@ export class DBTable {
       );
     }
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
-      assertValidFieldOptionArray(Array.from(o.fields));
+      assureFieldOptionArray(Array.from(o.fields));
 
     this.fields = fields;
     this.types = types;
@@ -181,7 +188,7 @@ export class DBTable {
    * @param data 局部数据
    * @param condition 条件（已校验）
    */
-  private filter(data: Row[], condition: RowObject<typeof this.fields>) {
+  private filter(data: Row[], condition: Partial<RowObject<typeof this.fields>>) {
     // 能快一点是一点
     // The faster, the better
     if (data.length === 0) {
@@ -214,6 +221,56 @@ export class DBTable {
     return result;
   }
 
+  /**
+   * 如果没给值（为undefined），那么先看默认值再看是否可为空 \
+   * 如果为null，那么只看是否可为空 \
+   * 如果为其他值，那么对比类型是否符合 \
+   * If no value is given (undefined), first check the default value and then see if it can be null \
+   * If it is null, only check if it is nullable \
+   * If it is other value, compare the type to see if it matches
+   * @param value
+   * @param i
+   * @returns
+   */
+  private assureValue(value: Value | undefined, i: number) {
+    // 看看是否没给这个值
+    if (value === undefined) {
+      // 看看是否有默认值
+      const d = this.defaults[i];
+      if (d) {
+        if (typeof d === 'function') {
+          return d();
+        } else {
+          return d;
+        }
+      }
+      // 没有默认值，看看允不允许为空
+      if (this.nullables[i]) {
+        return null;
+      }
+      throw new Error(`[MemDB] Field ${this.fields[i]} is not nullable`);
+    }
+
+    if (value === null && this.nullables[i]) {
+      return null;
+    }
+
+    // 类型校验
+    if (
+      typeof value !== this.types[i] &&
+      this.types[i] === 'Date' &&
+      !(value instanceof Date)
+    ) {
+      throw new Error(
+        `[MemDB] Field ${this.fields[i]} type mismatch, expected '${
+          this.types[i]
+        }', got '${typeof value}'`
+      );
+    }
+
+    return value;
+  }
+
   find(
     condition: Partial<RowObject<typeof this.fields>>
   ): RowObject<typeof this.fields>[] {
@@ -222,35 +279,65 @@ export class DBTable {
     }
     // 校验字段是否可用
     // Check if the fields are available
-    const fields = Object.keys(condition);
-    if (fields.some((k) => !this.fields.includes(k))) {
-      throw new Error(`[MemDB] Invalid field detected. fields: ${fields.join()}`);
+    const condFields = Object.keys(condition);
+    if (condFields.length === 0) {
+      throw new Error('[MemDB] Condition cannot be empty');
+    }
+    if (condFields.some((k) => !this.fields.includes(k))) {
+      throw new Error(`[MemDB] Invalid field detected. fields: ${condFields.join()}`);
+    }
+
+    // 校验condition字段是否符合设定的字段类型
+    // Check if the condition fields are of the correct type
+    for (let i = 0; i < condFields.length; i++) {
+      const idx = this.fieldIndex[condFields[i]];
+      const v = condition[condFields[i]];
+      const t = this.types[idx];
+      if (!this.nullables[idx] && v === null) {
+        throw new Error(`[MemDB] '${condFields[i]}' cannot be null`);
+      }
+
+      if (t === 'Date' && !(v instanceof Date)) {
+        throw new Error(
+          `[MemDB] Field ${
+            condFields[i]
+          } type mismatch, expected 'Date', got '${typeof v}'`
+        );
+      }
+
+      if (typeof v !== t) {
+        throw new Error(
+          `[MemDB] Field type mismatch, expected '${v}', got '${typeof v}'`
+        );
+      }
     }
 
     // 先试试唯一索引，能找到就轻松了
     // Try unique indexes first, if found, return directly
-    const uniqueFields = fields.filter((k) => this.uniqueMap.has(k));
-    if (uniqueFields.length > 0) {
-      const uniqueValueMap = this.uniqueMap.get(uniqueFields[0]) as Map<Value, Row>;
-      const vKey = condition[uniqueFields[0]];
-      const row = uniqueValueMap.get(vKey);
-      if (row) {
-        return this.filter([row], condition);
-      } else {
-        return [];
+    const uniques = condFields.filter((k) => this.uniqueMap.has(k));
+    if (uniques.length > 0) {
+      for (let i = 0; i < uniques.length; i++) {
+        const m = this.uniqueMap.get(uniques[i]) as Map<Value, Row>;
+        const vkey = condition[uniques[i]] as Value;
+        const row = m.get(vkey);
+        if (row) {
+          return this.filter([row], condition);
+        }
       }
+      // 走完了说明没找到，其实说明就没有了
+      return [];
     }
 
     // 再试普通索引
     // Try the normal indexes
-    const indexFields = fields.filter((k) => this.indexMap.has(k));
-    if (indexFields.length > 0) {
+    const indexes = condFields.filter((k) => this.indexMap.has(k));
+    if (indexes.length > 0) {
       let shortestRows = [] as Row[];
-      for (let i = 0; i < indexFields.length; i++) {
+      for (let i = 0; i < indexes.length; i++) {
         // 根据字段indexValueMaps[i]找到了此字段索引映射，看看有没有符合的数据行
         // Found the index map of by field indexValueMaps[i], see if there are any matching data rows
-        const map = this.indexMap.get(indexFields[i]) as Map<Value, Row[]>;
-        const rows = map.get(condition[indexFields[i]]);
+        const m = this.indexMap.get(indexes[i]) as Map<Value, Row[]>;
+        const rows = m.get(condition[indexes[i]] as Value);
         if (!rows || rows.length === 0) {
           return [];
         }
@@ -268,12 +355,10 @@ export class DBTable {
     return this.filter(this.data, condition);
   }
 
-  private validRow(row: Partial<RowObject<typeof this.fields>>) {}
-
   insert(row: Partial<RowObject<typeof this.fields>>) {
     for (let i = 0; i < this.fields.length; i++) {
       // 逐个字段校验
-      const value = row[this.fields[i]];
+      const value = this.assureValue(row[this.fields[i]], i);
     }
   }
 
