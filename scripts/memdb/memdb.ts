@@ -1,14 +1,24 @@
 import { decompressSync } from './brotli';
 
-type Value = string | number;
+type Value = string | number | boolean | null | undefined;
+type Row = Value[];
+
+type MemDBCreateOption = {
+  fields: { name: string; default?: Value | (() => Value) }[];
+  indexes?: string[];
+  uniqueIndexes?: string[];
+};
 
 export class DBTable {
   save: (dbFilePath: string) => void;
 
   /**
-   * 字段
+   * 字段，本可以写成构造器里那样的配置数组，但由于要用到typeof this.fields，所以只能这样写了 \
+   * Fields, could be written as a configuration array in the constructor, but because 'typeof this.fields' is used, there is no other way
    */
   private fields: string[];
+
+  private defaults: (Value | (() => Value))[];
 
   /**
    * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
@@ -19,29 +29,53 @@ export class DBTable {
   /**
    * 数据
    */
-  private data: Value[][];
+  private data: Row[];
 
   /**
    * Map<索引字段名,Map<索引字段值，多个数据行>> \
    * Map<Index Field Name, Map<Index Field Value, Data Rows>>
    */
-  private indexMap: Map<string, Map<Value, Value[][]>>;
+  private indexMap: Map<string, Map<Value, Row[]>>;
 
   /**
    * Map<索引字段名,Map<索引字段值，数据行>> \
    * Map<Index Field Name, Map<Index Field Value, Data Row>>
    */
-  private uniqueMap: Map<string, Map<Value, Value[]>>;
+  private uniqueMap: Map<string, Map<Value, Row>>;
 
-  constructor(o: any) {
-    this.fields = o.fields;
-    this.data = o.data;
+  constructor(o: MemDBCreateOption) {
+    for (let i = 0; i < o.fields.length; i++) {
+      this.fields[i] = o.fields[i].name;
+    }
+    this.data = [];
     this.fieldIndex = {};
     for (let i = 0; i < o.fields.length; i++) {
-      this.fieldIndex[o.fields[i]] = i;
+      this.fieldIndex[o.fields[i].name] = i;
     }
     this.indexMap = new Map();
     this.uniqueMap = new Map();
+  }
+
+  /**
+   * 初始化索引映射 \
+   * 把索引字段转换为索引字段在fields中的位置 \
+   * Initialize index mapping \
+   * Convert index fields to their positions in fields
+   * @param map 可以是indexMap或者uniqueMap
+   * @param fields 要初始化的字段列表
+   * @returns 从字段名到字段在fields中的位置的映射
+   */
+  private initIndexMap(
+    map: Map<string, Map<Value, Row[]>> | Map<string, Map<Value, Row>>,
+    fields: (typeof this.fields)[number][]
+  ) {
+    const iti = {} as { [k in (typeof this.fields)[number]]: number };
+    for (let i = 0; i < fields.length; i++) {
+      const idx = fields[i];
+      iti[idx] = this.fields.findIndex((f) => f === idx);
+      map.set(idx, new Map());
+    }
+    return iti;
   }
 
   private initIndexes(fields: (typeof this.fields)[number][]) {
@@ -50,16 +84,7 @@ export class DBTable {
       throw new Error('[MemDB] Index field not found in fields');
     }
 
-    /**
-     * 把索引字段转换为索引字段在fields中的位置 \
-     * Convert index fields to their positions in fields
-     */
-    const iti = {} as { [k in (typeof this.fields)[number]]: number };
-    for (let i = 0; i < fields.length; i++) {
-      const idx = fields[i];
-      iti[idx] = this.fields.findIndex((f) => f === idx);
-      this.indexMap.set(idx, new Map());
-    }
+    const iti = this.initIndexMap(this.indexMap, fields);
 
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
@@ -68,11 +93,11 @@ export class DBTable {
       for (let j = 0; j < fields.length; j++) {
         // 上面已经初始化过，这里一定是有的
         // As initialized above, 'get' must return a no undefined value here
-        const indexValueMap = this.indexMap.get(fields[j]) as Map<Value, Value[][]>;
+        const indexValueMap = this.indexMap.get(fields[j]) as Map<Value, Row[]>;
         const vKey = row[iti[fields[j]]];
         let rows = indexValueMap.get(vKey);
         if (!rows) {
-          rows = [] as Value[][];
+          rows = [] as Row[];
           indexValueMap.set(vKey, []);
         }
         rows.push(row);
@@ -86,16 +111,7 @@ export class DBTable {
       throw new Error('[MemDB] Index field not found in fields');
     }
 
-    /**
-     * 把索引字段转换为索引字段在fields中的位置 \
-     * Convert index fields to their positions in fields
-     */
-    const iti = {} as { [k in (typeof this.fields)[number]]: number };
-    for (let i = 0; i < fields.length; i++) {
-      const idx = fields[i];
-      iti[idx] = this.fields.findIndex((f) => f === idx);
-      this.uniqueMap.set(idx, new Map());
-    }
+    const iti = this.initIndexMap(this.indexMap, fields);
 
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
@@ -104,7 +120,7 @@ export class DBTable {
       for (let j = 0; j < fields.length; j++) {
         // 上面已经初始化过，这里一定是有的
         // As initialized above, 'get' must return a no undefined value here
-        const uniqueValueMap = this.uniqueMap.get(fields[j]) as Map<Value, Value[]>;
+        const uniqueValueMap = this.uniqueMap.get(fields[j]) as Map<Value, Row>;
         const vKey = row[iti[fields[j]]];
         // 唯一索引不能有重复数据
         // Unique indexes must not have duplicated data
@@ -124,10 +140,7 @@ export class DBTable {
    * @param data 局部数据
    * @param condition 条件（已校验）
    */
-  private filter(
-    data: Value[][],
-    condition: { [k in (typeof this.fields)[number]]: Value }
-  ) {
+  private filter(data: Row[], condition: { [k in (typeof this.fields)[number]]: Value }) {
     // 能快一点是一点
     // The faster, the better
     if (data.length === 0) {
@@ -135,7 +148,7 @@ export class DBTable {
     }
 
     const fields = Object.keys(condition);
-    const result = [] as Value[][];
+    const result = [] as Row[];
     for (let i = 0; i < data.length; i++) {
       let match = true;
       for (let j = 0; j < fields.length; j++) {
@@ -153,7 +166,7 @@ export class DBTable {
     return result;
   }
 
-  find(condition: { [k in (typeof this.fields)[number]]: Value }): Value[][] {
+  find(condition: { [k in (typeof this.fields)[number]]: Value }): Row[] {
     if (!condition || typeof condition !== 'object') {
       throw new Error('[MemDB] Condition must be an object with fields and values');
     }
@@ -168,7 +181,7 @@ export class DBTable {
     // Try unique indexes first, if found, return directly
     const uniqueFields = fields.filter((k) => this.uniqueMap.has(k));
     if (uniqueFields.length > 0) {
-      const uniqueValueMap = this.uniqueMap.get(uniqueFields[0]) as Map<Value, Value[]>;
+      const uniqueValueMap = this.uniqueMap.get(uniqueFields[0]) as Map<Value, Row>;
       const vKey = condition[uniqueFields[0]];
       const row = uniqueValueMap.get(vKey);
       if (row) {
@@ -180,21 +193,23 @@ export class DBTable {
 
     // 再试普通索引
     // Try the normal indexes
-    const indexValueMaps = fields.filter((k) => this.indexMap.has(k));
-    if (indexValueMaps.length > 0) {
-      let shortestRows = [] as Value[][];
-      for (let i = 0; i < indexValueMaps.length; i++) {
+    const indexFields = fields.filter((k) => this.indexMap.has(k));
+    if (indexFields.length > 0) {
+      let shortestRows = [] as Row[];
+      for (let i = 0; i < indexFields.length; i++) {
         // 根据字段indexValueMaps[i]找到了此字段索引映射，看看有没有符合的数据行
         // Found the index map of by field indexValueMaps[i], see if there are any matching data rows
-        const map = this.indexMap.get(indexValueMaps[i]) as Map<Value, Value[][]>;
-        const rows = map.get(condition[indexValueMaps[i]]);
-        if (!rows) {
+        const map = this.indexMap.get(indexFields[i]) as Map<Value, Row[]>;
+        const rows = map.get(condition[indexFields[i]]);
+        if (!rows || rows.length === 0) {
           return [];
         }
         if (rows.length < shortestRows.length || shortestRows.length === 0) {
           shortestRows = rows;
         }
       }
+      // 从最小行数组开始找，以求最快速度
+      // Searching from the shortest rows array for the fastest speed
       return this.filter(shortestRows, condition);
     }
 
@@ -215,7 +230,7 @@ export class DBTable {
     } catch (error) {
       console.log('Failed to load DBTable from file:', dbFilePath);
       console.error(error);
-      return new DBTable({ fields: [], data: [], indexes: [] });
+      return new DBTable({ fields: [], indexes: [] });
     }
   }
 }
