@@ -7,6 +7,7 @@ import {
   DefaultGetter,
   RowObject,
   FieldType,
+  FieldTypeMap,
 } from './types';
 
 export class DBTable {
@@ -52,6 +53,12 @@ export class DBTable {
   private isAI: boolean;
 
   /**
+   * 自增主键到几了 \
+   * Current auto-increment primary key
+   */
+  private autoIncrementId: number;
+
+  /**
    * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
    * Get the index of a field, used to get the value of this field from a row
    */
@@ -75,6 +82,9 @@ export class DBTable {
   private uniqueMap: Map<string, Map<Value, Row>>;
 
   constructor(o: MemDBTableCreateOption) {
+    this.autoIncrementId = 0;
+    this.data = [];
+
     assertValidTableName(o.tableName);
     this.name = o.tableName;
 
@@ -92,16 +102,14 @@ export class DBTable {
     this.nullables = nullables;
     this.pk = pk;
     this.isAI = isAI;
-
-    this.data = [];
-    this.fieldIndex = {};
-    for (let i = 0; i < o.fields.length; i++) {
-      this.fieldIndex[o.fields[i].name] = i;
-    }
     this.indexMap = new Map();
     this.uniqueMap = new Map();
     this.initIndexes(indexes);
     this.initUniques(uniques);
+    this.fieldIndex = {};
+    for (let i = 0; i < o.fields.length; i++) {
+      this.fieldIndex[o.fields[i].name] = i;
+    }
   }
 
   /**
@@ -233,6 +241,11 @@ export class DBTable {
    * @returns
    */
   private assureValue(value: Value | undefined, i: number) {
+    // 如果是自增主键，那么不管value给的是多少，都以自增值覆盖
+    if (this.isAI && i === this.pk) {
+      return ++this.autoIncrementId;
+    }
+
     // 看看是否没给这个值
     if (value === undefined) {
       // 看看是否有默认值
@@ -355,11 +368,39 @@ export class DBTable {
     return this.filter(this.data, condition);
   }
 
-  insert(row: Partial<RowObject<typeof this.fields>>) {
+  // insert(row: Partial<RowObject<typeof this.fields>>) {
+  insert(
+    row: Partial<{
+      [key in (typeof this.fields)[number]]: FieldTypeMap[(typeof this.types)[number]];
+    }>
+  ) {
+    const newRow = [] as Row;
     for (let i = 0; i < this.fields.length; i++) {
       // 逐个字段校验
-      const value = this.assureValue(row[this.fields[i]], i);
+      newRow[i] = this.assureValue(row[this.fields[i]], i);
+
+      // 校验是否有重复的唯一索引
+      // Check for duplicate unique indexes
+      if (this.uniqueMap.has(this.fields[i])) {
+        const m = this.uniqueMap.get(this.fields[i]) as Map<Value, Row>;
+        if (m.has(newRow[i])) {
+          throw new Error(
+            `[MemDB] Duplicate unique value detected, field:${this.fields[i]} valueKey: ${newRow[i]}`
+          );
+        } else {
+          m.set(newRow[i], newRow);
+        }
+      }
+
+      // 添加索引
+      // Add indexes
+      if (this.indexMap.has(this.fields[i])) {
+        const m = this.indexMap.get(this.fields[i]) as Map<Value, Row[]>;
+        let rows = m.get(newRow[i]);
+        rows ? rows.push(newRow) : m.set(newRow[i], [newRow]);
+      }
     }
+    this.data.push(newRow);
   }
 
   static from(dbFilePath: string): DBTable {
@@ -382,6 +423,7 @@ export class DBTable {
     console.log('defaults', this.defaults);
     console.log('indexes ', this.indexMap.keys());
     console.log('uniques ', this.uniqueMap.keys());
+    console.log('data    ', this.data);
 
     // console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
   }
