@@ -1,10 +1,12 @@
 import { decompressSync } from './brotli';
 import { assertValidFieldOptionArray, assertValidTableName } from './checkers';
-import { Value, Row, MemDBTableCreateOption, DefaultGetter } from './types';
+import { Value, Row, MemDBTableCreateOption, DefaultGetter, RowObject } from './types';
 
 export class DBTable {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   save: (dbFilePath: string) => void;
+
+  private name: string;
 
   /**
    * 字段，本可以写成构造器里那样的配置数组，但由于要用到typeof this.fields，所以只能这样写了 \
@@ -29,10 +31,6 @@ export class DBTable {
    * Field default value or default value getter function
    */
   private defaults: DefaultGetter[];
-
-  private indexes: string[];
-
-  private uniques: string[];
 
   /**
    * 代表主键在fields的下标 \
@@ -71,14 +69,16 @@ export class DBTable {
 
   constructor(o: MemDBTableCreateOption) {
     assertValidTableName(o.tableName);
+    this.name = o.tableName;
+
     if (!Array.isArray(o.fields)) {
       throw new Error(
         `[MemDB] Expected 'fields' to be an array, but got '${typeof o.fields}'`
       );
     }
-
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
       assertValidFieldOptionArray(Array.from(o.fields));
+
     this.fields = fields;
     this.types = types;
     this.defaults = defaults;
@@ -181,7 +181,7 @@ export class DBTable {
    * @param data 局部数据
    * @param condition 条件（已校验）
    */
-  private filter(data: Row[], condition: { [k in (typeof this.fields)[number]]: Value }) {
+  private filter(data: Row[], condition: RowObject<typeof this.fields>) {
     // 能快一点是一点
     // The faster, the better
     if (data.length === 0) {
@@ -189,11 +189,12 @@ export class DBTable {
     }
 
     const fields = Object.keys(condition);
-    const result = [] as Row[];
+    const result = [] as RowObject<typeof this.fields>[];
     for (let i = 0; i < data.length; i++) {
+      const d = data[i];
       let match = true;
       for (let j = 0; j < fields.length; j++) {
-        if (data[i][this.fieldIndex[fields[j]]] !== condition[fields[j]]) {
+        if (d[this.fieldIndex[fields[j]]] !== condition[fields[j]]) {
           // 这一行不符合
           // This row does not match
           match = false;
@@ -201,13 +202,21 @@ export class DBTable {
         }
       }
       if (match) {
-        result.push(data[i]);
+        // 这里要把数据组合成对象数组
+        // Here, the data must be combined into an array of objects
+        const row = {} as RowObject<typeof this.fields>;
+        for (let k = 0; k < this.fields.length; k++) {
+          row[this.fields[k]] = d[k];
+        }
+        result.push(row);
       }
     }
     return result;
   }
 
-  find(condition: { [k in (typeof this.fields)[number]]: Value }): Row[] {
+  find(
+    condition: Partial<RowObject<typeof this.fields>>
+  ): RowObject<typeof this.fields>[] {
     if (!condition || typeof condition !== 'object') {
       throw new Error('[MemDB] Condition must be an object with fields and values');
     }
@@ -259,8 +268,13 @@ export class DBTable {
     return this.filter(this.data, condition);
   }
 
-  insert(row: (string | number)[]): void {
-    this.data.push(row);
+  private validRow(row: Partial<RowObject<typeof this.fields>>) {}
+
+  insert(row: Partial<RowObject<typeof this.fields>>) {
+    for (let i = 0; i < this.fields.length; i++) {
+      // 逐个字段校验
+      const value = row[this.fields[i]];
+    }
   }
 
   static from(dbFilePath: string): DBTable {
@@ -276,7 +290,14 @@ export class DBTable {
   }
 
   display() {
+    console.log('tableName', this.name);
     console.log({ pk: this.pk, isAI: this.isAI });
-    console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
+    console.log('fields  ', this.fields);
+    console.log('types   ', this.types);
+    console.log('defaults', this.defaults);
+    console.log('indexes ', this.indexMap.keys());
+    console.log('uniques ', this.uniqueMap.keys());
+
+    // console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
   }
 }

@@ -6,6 +6,8 @@ export type FieldType = (typeof FILED_TYPE)[number];
 
 export type Row = Value[];
 
+export type RowObject<T extends string[]> = { [k in T[number]]: Value };
+
 export type DefaultGetter = Value | (() => Value);
 
 export type FieldOption = {
