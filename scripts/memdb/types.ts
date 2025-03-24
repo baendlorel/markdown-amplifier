@@ -16,6 +16,7 @@ export type FieldOption = {
   isIndex?: boolean;
   isUnique?: boolean;
   isPrimaryKey?: boolean;
+  isAutoIncrement?: boolean;
 };
 
 export type MemDBTableCreateOption = {

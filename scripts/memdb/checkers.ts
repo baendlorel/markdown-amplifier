@@ -10,36 +10,26 @@ export const assertValidTableName = (tableName: string) => {
 };
 
 /**
- * 保证数组一定是一定长度的Array，让后续可以使用Array上的方法 \
- * Ensure that the 'a' is an Array Instance with given length, so that methods of Array.prototype can be used
- * @param arr 待检测数组
- * @param variableName 变量名
- * @param length [可选]数组长度
- * @returns 转换为Array实例的arr
+ * 确保字段配置数组有效 \
+ * Ensure that the field configuration array is valid
+ * @param fieldOptions 待检测配置
  */
-export const assertValidFieldArrayThenCopyToArrayInstance = (arr: any) => {
-  if (!Array.isArray(arr)) {
-    throw new Error(`[MemDB] Expected 'fields' to be an array, but got: ` + arr);
-  }
-  return Array.from(arr);
-};
-
-// # 以下涉及的数组已经由上面的函数确保为Array的实例，其上的方法均可无压力使用
-// # The following arrays have been ensured to be instances of Array by the above function, and methods on them can be used without any pressure
-
-/**
- * 确保数组是字符串数组，字段名只能是大小写、数字、下划线，必须字母开头 \
- * Ensure that the fields array is a string array, and the field name can only contain letters, numbers or underscores, and must start with a letter
- * @param fields 待检测数组
- */
-export const assertValidFieldArray = (fields: FieldOption[]) => {
+export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
+  const fields = [] as string[];
+  const types = [] as string[];
   const defaults = [] as DefaultGetter[];
   const nullables = [] as boolean[];
   const indexes = [] as string[];
   const uniques = [] as string[];
+  let pk = undefined as undefined | number;
+  let isAI = false;
 
-  for (let i = 0; i < fields.length; i++) {
-    const o = fields[i];
+  // 保证有空槽比较好
+  // It's better to have empty slots
+  defaults.length = fieldOptions.length;
+
+  for (let i = 0; i < fieldOptions.length; i++) {
+    const o = fieldOptions[i];
 
     // 确保字段名称合法
     // Ensure that the field name is valid
@@ -62,117 +52,92 @@ export const assertValidFieldArray = (fields: FieldOption[]) => {
     }
 
     // # 逐个检测可选配置项
-    const isNullable = o.isNullable ?? true;
-    if (typeof isNullable !== 'boolean') {
+    const _isNullable = o.isNullable ?? true;
+    if (typeof _isNullable !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid option: ${o.name}${isNullable}(${typeof isNullable})`
+        `[MemDB] Invalid option: ${o.name}${_isNullable}(${typeof _isNullable})`
       );
     }
-    nullables[i] = isNullable;
 
     if ('default' in o) {
-      const d = o.default;
-      const dv = typeof d === 'function' ? d() : d;
+      const _default = o.default;
+      const _value = typeof _default === 'function' ? _default() : _default;
       // string、boolean、number、Date的情形，允许为空的情况下可以是null
       // The cases of string, boolean, number and Date, if the field is nullable then allow 'null'
       if (
-        typeof dv === o.type ||
-        (dv as any) instanceof Date ||
-        (isNullable && dv === null)
+        typeof _value === o.type ||
+        (_value as any) instanceof Date ||
+        (_isNullable && _value === null)
       ) {
-        defaults[i] = d;
+        defaults[i] = _default;
       } else {
-        throw new Error(`[MemDB] Invalid default value getter, index:${i} default:${d}`);
+        throw new Error(
+          `[MemDB] Invalid default value getter, index:${i} default:${_default}`
+        );
       }
     }
 
-    const isIndex = o.isIndex ?? false;
-    if (typeof isIndex !== 'boolean') {
+    const _isIndex = o.isIndex ?? false;
+    if (typeof _isIndex !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isIndex': ${o.name}${isIndex}(${typeof isIndex})`
+        `[MemDB] Invalid 'isIndex': ${o.name}${_isIndex}(${typeof _isIndex})`
       );
     }
 
-    const isUnique = o.isUnique ?? false;
-    if (typeof isUnique !== 'boolean') {
+    const _isUnique = o.isUnique ?? false;
+    if (typeof _isUnique !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isUnique': ${o.name}${isUnique}(${typeof isUnique})`
+        `[MemDB] Invalid 'isUnique': ${o.name}${_isUnique}(${typeof _isUnique})`
       );
     }
 
-    const isPK = o.isPrimaryKey ?? false;
-    if (typeof isPK !== 'boolean') {
-      throw new Error(`[MemDB] Invalid 'isPrimaryKey': ${o.name}${isPK}(${typeof isPK})`);
-    }
-  }
-
-  return { defaults, nullables, indexes, uniques };
-};
-
-/**
- * 确保IsNullable数组是可用的 \
- * Ensure that the IsNullable array is valid
- * @param isNullable
- */
-export const assertValidIsNullableArray = (isNullable: boolean[]) => {
-  for (let i = 0; i < isNullable.length; i++) {
-    const v = isNullable[i];
-    if (typeof v !== 'boolean') {
-      throw new Error(`[MemDB] Invalid isNullable detected: ${v}(${typeof v})`);
-    }
-  }
-};
-
-/**
- * 保证字段类型数组记录了有效的类型 \
- * Ensure that the fieldTypes array records valid type
- * @param fieldTypes
- */
-export const assertValidFieldTypeArray = (fieldTypes: any[]) => {
-  for (let i = 0; i < fieldTypes.length; i++) {
-    const f = fieldTypes[i];
-    if (!FILED_TYPE.includes(f)) {
+    const _isPK = o.isPrimaryKey ?? false;
+    if (typeof _isPK !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid type '${f}(${typeof f})', must be '${FILED_TYPE.join(`', '`)}'`
+        `[MemDB] Invalid 'isPrimaryKey': ${o.name}${_isPK}(${typeof _isPK})`
       );
     }
-  }
-};
-
-/**
- * 保证默认值数组记录的默认值是有效的 \
- * fieldTypes的有效性由上面的函数保证 \
- * Ensure that the defaultValue array records valid default values \
- * The validity of fieldTypes is guaranteed by the above function 'assertValidFieldTypeArray'
- * @param defaults
- * @param fieldTypes
- */
-export const assertValidDefaultsArray = (
-  defaults: any[],
-  fieldTypes: FieldType[],
-  isNullable: boolean[]
-) => {
-  for (let i = 0; i < defaults.length; i++) {
-    const d = defaults[i];
-    // 如果这一格的默认值是空槽，那么免检
-    // If the default value of this slot is empty, skip the check
-    if (!(i in defaults)) {
-      continue;
+    if (_isPK) {
+      if (pk !== undefined) {
+        throw new Error(
+          `[MemDB] Duplicate primary key detected, current field: ${o.name}`
+        );
+      }
+      pk = i;
     }
 
-    const value = typeof d === 'function' ? d() : d;
-    // string、boolean、number、Date的情形，允许为空的情况下可以是null
-    // The cases of string, boolean, number and Date, if the field is nullable then allow 'null'
-    if (
-      typeof value === fieldTypes[i] ||
-      value instanceof Date ||
-      (isNullable[i] && value === null)
-    ) {
-      continue;
+    const _isAI = o.isAutoIncrement ?? false;
+    if (typeof _isAI !== 'boolean') {
+      throw new Error(
+        `[MemDB] Invalid 'isAutoIncrement': ${o.name}${_isAI}(${typeof _isAI})`
+      );
+    }
+    if (_isAI && !_isPK) {
+      throw new Error(
+        `[MemDB] Only primary key can be set as auto-increment, current field: ${o.name}`
+      );
+    }
+    if (_isAI) {
+      isAI = true;
     }
 
-    throw new Error(`[MemDB] Invalid default value, index:${i}, default:${d}`);
+    fields[i] = o.name;
+    types[i] = o.type;
+    nullables[i] = _isNullable;
+    _isIndex && indexes.push(o.name);
+    _isUnique && uniques.push(o.name);
   }
+
+  // 确保主键不为空
+  if (pk === undefined) {
+    throw new Error('[MemDB] Primary key is required');
+  }
+
+  assertNoDuplicateFields(fields);
+
+  assertNoDuplicateIndexes(indexes, uniques);
+
+  return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
 };
 
 /**
@@ -189,7 +154,7 @@ export const assertNoDuplicateFields = (fields: string[]) => {
   }
 };
 
-export const assertNoDuplicatedIndexes = (indexes: string[], uniques: string[]) => {
+export const assertNoDuplicateIndexes = (indexes: string[], uniques: string[]) => {
   const indexesSet = new Set(indexes);
   const uniqueSet = new Set(uniques);
   const wholeSet = new Set([...indexesSet, ...uniqueSet]);

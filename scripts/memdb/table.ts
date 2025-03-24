@@ -1,4 +1,5 @@
 import { decompressSync } from './brotli';
+import { assertValidFieldOptionArray, assertValidTableName } from './checkers';
 import { Value, Row, MemDBTableCreateOption, DefaultGetter } from './types';
 
 export class DBTable {
@@ -11,11 +12,39 @@ export class DBTable {
    */
   private fields: string[];
 
-  private fieldTypes: string[];
+  /**
+   * 字段类型，包含string、number、boolean、Date \
+   * Field types, including string, number, boolean, Date
+   */
+  private types: string[];
 
-  private isNullable: boolean[];
+  /**
+   * 标记是否可为空 \
+   * Mark whether it can be null
+   */
+  private nullables: boolean[];
 
+  /**
+   * 字段默认值或默认值获取函数 \
+   * Field default value or default value getter function
+   */
   private defaults: DefaultGetter[];
+
+  private indexes: string[];
+
+  private uniques: string[];
+
+  /**
+   * 代表主键在fields的下标 \
+   * The index of the primary key in fields
+   */
+  private pk: number;
+
+  /**
+   * 是否为自增 \
+   * Whether it is auto-increment
+   */
+  private isAI: boolean;
 
   /**
    * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
@@ -41,9 +70,22 @@ export class DBTable {
   private uniqueMap: Map<string, Map<Value, Row>>;
 
   constructor(o: MemDBTableCreateOption) {
-    for (let i = 0; i < o.fields.length; i++) {
-      this.fields[i] = o.fields[i].name;
+    assertValidTableName(o.tableName);
+    if (!Array.isArray(o.fields)) {
+      throw new Error(
+        `[MemDB] Expected 'fields' to be an array, but got '${typeof o.fields}'`
+      );
     }
+
+    const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
+      assertValidFieldOptionArray(Array.from(o.fields));
+    this.fields = fields;
+    this.types = types;
+    this.defaults = defaults;
+    this.nullables = nullables;
+    this.pk = pk;
+    this.isAI = isAI;
+
     this.data = [];
     this.fieldIndex = {};
     for (let i = 0; i < o.fields.length; i++) {
@@ -51,6 +93,8 @@ export class DBTable {
     }
     this.indexMap = new Map();
     this.uniqueMap = new Map();
+    this.initIndexes(indexes);
+    this.initUniques(uniques);
   }
 
   /**
@@ -102,7 +146,7 @@ export class DBTable {
     }
   }
 
-  private initUnique(fields: (typeof this.fields)[number][]) {
+  private initUniques(fields: (typeof this.fields)[number][]) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
       throw new Error('[MemDB] Index field not found in fields');
@@ -227,7 +271,12 @@ export class DBTable {
     } catch (error) {
       console.log('Failed to load DBTable from file:', dbFilePath);
       console.error(error);
-      return new DBTable({ fields: [], indexes: [] });
+      return new DBTable({ fields: [] as any[], tableName: 'test' });
     }
+  }
+
+  display() {
+    console.log({ pk: this.pk, isAI: this.isAI });
+    console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
   }
 }
