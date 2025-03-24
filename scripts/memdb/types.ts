@@ -1,4 +1,19 @@
-// TODO 数据库文件要写成第一行字段名，第二行字段类型，第三行索引，第四行唯一索引，第五行往后是数据
+export type Value = string | number | boolean | null | undefined;
+
+export const FILED_TYPE = ['string', 'number', 'boolean', 'Date'] as const;
+
+export type FieldType = (typeof FILED_TYPE)[number];
+
+export type Row = Value[];
+
+export type MemDBCreateOption = {
+  fields: { name: string; default?: Value | (() => Value); isNullable: boolean }[];
+
+  indexes?: string[];
+
+  uniqueIndexes?: string[];
+};
+
 /**
  * 数据库文件每一行代表的含义 \
  * The meaning of each line in the database file

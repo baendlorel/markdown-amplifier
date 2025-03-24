@@ -1,15 +1,8 @@
 import { decompressSync } from './brotli';
-
-type Value = string | number | boolean | null | undefined;
-type Row = Value[];
-
-type MemDBCreateOption = {
-  fields: { name: string; default?: Value | (() => Value) }[];
-  indexes?: string[];
-  uniqueIndexes?: string[];
-};
+import { Value, Row, MemDBCreateOption } from './types';
 
 export class DBTable {
+  // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   save: (dbFilePath: string) => void;
 
   /**
@@ -17,6 +10,10 @@ export class DBTable {
    * Fields, could be written as a configuration array in the constructor, but because 'typeof this.fields' is used, there is no other way
    */
   private fields: string[];
+
+  private fieldTypes: string[];
+
+  private isNullable: boolean[];
 
   private defaults: (Value | (() => Value))[];
 
