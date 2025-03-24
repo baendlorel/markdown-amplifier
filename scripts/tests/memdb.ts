@@ -5,8 +5,8 @@ const a = new DBTable({
   fields: [
     { name: 'id', type: 'number', isPrimaryKey: true },
     { name: 'name', type: 'string' },
-    { name: 'age', type: 'number' },
-    { name: 'sex', type: 'string' },
+    { name: 'age', type: 'number', default: () => Math.random() * 20 },
+    { name: 'sex', type: 'string', isUnique: true },
   ],
 });
 

@@ -44,11 +44,9 @@ export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
 
     // 确保字段类型合法
     if (!FILED_TYPE.includes(o.type)) {
-      throw new Error(
-        `[MemDB] Invalid type '${o.type}(${typeof o.type})', must be '${FILED_TYPE.join(
-          `', '`
-        )}'`
-      );
+      const v = `${o.type}(${typeof o.type})`;
+      const fieldTypes = FILED_TYPE.join(`', '`);
+      throw new Error(`[MemDB] Invalid type '${v}', must be '${fieldTypes}'`);
     }
 
     // # 逐个检测可选配置项
@@ -97,13 +95,8 @@ export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
         `[MemDB] Invalid 'isPrimaryKey': ${o.name}${_isPK}(${typeof _isPK})`
       );
     }
-    if (_isPK) {
-      if (pk !== undefined) {
-        throw new Error(
-          `[MemDB] Duplicate primary key detected, current field: ${o.name}`
-        );
-      }
-      pk = i;
+    if (_isPK && pk !== undefined) {
+      throw new Error(`[MemDB] Duplicate primary key detected, current field: ${o.name}`);
     }
 
     const _isAI = o.isAutoIncrement ?? false;
@@ -117,13 +110,33 @@ export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
         `[MemDB] Only primary key can be set as auto-increment, current field: ${o.name}`
       );
     }
-    if (_isAI) {
-      isAI = true;
+
+    // 一些互斥判定
+    // 不能同时为索引和唯一索引
+    if (_isIndex && _isUnique) {
+      throw new Error(
+        `[MemDB] A field cannot be both unique and index, current field: ${o.name}`
+      );
+    }
+    // 主键不能是索引和唯一索引，因为它已经有索引了
+    if (_isPK && (_isIndex || _isUnique)) {
+      throw new Error(
+        `[MemDB] A primary key cannot be unique or index, current field: ${o.name}`
+      );
+    }
+    // 自增的话type必须为数字
+    if (_isAI && o.type !== 'number') {
+      throw new Error(
+        `[MemDB] Auto-increment field must be number type, current field: ${o.name}`
+      );
     }
 
+    // 赋值部分
     fields[i] = o.name;
     types[i] = o.type;
     nullables[i] = _isNullable;
+    _isAI && (isAI = true);
+    _isPK && (pk = i);
     _isIndex && indexes.push(o.name);
     _isUnique && uniques.push(o.name);
   }
@@ -134,9 +147,7 @@ export const assertValidFieldOptionArray = (fieldOptions: FieldOption[]) => {
   }
 
   assertNoDuplicateFields(fields);
-
   assertNoDuplicateIndexes(indexes, uniques);
-
   return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
 };
 
