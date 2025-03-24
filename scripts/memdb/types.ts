@@ -6,12 +6,21 @@ export type FieldType = (typeof FILED_TYPE)[number];
 
 export type Row = Value[];
 
-export type MemDBCreateOption = {
-  fields: { name: string; default?: Value | (() => Value); isNullable: boolean }[];
+export type DefaultGetter = Value | (() => Value);
 
-  indexes?: string[];
+export type FieldOption = {
+  name: string;
+  type: FieldType;
+  default?: DefaultGetter;
+  isNullable?: boolean;
+  isIndex?: boolean;
+  isUnique?: boolean;
+  isPrimaryKey?: boolean;
+};
 
-  uniqueIndexes?: string[];
+export type MemDBTableCreateOption = {
+  tableName: string;
+  fields: FieldOption[];
 };
 
 /**

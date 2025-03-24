@@ -1,5 +1,5 @@
 import { decompressSync } from './brotli';
-import { Value, Row, MemDBCreateOption } from './types';
+import { Value, Row, MemDBTableCreateOption, DefaultGetter } from './types';
 
 export class DBTable {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
@@ -15,7 +15,7 @@ export class DBTable {
 
   private isNullable: boolean[];
 
-  private defaults: (Value | (() => Value))[];
+  private defaults: DefaultGetter[];
 
   /**
    * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
@@ -40,7 +40,7 @@ export class DBTable {
    */
   private uniqueMap: Map<string, Map<Value, Row>>;
 
-  constructor(o: MemDBCreateOption) {
+  constructor(o: MemDBTableCreateOption) {
     for (let i = 0; i < o.fields.length; i++) {
       this.fields[i] = o.fields[i].name;
     }

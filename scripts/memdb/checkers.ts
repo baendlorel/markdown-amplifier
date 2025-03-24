@@ -1,4 +1,13 @@
-import { FieldType, FILED_TYPE } from './types';
+import { DefaultGetter, FieldOption, FieldType, FILED_TYPE } from './types';
+
+export const assertValidTableName = (tableName: string) => {
+  const match = tableName.match(/^[a-zA-Z][\w]{0,}$/);
+  if (match === null) {
+    throw new Error(
+      `[MemDB] Invalid table name detected: ${tableName}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
+    );
+  }
+};
 
 /**
  * 保证数组一定是一定长度的Array，让后续可以使用Array上的方法 \
@@ -8,21 +17,11 @@ import { FieldType, FILED_TYPE } from './types';
  * @param length [可选]数组长度
  * @returns 转换为Array实例的arr
  */
-export const assertArrayAndLengthThenCopyToArrayInstance = (
-  arr: any,
-  variableName: string,
-  length?: number
-) => {
+export const assertValidFieldArrayThenCopyToArrayInstance = (arr: any) => {
   if (!Array.isArray(arr)) {
-    throw new Error(`[MemDB] Expected '${variableName}' to be an array, but got: ` + arr);
+    throw new Error(`[MemDB] Expected 'fields' to be an array, but got: ` + arr);
   }
-  arr = Array.from(arr);
-  if (length !== undefined && length !== arr.length) {
-    throw new Error(
-      `[MemDB] The length of '${variableName}'(${arr.length}) should be equal to ${length}`
-    );
-  }
-  return arr;
+  return Array.from(arr);
 };
 
 // # 以下涉及的数组已经由上面的函数确保为Array的实例，其上的方法均可无压力使用
@@ -33,18 +32,81 @@ export const assertArrayAndLengthThenCopyToArrayInstance = (
  * Ensure that the fields array is a string array, and the field name can only contain letters, numbers or underscores, and must start with a letter
  * @param fields 待检测数组
  */
-export const assertValidFieldArray = (fields: string[]) => {
+export const assertValidFieldArray = (fields: FieldOption[]) => {
+  const defaults = [] as DefaultGetter[];
+  const nullables = [] as boolean[];
+  const indexes = [] as string[];
+  const uniques = [] as string[];
+
   for (let i = 0; i < fields.length; i++) {
-    const f = fields[i];
-    if (typeof f !== 'string') {
-      throw new Error(`[MemDB] Non-string item detected, fields: ${f}(${typeof f})`);
+    const o = fields[i];
+
+    // 确保字段名称合法
+    // Ensure that the field name is valid
+    if (typeof o.name !== 'string') {
+      throw new Error(`[MemDB] Non-string item detected, fields: ${o}(${typeof o})`);
     }
-    if (!f.match(/^[a-zA-Z][\w]{0,}$/)) {
+    if (!o.name.match(/^[a-zA-Z][\w]{0,}$/)) {
       throw new Error(
-        `[MemDB] Invalid field name detected: ${f}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
+        `[MemDB] Invalid field name detected: ${o.name}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
       );
     }
+
+    // 确保字段类型合法
+    if (!FILED_TYPE.includes(o.type)) {
+      throw new Error(
+        `[MemDB] Invalid type '${o.type}(${typeof o.type})', must be '${FILED_TYPE.join(
+          `', '`
+        )}'`
+      );
+    }
+
+    // # 逐个检测可选配置项
+    const isNullable = o.isNullable ?? true;
+    if (typeof isNullable !== 'boolean') {
+      throw new Error(
+        `[MemDB] Invalid option: ${o.name}${isNullable}(${typeof isNullable})`
+      );
+    }
+    nullables[i] = isNullable;
+
+    if ('default' in o) {
+      const d = o.default;
+      const dv = typeof d === 'function' ? d() : d;
+      // string、boolean、number、Date的情形，允许为空的情况下可以是null
+      // The cases of string, boolean, number and Date, if the field is nullable then allow 'null'
+      if (
+        typeof dv === o.type ||
+        (dv as any) instanceof Date ||
+        (isNullable && dv === null)
+      ) {
+        defaults[i] = d;
+      } else {
+        throw new Error(`[MemDB] Invalid default value getter, index:${i} default:${d}`);
+      }
+    }
+
+    const isIndex = o.isIndex ?? false;
+    if (typeof isIndex !== 'boolean') {
+      throw new Error(
+        `[MemDB] Invalid 'isIndex': ${o.name}${isIndex}(${typeof isIndex})`
+      );
+    }
+
+    const isUnique = o.isUnique ?? false;
+    if (typeof isUnique !== 'boolean') {
+      throw new Error(
+        `[MemDB] Invalid 'isUnique': ${o.name}${isUnique}(${typeof isUnique})`
+      );
+    }
+
+    const isPK = o.isPrimaryKey ?? false;
+    if (typeof isPK !== 'boolean') {
+      throw new Error(`[MemDB] Invalid 'isPrimaryKey': ${o.name}${isPK}(${typeof isPK})`);
+    }
   }
+
+  return { defaults, nullables, indexes, uniques };
 };
 
 /**
