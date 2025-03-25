@@ -1,4 +1,4 @@
-import { DefaultGetter, FieldOption, FieldType, FILED_TYPE } from './types';
+import { DefaultGetter, FieldDefinition, FieldType, FILED_TYPE } from './types';
 
 export const assertValidTableName = (tableName: string) => {
   const match = tableName.match(/^[a-zA-Z][\w]{0,}$/);
@@ -14,7 +14,7 @@ export const assertValidTableName = (tableName: string) => {
  * Ensure that the field configuration array is valid
  * @param fieldOptions 待检测配置
  */
-export const assureFieldOptionArray = (fieldOptions: FieldOption[]) => {
+export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
   const fields = [] as string[];
   const types = [] as FieldType[];
   const defaults = [] as DefaultGetter[];

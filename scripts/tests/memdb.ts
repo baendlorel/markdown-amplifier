@@ -5,8 +5,7 @@ const a = new DBTable({
   tableName: 'test_table',
   fields: [
     { name: 'id', type: 'number', isPrimaryKey: true, isAutoIncrement: true },
-    { name: 'uuid', type: 'string', isNullable: false, default: 'da' },
-    { name: 'uuid2', type: 'string' },
+    { name: 'uuid', type: 'string', default: DBTable.UUIDv4 },
     { name: 'name', type: 'string', isUnique: true },
     { name: 'age', type: 'number', default: () => Math.ceil(Math.random() * 20) },
     { name: 'sex', type: 'string' },

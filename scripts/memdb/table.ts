@@ -5,7 +5,6 @@ import {
   Row,
   TableConfig,
   DefaultGetter,
-  RowObject,
   FieldType,
   Entity,
   FindCondition,
@@ -14,8 +13,18 @@ import {
 const dbDataSymbol = Symbol('dbData');
 
 export class DBTable<T extends TableConfig> {
-  // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
-  save: (dbFilePath: string) => void;
+  /**
+   * 生成一个符合 UUID v4 标准的随机字符串 \
+   * Generate a random string that conforms to the UUID v4 standard
+   * @returns UUID v4 字符串
+   */
+  static UUIDv4(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+      const random = (Math.random() * 16) | 0; // 生成 0-15 的随机数
+      const value = char === 'x' ? random : (random & 0x3) | 0x8; // 确保符合 UUID v4 标准
+      return value.toString(16); // 转换为十六进制
+    });
+  }
 
   private name: string;
 
@@ -43,6 +52,8 @@ export class DBTable<T extends TableConfig> {
    */
   private defaults: DefaultGetter[];
 
+  // DEAFULT_GETTER_IS_FUNCTION
+
   /**
    * 代表主键在fields的下标 \
    * The index of the primary key in fields
@@ -62,17 +73,6 @@ export class DBTable<T extends TableConfig> {
   private autoIncrementId: number;
 
   /**
-   * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
-   * Get the index of a field, used to get the value of this field from a row
-   */
-  private fieldIndex: { [key in (typeof this.fields)[number]]: number };
-
-  /**
-   * 数据
-   */
-  private data: Row[];
-
-  /**
    * Map<索引字段名,Map<索引字段值，多个数据行>> \
    * Map<Index Field Name, Map<Index Field Value, Data Rows>>
    */
@@ -83,13 +83,27 @@ export class DBTable<T extends TableConfig> {
    * Map<Index Field Name, Map<Index Field Value, Data Row>>
    */
   private uniqueMap: Map<string, Map<Value, Row>>;
+
   private pkMap: Map<string, Map<Value, Row>>;
+
+  /**
+   * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
+   * Get the index of a field, used to get the value of this field from a row
+   */
+  private fieldIndex: Record<string, number>;
+
+  /**
+   * 数据
+   */
+  private data: Row[];
 
   constructor(o: T) {
     this.autoIncrementId = 0;
     if (dbDataSymbol in o) {
       console.log(`[MemDB] Loading DBTable from file: ${o[dbDataSymbol]}`);
       this.data = o[dbDataSymbol] as Row[];
+    } else {
+      this.data = [];
     }
 
     assertValidTableName(o.tableName);
@@ -104,7 +118,7 @@ export class DBTable<T extends TableConfig> {
       assureFieldOptionArray(Array.from(o.fields));
 
     this.fields = fields;
-    this.fieldIndex = {};
+    this.fieldIndex = {} as Record<string, number>;
     for (let i = 0; i < fields.length; i++) {
       this.fieldIndex[fields[i]] = i;
     }
@@ -132,9 +146,9 @@ export class DBTable<T extends TableConfig> {
    */
   private initIndexMap(
     map: Map<string, Map<Value, Row[]>> | Map<string, Map<Value, Row>>,
-    fields: (typeof this.fields)[number][]
+    fields: string[]
   ) {
-    const iti = {} as { [k in (typeof this.fields)[number]]: number };
+    const iti = {} as Record<string, number>;
     for (let i = 0; i < fields.length; i++) {
       const idx = fields[i];
       iti[idx] = this.fields.findIndex((f) => f === idx);
@@ -143,10 +157,7 @@ export class DBTable<T extends TableConfig> {
     return iti;
   }
 
-  private initIndexes(
-    map: Map<string, Map<Value, Row[]>>,
-    fields: (typeof this.fields)[number][]
-  ) {
+  private initIndexes(map: Map<string, Map<Value, Row[]>>, fields: string[]) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
       throw new Error('[MemDB] Index field not found in fields');
@@ -173,10 +184,7 @@ export class DBTable<T extends TableConfig> {
     }
   }
 
-  private initUniques(
-    map: Map<string, Map<Value, Row>>,
-    fields: (typeof this.fields)[number][]
-  ) {
+  private initUniques(map: Map<string, Map<Value, Row>>, fields: string[]) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
       throw new Error('[MemDB] Index field not found in fields');
@@ -219,7 +227,7 @@ export class DBTable<T extends TableConfig> {
     }
 
     const fields = Object.keys(condition);
-    const result = [] as RowObject<typeof this.fields>[];
+    const result = [] as Entity<T['fields']>[];
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       let match = true;
@@ -234,7 +242,7 @@ export class DBTable<T extends TableConfig> {
       if (match) {
         // 这里要把数据组合成对象数组
         // Here, the data must be combined into an array of objects
-        const row = {} as RowObject<typeof this.fields>;
+        const row = {} as Entity<T['fields']>;
         for (let k = 0; k < this.fields.length; k++) {
           row[this.fields[k]] = d[k];
         }
@@ -297,7 +305,7 @@ export class DBTable<T extends TableConfig> {
     return value;
   }
 
-  find(condition: FindCondition<T['fields']>): RowObject<typeof this.fields>[] {
+  find(condition: FindCondition<T['fields']>): Entity<T['fields']>[] {
     if (!condition || typeof condition !== 'object') {
       throw new Error('[MemDB] Condition must be an object with fields and values');
     }
@@ -422,6 +430,9 @@ export class DBTable<T extends TableConfig> {
     }
   }
 
+  // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
+  save(dbFilePath: string) {}
+
   display() {
     console.log('tableName', this.name);
     console.log({ pk: this.pk, isAI: this.isAI });
@@ -437,7 +448,7 @@ export class DBTable<T extends TableConfig> {
     }
 
     if (this.data.length > 15) {
-      console.log('data    ', this.data.slice(0, 15), `...${this.data.length - 15} more`);
+      console.log('data    ', this.data.slice(0, 5), `...${this.data.length - 5} more`);
     } else {
       console.log('data    ', this.data);
     }

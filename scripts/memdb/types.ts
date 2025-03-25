@@ -13,16 +13,14 @@ export type FieldType = (typeof FILED_TYPE)[number];
 
 export type Row = Value[];
 
-export type RowObject<T extends string[]> = { [k in T[number]]: Value };
-
 export type DefaultGetter = Value | (() => Value);
 
 export type TableConfig = {
   tableName: string;
-  fields: FieldOption[];
+  fields: FieldDefinition[];
 };
 
-export type FieldOption = {
+export type FieldDefinition = {
   name: string;
   type: FieldType;
   default?: DefaultGetter;
@@ -33,11 +31,11 @@ export type FieldOption = {
   isAutoIncrement?: boolean;
 };
 
-export type FindCondition<T extends readonly FieldOption[]> = {
+export type FindCondition<T extends readonly FieldDefinition[]> = {
   [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
 };
 
-export type Entity<T extends readonly FieldOption[]> = {
+export type Entity<T extends readonly FieldDefinition[]> = {
   // 可选项
   [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
 } & {
@@ -56,11 +54,11 @@ export type Entity<T extends readonly FieldOption[]> = {
  * 数据库文件每一行代表的含义 \
  * The meaning of each line in the database file
  */
-export enum DBFileLine {
+export enum DBTableFile {
   /**
    * 表名
    */
-  TABLE_NAME,
+  NAME,
   /**
    * 字段名
    */
@@ -94,7 +92,7 @@ export enum DBFileLine {
    * 是否自增主键 \
    * Whether it is an auto-increment primary key
    */
-  IS_AUTO_INCREMENT,
+  IS_AI,
   /**
    * 记载自增主键加到哪里了 \
    * Now what id is
