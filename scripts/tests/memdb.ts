@@ -11,7 +11,6 @@ const a = new DBTable({
     { name: 'sex', type: 'string' },
     { name: 'createDate', type: 'Date', default: () => new Date() },
   ],
-  data: [],
 });
 console.timeEnd('建表');
 

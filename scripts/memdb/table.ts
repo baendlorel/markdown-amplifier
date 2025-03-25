@@ -8,9 +8,10 @@ import {
   RowObject,
   FieldType,
   FieldTypeMap,
+  FieldOption,
 } from './types';
 
-const dbFilePathSymbol = Symbol('dbFilePath');
+const dbDataSymbol = Symbol('dbData');
 
 export class DBTable {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
@@ -86,12 +87,9 @@ export class DBTable {
 
   constructor(o: MemDBTableCreateOption) {
     this.autoIncrementId = 0;
-    if (dbFilePathSymbol in o) {
-      console.log(`[MemDB] Loading DBTable from file: ${o[dbFilePathSymbol]}`);
-      this.data = o.data as Row[];
-    } else {
-      console.log(`[MemDB] Loading DBTable from property 'data'`);
-      this.data = o.data ?? [];
+    if (dbDataSymbol in o) {
+      console.log(`[MemDB] Loading DBTable from file: ${o[dbDataSymbol]}`);
+      this.data = o[dbDataSymbol] as Row[];
     }
 
     assertValidTableName(o.tableName);
@@ -156,7 +154,6 @@ export class DBTable {
 
     const iti = this.initIndexMap(map, fields);
 
-    // TODO 初始化阶段this.data一定是空的，在这里扫描建立索引也许是白费力气
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
     for (let i = 0; i < this.data.length; i++) {
@@ -187,7 +184,6 @@ export class DBTable {
 
     const iti = this.initIndexMap(map, fields);
 
-    // TODO 初始化阶段this.data一定是空的，在这里扫描建立索引也许是白费力气
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
     for (let i = 0; i < this.data.length; i++) {
@@ -419,11 +415,11 @@ export class DBTable {
     this.data.push(newRow);
   }
 
-  static from(dbFilePath: string): DBTable {
+  static from(dbFilePath: string) {
     try {
       const str = decompressSync(dbFilePath);
       const o = JSON.parse(str);
-      o[dbFilePathSymbol] = dbFilePath;
+      o[dbDataSymbol] = o.data;
       return new DBTable(o);
     } catch (error) {
       console.log('Failed to load DBTable from file:', dbFilePath);
