@@ -19,7 +19,7 @@ const incr = (() => {
   return () => (++i).toString(36).padStart(8, '0');
 })();
 
-const SIZE = 10000;
+const SIZE = 100;
 let howManyMen = 0;
 console.time(`插表${SIZE}个`);
 for (let i = 0; i < SIZE; i++) {
@@ -52,4 +52,5 @@ for (let i = 0; i < TIMES; i++) {
 }
 console.timeEnd(`有索引${TIMES}次`);
 
+a.save('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
 a.display();

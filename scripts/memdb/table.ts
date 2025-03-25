@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { decompressSync } from './brotli';
 import { assureFieldOptionArray, assertValidTableName } from './checkers';
 import {
@@ -8,6 +9,7 @@ import {
   FieldType,
   Entity,
   FindCondition,
+  Line,
 } from './types';
 
 const dbDataSymbol = Symbol('dbData');
@@ -431,7 +433,36 @@ export class DBTable<T extends TableConfig> {
   }
 
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
-  save(dbFilePath: string) {}
+  save(dbFilePath: string) {
+    // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值DBTableFile排列每一行的内容
+    // * Most of the time, adding string is faster than array join, but here we need to accurately arrange the content of each line according to 'DBTableFile'
+    const content = [] as string[];
+    content[Line.NAME] = 'NAME: ' + this.name;
+    content[Line.FIELDS] = 'FIELDS: ' + this.fields.join(',');
+    content[Line.TYPES] = 'TYPES: ' + this.types.join(',');
+    content[Line.NULLABLES] =
+      'NULLABLES: ' + this.nullables.map((n) => (n ? '1' : '0')).join(',');
+    content[Line.DEFAULTS] =
+      'DEFAULTS: ' +
+      '{' +
+      this.defaults.reduce((p, c, i) => `${p && p + ','}"${i}":"${String(c)}"`, '') +
+      '}';
+    content[Line.DEAFULT_GETTER_IS_FUNCTION] =
+      'DEAFULT_GETTER_IS_FUNCTION: ' +
+      this.defaults.map((d) => (typeof d === 'function' ? '1' : '0')).join(',');
+    content[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(this.pk);
+    content[Line.IS_AI] = 'IS_AI: ' + (this.isAI ? '1' : '0');
+    content[Line.AUTO_INCREMENT_ID] =
+      'AUTO_INCREMENT_ID: ' + String(this.autoIncrementId);
+    content[Line.INDEXES] = 'INDEXES: ' + [...this.indexMap.keys()].join();
+    content[Line.UNIQUES] = 'UNIQUES: ' + [...this.uniqueMap.keys()].join();
+
+    const total = Line.DATA_START + this.data.length;
+    for (let i = Line.DATA_START; i < total; i++) {
+      content[i] = JSON.stringify(this.data[i - Line.DATA_START]).slice(1, -1);
+    }
+    fs.writeFileSync(dbFilePath, content.join('\n'));
+  }
 
   display() {
     console.log('tableName', this.name);

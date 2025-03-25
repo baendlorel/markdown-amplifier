@@ -54,7 +54,7 @@ export type Entity<T extends readonly FieldDefinition[]> = {
  * 数据库文件每一行代表的含义 \
  * The meaning of each line in the database file
  */
-export enum DBTableFile {
+export enum Line {
   /**
    * 表名
    */
@@ -77,7 +77,7 @@ export enum DBTableFile {
    * 对应字段的默认值，可以是一个无参数函数 \
    * Default value of the field, can be a function without parameters
    */
-  DEAFULTS,
+  DEFAULTS,
   /**
    * 标记出这个默认值设定是否为一个函数 \
    * Default value of the field, can be a function
