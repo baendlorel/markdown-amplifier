@@ -12,6 +12,6 @@ const a = new DBTable({
 });
 
 a.insert({ name: 'asd', age: 3, sex: '男' });
-a.insert({ name: 'asd', age: '3', sex: '男' });
+a.insert({ name: 'asd', age: 6, sex: '男' });
 
 a.display();

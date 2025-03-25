@@ -167,7 +167,7 @@ export class DBTable {
       throw new Error('[MemDB] Index field not found in fields');
     }
 
-    const iti = this.initIndexMap(this.indexMap, fields);
+    const iti = this.initIndexMap(this.uniqueMap, fields);
 
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
@@ -261,7 +261,7 @@ export class DBTable {
       if (this.nullables[i]) {
         return null;
       }
-      throw new Error(`[MemDB] Field ${this.fields[i]} is not nullable`);
+      throw new Error(`[MemDB] Field '${this.fields[i]}' is not nullable`);
     }
 
     if (value === null && this.nullables[i]) {
@@ -270,17 +270,15 @@ export class DBTable {
 
     // 类型校验
     if (
-      typeof value !== this.types[i] &&
-      this.types[i] === 'Date' &&
-      !(value instanceof Date)
+      (this.types[i] === 'Date' && !(value instanceof Date)) ||
+      (this.types[i] !== 'Date' && typeof value !== this.types[i])
     ) {
       throw new Error(
-        `[MemDB] Field ${this.fields[i]} type mismatch, expected '${
+        `[MemDB] Field '${this.fields[i]}' type mismatch, expected '${
           this.types[i]
         }', got '${typeof value}'`
       );
     }
-
     return value;
   }
 
