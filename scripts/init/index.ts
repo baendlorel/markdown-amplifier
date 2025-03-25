@@ -3,7 +3,6 @@ import path from 'path';
 import { lerr, lgrey, load, save } from '../misc';
 import { MA_RC, MA_DIR, MA_RC_DEFAULT, loadRc } from '../core';
 
-// TODO 编写初始化脚本，创建文件夹、初始化数据库等
 /**
  * 初始化程序 \
  * Initialize the program

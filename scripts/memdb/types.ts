@@ -31,6 +31,7 @@ export type FieldOption = {
 export type MemDBTableCreateOption = {
   tableName: string;
   fields: FieldOption[];
+  data?: Row[];
 };
 
 /**

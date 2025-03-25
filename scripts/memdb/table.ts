@@ -80,10 +80,11 @@ export class DBTable {
    * Map<Index Field Name, Map<Index Field Value, Data Row>>
    */
   private uniqueMap: Map<string, Map<Value, Row>>;
+  private pkMap: Map<string, Map<Value, Row>>;
 
   constructor(o: MemDBTableCreateOption) {
     this.autoIncrementId = 0;
-    this.data = [];
+    this.data = o.data ?? [];
 
     assertValidTableName(o.tableName);
     this.name = o.tableName;
@@ -97,6 +98,10 @@ export class DBTable {
       assureFieldOptionArray(Array.from(o.fields));
 
     this.fields = fields;
+    this.fieldIndex = {};
+    for (let i = 0; i < fields.length; i++) {
+      this.fieldIndex[fields[i]] = i;
+    }
     this.types = types;
     this.defaults = defaults;
     this.nullables = nullables;
@@ -104,12 +109,10 @@ export class DBTable {
     this.isAI = isAI;
     this.indexMap = new Map();
     this.uniqueMap = new Map();
-    this.initIndexes(indexes);
-    this.initUniques(uniques);
-    this.fieldIndex = {};
-    for (let i = 0; i < o.fields.length; i++) {
-      this.fieldIndex[o.fields[i].name] = i;
-    }
+    this.pkMap = new Map();
+    this.initIndexes(this.indexMap, indexes);
+    this.initUniques(this.uniqueMap, uniques);
+    this.initUniques(this.pkMap, [fields[pk]]);
   }
 
   /**
@@ -134,14 +137,18 @@ export class DBTable {
     return iti;
   }
 
-  private initIndexes(fields: (typeof this.fields)[number][]) {
+  private initIndexes(
+    map: Map<string, Map<Value, Row[]>>,
+    fields: (typeof this.fields)[number][]
+  ) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
       throw new Error('[MemDB] Index field not found in fields');
     }
 
-    const iti = this.initIndexMap(this.indexMap, fields);
+    const iti = this.initIndexMap(map, fields);
 
+    // TODO 初始化阶段this.data一定是空的，在这里扫描建立索引也许是白费力气
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
     for (let i = 0; i < this.data.length; i++) {
@@ -149,7 +156,7 @@ export class DBTable {
       for (let j = 0; j < fields.length; j++) {
         // 上面已经初始化过，这里一定是有的
         // As initialized above, 'get' must return a no undefined value here
-        const indexValueMap = this.indexMap.get(fields[j]) as Map<Value, Row[]>;
+        const indexValueMap = map.get(fields[j]) as Map<Value, Row[]>;
         const vKey = row[iti[fields[j]]];
         let rows = indexValueMap.get(vKey);
         if (!rows) {
@@ -161,14 +168,18 @@ export class DBTable {
     }
   }
 
-  private initUniques(fields: (typeof this.fields)[number][]) {
+  private initUniques(
+    map: Map<string, Map<Value, Row>>,
+    fields: (typeof this.fields)[number][]
+  ) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
       throw new Error('[MemDB] Index field not found in fields');
     }
 
-    const iti = this.initIndexMap(this.uniqueMap, fields);
+    const iti = this.initIndexMap(map, fields);
 
+    // TODO 初始化阶段this.data一定是空的，在这里扫描建立索引也许是白费力气
     // 遍历全表，建立索引
     // Traverse the entire table and build indexes
     for (let i = 0; i < this.data.length; i++) {
@@ -176,7 +187,7 @@ export class DBTable {
       for (let j = 0; j < fields.length; j++) {
         // 上面已经初始化过，这里一定是有的
         // As initialized above, 'get' must return a no undefined value here
-        const uniqueValueMap = this.uniqueMap.get(fields[j]) as Map<Value, Row>;
+        const uniqueValueMap = map.get(fields[j]) as Map<Value, Row>;
         const vKey = row[iti[fields[j]]];
         // 唯一索引不能有重复数据
         // Unique indexes must not have duplicated data
