@@ -33,6 +33,10 @@ export type FieldOption = {
   isAutoIncrement?: boolean;
 };
 
+export type FindCondition<T extends readonly FieldOption[]> = {
+  [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
+};
+
 export type Entity<T extends readonly FieldOption[]> = {
   // 可选项
   [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
@@ -60,7 +64,7 @@ export enum DBFileLine {
   /**
    * 字段名
    */
-  FIELD,
+  FIELDS,
   /**
    * 字段类型，加载表文件、更新、插入的时候会检测 \
    * Field type, will be checked when loading, updating and inserting
@@ -81,14 +85,30 @@ export enum DBFileLine {
    * Default value of the field, can be a function
    */
   DEAFULT_GETTER_IS_FUNCTION,
+  /**
+   * 主键在fields数组的下标 \
+   * The index of the primary key in the fields array
+   */
   PRIMARY_KEY,
+  /**
+   * 是否自增主键 \
+   * Whether it is an auto-increment primary key
+   */
   IS_AUTO_INCREMENT,
   /**
    * 记载自增主键加到哪里了 \
    * Now what id is
    */
   AUTO_INCREMENT_ID,
+  /**
+   * 索引字段名列表 \
+   * Index field name list
+   */
   INDEXES,
+  /**
+   * 唯一约束字段名列表 \
+   * Unique constraint field name list
+   */
   UNIQUES,
   /**
    * 数据开始行数 \

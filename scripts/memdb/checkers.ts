@@ -59,15 +59,16 @@ export const assureFieldOptionArray = (fieldOptions: FieldOption[]) => {
 
     if ('default' in o) {
       const _default = o.default;
-      const _value = typeof _default === 'function' ? _default() : _default;
-      // string、boolean、number、Date的情形，允许为空的情况下可以是null
-      // The cases of string, boolean, number and Date, if the field is nullable then allow 'null'
+      const _defaultValue = typeof _default === 'function' ? _default() : _default;
       if (
-        typeof _value === o.type ||
-        (_value as any) instanceof Date ||
-        (_isNullable && _value === null)
+        typeof _defaultValue === o.type ||
+        _defaultValue instanceof Date ||
+        (_isNullable && _defaultValue === null)
       ) {
-        defaults[i] = _default;
+        // 至此默认值已经限定为string、boolean、number、Date，在可为空时允许为null，不可能是undefined
+        // '_defaultValue' has been restricted to string, boolean, number, Date
+        // And it can be null when nullable, so it must not be undefined
+        defaults[i] = _default as DefaultGetter;
       } else {
         throw new Error(
           `[MemDB] Invalid default value getter, index:${i} default:${_default}`

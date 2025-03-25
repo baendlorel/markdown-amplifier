@@ -8,6 +8,7 @@ import {
   RowObject,
   FieldType,
   Entity,
+  FindCondition,
 } from './types';
 
 const dbDataSymbol = Symbol('dbData');
@@ -210,7 +211,7 @@ export class DBTable<T extends TableConfig> {
    * @param data 局部数据
    * @param condition 条件（已校验）
    */
-  private filter(data: Row[], condition: Entity<T['fields']>) {
+  private filter(data: Row[], condition: FindCondition<T['fields']>) {
     // 能快一点是一点
     // The faster, the better
     if (data.length === 0) {
@@ -296,7 +297,7 @@ export class DBTable<T extends TableConfig> {
     return value;
   }
 
-  find(condition: Entity<T['fields']>): RowObject<typeof this.fields>[] {
+  find(condition: FindCondition<T['fields']>): RowObject<typeof this.fields>[] {
     if (!condition || typeof condition !== 'object') {
       throw new Error('[MemDB] Condition must be an object with fields and values');
     }
