@@ -3,17 +3,16 @@ import { assureFieldOptionArray, assertValidTableName } from './checkers';
 import {
   Value,
   Row,
-  MemDBTableCreateOption,
+  TableConfig,
   DefaultGetter,
   RowObject,
   FieldType,
-  FieldTypeMap,
-  FieldOption,
+  Entity,
 } from './types';
 
 const dbDataSymbol = Symbol('dbData');
 
-export class DBTable {
+export class DBTable<T extends TableConfig> {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   save: (dbFilePath: string) => void;
 
@@ -85,7 +84,7 @@ export class DBTable {
   private uniqueMap: Map<string, Map<Value, Row>>;
   private pkMap: Map<string, Map<Value, Row>>;
 
-  constructor(o: MemDBTableCreateOption) {
+  constructor(o: T) {
     this.autoIncrementId = 0;
     if (dbDataSymbol in o) {
       console.log(`[MemDB] Loading DBTable from file: ${o[dbDataSymbol]}`);
@@ -211,7 +210,7 @@ export class DBTable {
    * @param data 局部数据
    * @param condition 条件（已校验）
    */
-  private filter(data: Row[], condition: Partial<RowObject<typeof this.fields>>) {
+  private filter(data: Row[], condition: Entity<T['fields']>) {
     // 能快一点是一点
     // The faster, the better
     if (data.length === 0) {
@@ -297,9 +296,7 @@ export class DBTable {
     return value;
   }
 
-  find(
-    condition: Partial<RowObject<typeof this.fields>>
-  ): RowObject<typeof this.fields>[] {
+  find(condition: Entity<T['fields']>): RowObject<typeof this.fields>[] {
     if (!condition || typeof condition !== 'object') {
       throw new Error('[MemDB] Condition must be an object with fields and values');
     }
@@ -381,11 +378,7 @@ export class DBTable {
     return this.filter(this.data, condition);
   }
 
-  insert(
-    row: Partial<{
-      [key in (typeof this.fields)[number]]: FieldTypeMap[(typeof this.types)[number]];
-    }>
-  ) {
+  insert(row: Entity<T['fields']>) {
     const newRow = [] as Row;
     for (let i = 0; i < this.fields.length; i++) {
       // 逐个字段校验

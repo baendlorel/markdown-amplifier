@@ -17,6 +17,11 @@ export type RowObject<T extends string[]> = { [k in T[number]]: Value };
 
 export type DefaultGetter = Value | (() => Value);
 
+export type TableConfig = {
+  tableName: string;
+  fields: FieldOption[];
+};
+
 export type FieldOption = {
   name: string;
   type: FieldType;
@@ -28,9 +33,19 @@ export type FieldOption = {
   isAutoIncrement?: boolean;
 };
 
-export type MemDBTableCreateOption = {
-  tableName: string;
-  fields: FieldOption[];
+export type Entity<T extends readonly FieldOption[]> = {
+  // 可选项
+  [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
+} & {
+  // 这些是必选
+  [K in T[number]['name'] as Extract<T[number], { name: K }> extends
+    | {
+        isPrimaryKey: true;
+        isAutoIncrement?: false;
+      }
+    | { isNullable: false; default?: undefined }
+    ? K
+    : never]: FieldTypeMap[Extract<T[number], { name: K }>['type']];
 };
 
 /**
