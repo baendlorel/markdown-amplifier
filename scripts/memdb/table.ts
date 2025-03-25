@@ -10,6 +10,8 @@ import {
   FieldTypeMap,
 } from './types';
 
+const dbFilePathSymbol = Symbol('dbFilePath');
+
 export class DBTable {
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   save: (dbFilePath: string) => void;
@@ -84,7 +86,13 @@ export class DBTable {
 
   constructor(o: MemDBTableCreateOption) {
     this.autoIncrementId = 0;
-    this.data = o.data ?? [];
+    if (dbFilePathSymbol in o) {
+      console.log(`[MemDB] Loading DBTable from file: ${o[dbFilePathSymbol]}`);
+      this.data = o.data as Row[];
+    } else {
+      console.log(`[MemDB] Loading DBTable from property 'data'`);
+      this.data = o.data ?? [];
+    }
 
     assertValidTableName(o.tableName);
     this.name = o.tableName;
@@ -416,6 +424,7 @@ export class DBTable {
     try {
       const str = decompressSync(dbFilePath);
       const o = JSON.parse(str);
+      o[dbFilePathSymbol] = dbFilePath;
       return new DBTable(o);
     } catch (error) {
       console.log('Failed to load DBTable from file:', dbFilePath);
@@ -432,7 +441,12 @@ export class DBTable {
     console.log('defaults', this.defaults);
     console.log('indexes ', this.indexMap.keys());
     console.log('uniques ', this.uniqueMap.keys());
-    console.log('data    ', this.data);
+
+    if (this.data.length > 15) {
+      console.log('data    ', this.data.slice(0, 15), `...${this.data.length - 15} more`);
+    } else {
+      console.log('data    ', this.data);
+    }
 
     // console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
   }
