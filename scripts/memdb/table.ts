@@ -337,7 +337,7 @@ export class DBTable {
 
       if (typeof v !== t) {
         throw new Error(
-          `[MemDB] Field type mismatch, expected '${v}', got '${typeof v}'`
+          `[MemDB] Field type mismatch, expected '${t}', got '${typeof v}'`
         );
       }
     }
@@ -439,8 +439,13 @@ export class DBTable {
     console.log('fields  ', this.fields);
     console.log('types   ', this.types);
     console.log('defaults', this.defaults);
-    console.log('indexes ', this.indexMap.keys());
-    console.log('uniques ', this.uniqueMap.keys());
+    for (const f of this.indexMap.keys()) {
+      console.log(`indexes ${f}: ${this.indexMap.get(f)?.size}`);
+    }
+
+    for (const f of this.uniqueMap.keys()) {
+      console.log(`uniques ${f}: ${this.uniqueMap.get(f)?.size}`);
+    }
 
     if (this.data.length > 15) {
       console.log('data    ', this.data.slice(0, 15), `...${this.data.length - 15} more`);

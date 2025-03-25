@@ -19,11 +19,33 @@ const incr = (() => {
   return () => (++i).toString(36).padStart(8, '0');
 })();
 
-const SIZE = 100_0000;
+const SIZE = 1000;
+let howManyMen = 0;
 console.time(`插表${SIZE}个`);
-for (let i = 0; i < 100_0000; i++) {
-  a.insert({ name: incr(), sex: Math.random() > 0.5 ? '男' : '女' });
+for (let i = 0; i < SIZE; i++) {
+  if (Math.random() > 0.5) {
+    a.insert({ name: incr(), sex: '男' });
+    howManyMen++;
+  } else {
+    a.insert({ name: incr(), sex: '女' });
+  }
 }
+console.log('总共男人:' + howManyMen);
 console.timeEnd(`插表${SIZE}个`);
+
+const TIMES = 10;
+console.time(`查询无索引${TIMES}次`);
+for (let i = 0; i < TIMES; i++) {
+  const t = a.find({ sex: '男' });
+  console.log('性别为男数量:' + t.length);
+}
+console.timeEnd(`查询无索引${TIMES}次`);
+
+console.time(`有索引${TIMES}次`);
+for (let i = 0; i < TIMES; i++) {
+  const t = a.find({ name: '2' });
+  console.log('name记录数量:' + t.length);
+}
+console.timeEnd(`有索引${TIMES}次`);
 
 a.display();
