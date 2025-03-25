@@ -9,6 +9,7 @@ const a = new DBTable({
     { name: 'name', type: 'string', isUnique: true },
     { name: 'age', type: 'number', default: () => Math.ceil(Math.random() * 20) },
     { name: 'sex', type: 'string' },
+    { name: 'createDate', type: 'Date', default: () => new Date() },
   ],
   data: [],
 });
@@ -19,7 +20,7 @@ const incr = (() => {
   return () => (++i).toString(36).padStart(8, '0');
 })();
 
-const SIZE = 1000;
+const SIZE = 10000;
 let howManyMen = 0;
 console.time(`插表${SIZE}个`);
 for (let i = 0; i < SIZE; i++) {
@@ -37,14 +38,18 @@ const TIMES = 10;
 console.time(`查询无索引${TIMES}次`);
 for (let i = 0; i < TIMES; i++) {
   const t = a.find({ sex: '男' });
-  console.log('性别为男数量:' + t.length);
+  if (i === 0) {
+    console.log('性别为男数量:' + t.length);
+  }
 }
 console.timeEnd(`查询无索引${TIMES}次`);
 
 console.time(`有索引${TIMES}次`);
 for (let i = 0; i < TIMES; i++) {
   const t = a.find({ name: '2' });
-  console.log('name记录数量:' + t.length);
+  if (i === 0) {
+    console.log('name记录数量:' + t.length);
+  }
 }
 console.timeEnd(`有索引${TIMES}次`);
 

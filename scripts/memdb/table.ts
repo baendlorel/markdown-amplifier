@@ -385,7 +385,6 @@ export class DBTable {
     return this.filter(this.data, condition);
   }
 
-  // insert(row: Partial<RowObject<typeof this.fields>>) {
   insert(
     row: Partial<{
       [key in (typeof this.fields)[number]]: FieldTypeMap[(typeof this.types)[number]];
