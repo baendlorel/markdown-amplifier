@@ -82,7 +82,7 @@ export enum Line {
    * 标记出这个默认值设定是否为一个函数 \
    * Default value of the field, can be a function
    */
-  DEAFULT_GETTER_IS_FUNCTION,
+  DEAFULT_GETTER_TYPE,
   /**
    * 主键在fields数组的下标 \
    * The index of the primary key in the fields array

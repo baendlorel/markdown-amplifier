@@ -11,8 +11,11 @@ import {
   FindCondition,
   Line,
 } from './types';
+import { base64 } from './utils';
 
 const dbDataSymbol = Symbol('dbData');
+
+// TODO 给所有错误标记上函数名称
 
 export class DBTable<T extends TableConfig> {
   /**
@@ -434,7 +437,7 @@ export class DBTable<T extends TableConfig> {
 
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   save(dbFilePath: string) {
-    // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值DBTableFile排列每一行的内容
+    // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值Line排列每一行的内容
     // * Most of the time, adding string is faster than array join, but here we need to accurately arrange the content of each line according to 'DBTableFile'
     const content = [] as string[];
     content[Line.NAME] = 'NAME: ' + this.name;
@@ -443,17 +446,59 @@ export class DBTable<T extends TableConfig> {
     content[Line.NULLABLES] =
       'NULLABLES: ' + this.nullables.map((n) => (n ? '1' : '0')).join(',');
 
-    // TODO 函数转化为字符串可能会包含很多问题无法处理，比如包含换行符的时候，split会直接导致异常
+    // * 全部字符串化并转换为base64编码，防止出现换行符影响split
+    // 首尾加上大括号可以变成对象
     content[Line.DEFAULTS] =
       'DEFAULTS: ' +
-      '{' +
-      this.defaults.reduce((p, c, i) => `${p && p + ','}"${i}":"${String(c)}"`, '') +
-      '}';
-    content[Line.DEAFULT_GETTER_IS_FUNCTION] =
-      'DEAFULT_GETTER_IS_FUNCTION: ' +
-      this.defaults
-        .reduce((p, c, i) => (typeof c === 'function' && p.push(i), p), [] as number[])
-        .join(',');
+      this.defaults.reduce((prev, getter, i) => {
+        let v = '';
+        switch (typeof getter) {
+          case 'string':
+            v = getter;
+            break;
+          case 'number':
+            v = String(getter);
+            break;
+          case 'boolean':
+            v = getter ? '1' : '0';
+            break;
+          case 'function':
+            v = getter.toString();
+            break;
+          case 'object':
+            v = String(getter);
+            break;
+          default:
+            throw new Error(
+              '[MemDB] Invalid default value getter, must be string, number, boolean, Date or a function'
+            );
+        }
+        return `${prev && prev + ','}"${i}":"${base64.encode(v)}"`;
+      }, '');
+    // 首尾加上大括号可以变成对象
+    content[Line.DEAFULT_GETTER_TYPE] =
+      'DEAFULT_GETTER_TYPE: ' +
+      this.defaults.reduce((prev, getter, i) => {
+        let v = '';
+        switch (typeof getter) {
+          case 'string':
+          case 'number':
+          case 'boolean':
+          case 'function':
+            v = typeof getter;
+            break;
+          case 'object':
+            if (getter instanceof Date) {
+              v = 'Date';
+              break;
+            }
+          default:
+            throw new Error(
+              `[MemDB] Invalid default value getter, must return string, number, boolean or Date`
+            );
+        }
+        return `${prev && prev + ','}"${i}":"${v}"`;
+      }, '');
     content[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(this.pk);
     content[Line.IS_AI] = 'IS_AI: ' + (this.isAI ? '1' : '0');
     content[Line.AUTO_INCREMENT_ID] =
@@ -463,6 +508,7 @@ export class DBTable<T extends TableConfig> {
 
     const total = Line.DATA_START + this.data.length;
     for (let i = Line.DATA_START; i < total; i++) {
+      // 删除首尾的方括号
       content[i] = JSON.stringify(this.data[i - Line.DATA_START]).slice(1, -1);
     }
     fs.writeFileSync(dbFilePath, content.join('\n'));
