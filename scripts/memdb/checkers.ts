@@ -210,6 +210,53 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
   return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
 };
 
+export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) => {
+  if (typeof d1 !== typeof d2) {
+    throw new Error(
+      `[MemDB assertSameDefaultGetter] Types of defaultGetters are different. 'd1': ${typeof d1}, 'd2': ${typeof d2}`
+    );
+  }
+
+  switch (typeof d1) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+      if (d1 !== d2) {
+        throw new Error(
+          `[MemDB assertSameDefaultGetter] defaultGetters mismatch,'d1': ${d1}, 'd2': ${d2}`
+        );
+      }
+      break;
+    case 'object':
+      if (d1 instanceof Date && d2 instanceof Date) {
+        if (d1.getTime() !== d2.getTime()) {
+          throw new Error(
+            `[MemDB assertSameDefaultGetter] defaultGetters mismatch,'d1': ${d1}, 'd2': ${d2}`
+          );
+        }
+      } else {
+        throw new Error(
+          `[MemDB assertSameDefaultGetter] defaultGetters cannot have non-Date object,'d1': ${d1}, 'd2': ${d2}`
+        );
+      }
+    case 'function':
+      // d2类型和d1相同，这里肯定是一样的，但是ts不认识，手动标记
+      // 'd2' has the same type as 'd1', so they must both be functions
+      const _d2 = d2 as Function;
+      if (
+        d1.toString().replace(/^\s+function\s+/, '') !==
+        _d2.toString().replace(/^\s+function\s+/, '')
+      ) {
+        throw new Error(
+          `[MemDB assertSameDefaultGetter] defaultGetters mismatch, d1:${d1.toString()}, d2:${_d2.toString()}`
+        );
+      }
+
+    default:
+      break;
+  }
+};
+
 /**
  * 确保字段名没有重复的 \
  * Ensure that there are no duplicate field names

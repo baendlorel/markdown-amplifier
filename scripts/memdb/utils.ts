@@ -30,6 +30,65 @@ export const recreateFunction = (funcStr: string): Function => {
   }
 
   // 目前没有发现函数toString的其他情形，大概率构造不出来
-  console.error(`[MemDB] Might be an invalid function string: ${funcStr}`);
+  console.error(
+    `[MemDB recreateFunction] Might be an invalid function string: ${funcStr}`
+  );
   return new Function('return function ' + funcStr)();
+};
+
+/**
+ * 对比一个无重复的数组是否由另一个数组重排列得到 \
+ * Compare an array without duplicates to see if it is permutated from another array
+ * @param arr1
+ * @param arr2
+ * @param equals
+ */
+export const isPermutated = (
+  arr1: any[],
+  arr2: any[],
+  equals?: (a: any, b: any) => boolean
+) => {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  if (arr1.length === 0) {
+    return true;
+  }
+  equals = equals ?? ((a, b) => a === b);
+  const length = arr1.length;
+  if (length === 1) {
+    return equals(arr1[0], arr2[0]);
+  }
+
+  // 确保没有重复项
+  // Assure no duplicate elements
+  for (let i = 0; i < length; i++) {
+    for (let j = i; j < length; j++) {
+      if (equals(arr1[i], arr1[j])) {
+        throw new Error(
+          `[MemDB isPermutated] Duplicate elements of 'arr1' found! [${i}] === [${j}]`
+        );
+      }
+      if (equals(arr2[i], arr2[j])) {
+        throw new Error(
+          `[MemDB isPermutated] Duplicate elements of 'arr2' found! [${i}] === [${j}]`
+        );
+      }
+    }
+  }
+
+  for (let i = 0; i < length; i++) {
+    let index = -1;
+    for (let j = 0; j < length; j++) {
+      if (equals(arr1[i], arr2[j])) {
+        index = j;
+        break;
+      }
+    }
+    if (index === -1) {
+      return false;
+    }
+  }
+
+  return true;
 };

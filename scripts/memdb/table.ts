@@ -1,6 +1,10 @@
 import fs from 'fs';
 import { decompressSync } from './brotli';
-import { assureFieldOptionArray, assertValidTableName } from './checkers';
+import {
+  assureFieldOptionArray,
+  assertValidTableName,
+  assertSameDefaultGetter,
+} from './checkers';
 import {
   Value,
   Row,
@@ -11,7 +15,7 @@ import {
   FindCondition,
   Line,
 } from './types';
-import { base64, recreateFunction } from './utils';
+import { base64, isPermutated, recreateFunction } from './utils';
 
 const dbDataSymbol = Symbol('dbData');
 
@@ -610,31 +614,59 @@ export class DBTable<T extends TableConfig> {
     const indexes = lines[Line.INDEXES].replace('INDEXES: ', '').split(',');
     const uniques = lines[Line.UNIQUES].replace('UNIQUES: ', '').split(',');
 
-    const err = (prop: string, i: number, ti: number, ct: any, got: any) => {
+    const err = (prop: string, i: number, ti: number, expected: any, got: any) => {
       throw new Error(
-        `[MemDB] '${prop}[${i}]->[${ti}]' mismatch, expected '${ct}', got '${got}'`
+        `[MemDB] '${prop}[${i}]->[${ti}]' mismatch, expected '${expected}', got '${got}'`
       );
     };
+
+    // # compare types, nullables, defaults
     for (let i = 0; i < fields.length; i++) {
-      const ti = toThisIndex[i];
-      const ctType = this.types[ti];
-      if (types[i] !== ctType) {
-        err('types', i, ti, ctType, types[i]);
+      const ii = toThisIndex[i];
+
+      if (types[i] !== this.types[ii]) {
+        err('types', i, ii, this.types[ii], types[i]);
       }
 
-      const ctNlb = this.nullables[ti];
-      if (nullables[i] !== ctNlb) {
-        err('nullables', i, ti, ctNlb, nullables[i]);
+      if (nullables[i] !== this.nullables[ii]) {
+        err('nullables', i, ii, this.nullables[ii], nullables[i]);
       }
 
-      const ctD = this.defaults[ti];
-      if (defaults[i] !== ctD) {
-        throw new Error(
-          `[MemDB] 'defaults[${i}]->[${ti}]' mismatch, expected '${ctD}', got '${defaults[i]}'`
-        );
-      }
+      // defaultGetter的对比相对复杂一些
+      assertSameDefaultGetter(this.defaults[ii], defaults[i]);
     }
 
+    // # compare isAI and pk
+    if (isAI !== this.isAI) {
+      throw new Error(`[MemDB] 'isAI' mismatch, expected '${this.isAI}', got '${isAI}'`);
+    }
+
+    if (toThisIndex[pk] !== this.pk) {
+      throw new Error(
+        `[MemDB] 'pk' mismatch, expected '${this.pk}', got '${pk}->${toThisIndex[pk]}'`
+      );
+    }
+
+    // # compare indexes and uniques
+    const thisIndexes = [...this.indexMap.keys()];
+    if (!isPermutated(indexes, thisIndexes)) {
+      throw new Error(
+        `[MemDB] 'indexes' mismatch, expected '${thisIndexes.join()}', got '${indexes.join()}'`
+      );
+    }
+
+    const thisUniques = [...this.uniqueMap.keys()];
+    if (!isPermutated(uniques, thisUniques)) {
+      throw new Error(
+        `[MemDB] 'uniques' mismatch, expected '${thisUniques.join()}', got '${uniques.join()}'`
+      );
+    }
+
+    if (Number.isNaN(autoIncrementId)) {
+      throw new Error(`[MemDB] Loaded 'autoIncrementId' is NaN`);
+    }
+
+    this.autoIncrementId = autoIncrementId;
     // 开始加载数据
     // Start loading data from file
 
