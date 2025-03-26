@@ -442,6 +442,8 @@ export class DBTable<T extends TableConfig> {
     content[Line.TYPES] = 'TYPES: ' + this.types.join(',');
     content[Line.NULLABLES] =
       'NULLABLES: ' + this.nullables.map((n) => (n ? '1' : '0')).join(',');
+
+    // TODO 函数转化为字符串可能会包含很多问题无法处理，比如包含换行符的时候，split会直接导致异常
     content[Line.DEFAULTS] =
       'DEFAULTS: ' +
       '{' +
@@ -449,7 +451,9 @@ export class DBTable<T extends TableConfig> {
       '}';
     content[Line.DEAFULT_GETTER_IS_FUNCTION] =
       'DEAFULT_GETTER_IS_FUNCTION: ' +
-      this.defaults.map((d) => (typeof d === 'function' ? '1' : '0')).join(',');
+      this.defaults
+        .reduce((p, c, i) => (typeof c === 'function' && p.push(i), p), [] as number[])
+        .join(',');
     content[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(this.pk);
     content[Line.IS_AI] = 'IS_AI: ' + (this.isAI ? '1' : '0');
     content[Line.AUTO_INCREMENT_ID] =
