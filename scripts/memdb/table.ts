@@ -11,7 +11,7 @@ import {
   FindCondition,
   Line,
 } from './types';
-import { base64 } from './utils';
+import { base64, recreateFunction } from './utils';
 
 const dbDataSymbol = Symbol('dbData');
 
@@ -436,19 +436,28 @@ export class DBTable<T extends TableConfig> {
   }
 
   // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
+  /**
+   * 保存数据库结构、内容到文件中 \
+   * 主要是内容，结构只是为了调用load的时候进行对比校验 \
+   * Save the database structure and content to a file \
+   * Content is the main point, saving structure is just for validation when calling 'load'
+   * @param dbFilePath
+   */
   save(dbFilePath: string) {
     // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值Line排列每一行的内容
     // * Most of the time, adding string is faster than array join, but here we need to accurately arrange the content of each line according to 'DBTableFile'
-    const content = [] as string[];
-    content[Line.NAME] = 'NAME: ' + this.name;
-    content[Line.FIELDS] = 'FIELDS: ' + this.fields.join(',');
-    content[Line.TYPES] = 'TYPES: ' + this.types.join(',');
-    content[Line.NULLABLES] =
+    const lines = [] as string[];
+    lines[Line.NAME] = 'NAME: ' + this.name;
+    lines[Line.FIELDS] = 'FIELDS: ' + this.fields.join(',');
+    lines[Line.TYPES] = 'TYPES: ' + this.types.join(',');
+    lines[Line.NULLABLES] =
       'NULLABLES: ' + this.nullables.map((n) => (n ? '1' : '0')).join(',');
 
     // * 全部字符串化并转换为base64编码，防止出现换行符影响split
+    // * Convert all defaultGetters to string and encode with base64 to prevent line breaks from affecting 'split'
     // 首尾加上大括号可以变成对象
-    content[Line.DEFAULTS] =
+    // Add braces at the beginning and end to make it an object
+    lines[Line.DEFAULTS] =
       'DEFAULTS: ' +
       this.defaults.reduce((prev, getter, i) => {
         let v = '';
@@ -466,8 +475,10 @@ export class DBTable<T extends TableConfig> {
             v = getter.toString();
             break;
           case 'object':
-            v = String(getter);
-            break;
+            if (getter instanceof Date) {
+              v = getter.getTime().toString();
+              break;
+            }
           default:
             throw new Error(
               '[MemDB] Invalid default value getter, must be string, number, boolean, Date or a function'
@@ -476,7 +487,8 @@ export class DBTable<T extends TableConfig> {
         return `${prev && prev + ','}"${i}":"${base64.encode(v)}"`;
       }, '');
     // 首尾加上大括号可以变成对象
-    content[Line.DEAFULT_GETTER_TYPE] =
+    // Add braces at the beginning and end to make it an object
+    lines[Line.DEAFULT_GETTER_TYPE] =
       'DEAFULT_GETTER_TYPE: ' +
       this.defaults.reduce((prev, getter, i) => {
         let v = '';
@@ -499,19 +511,134 @@ export class DBTable<T extends TableConfig> {
         }
         return `${prev && prev + ','}"${i}":"${v}"`;
       }, '');
-    content[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(this.pk);
-    content[Line.IS_AI] = 'IS_AI: ' + (this.isAI ? '1' : '0');
-    content[Line.AUTO_INCREMENT_ID] =
-      'AUTO_INCREMENT_ID: ' + String(this.autoIncrementId);
-    content[Line.INDEXES] = 'INDEXES: ' + [...this.indexMap.keys()].join();
-    content[Line.UNIQUES] = 'UNIQUES: ' + [...this.uniqueMap.keys()].join();
+    lines[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(this.pk);
+    lines[Line.IS_AI] = 'IS_AI: ' + (this.isAI ? '1' : '0');
+    lines[Line.AUTO_INCREMENT_ID] = 'AUTO_INCREMENT_ID: ' + String(this.autoIncrementId);
+    lines[Line.INDEXES] = 'INDEXES: ' + [...this.indexMap.keys()].join();
+    lines[Line.UNIQUES] = 'UNIQUES: ' + [...this.uniqueMap.keys()].join();
 
-    const total = Line.DATA_START + this.data.length;
-    for (let i = Line.DATA_START; i < total; i++) {
+    // 开始保存数据
+    for (let i = 0; i < this.data.length; i++) {
       // 删除首尾的方括号
-      content[i] = JSON.stringify(this.data[i - Line.DATA_START]).slice(1, -1);
+      lines[i + Line.DATA_START] = JSON.stringify(this.data[i]).slice(1, -1);
     }
-    fs.writeFileSync(dbFilePath, content.join('\n'));
+    fs.writeFileSync(dbFilePath, lines.join('\n'), { encoding: 'utf-8' });
+  }
+
+  load(dbFilePath: string) {
+    const content = fs.readFileSync(dbFilePath, { encoding: 'utf-8' });
+    const lines = content.split('\n');
+    // 开始对比表结构。可能改代码时会调整字段顺序，故此处要做成映射再行对比
+    // Start comparison of table structure. The field order may be adjusted when coding, so map it to an object for comparison
+    const name = lines[Line.NAME].replace('NAME: ', '');
+    if (name !== this.name) {
+      throw new Error(
+        `[MemDB] Table name mismatch, expected '${this.name}', got '${name}'`
+      );
+    }
+    const fields = lines[Line.NAME].replace('FIELDS: ', '').split(',');
+    if (this.fields.length !== fields.length) {
+      const used = `[${this.fields.join()}](${this.fields.length})`;
+      const loaded = `[${fields.join()}](${fields.length})`;
+      throw new Error(
+        `[MemDB] Field count mismatch, expected '${used}', loaded '${loaded}'`
+      );
+    }
+
+    // 下面开始考虑fields和this.field的内容是否一致
+    // get函数能够顺利生成说明两者只是调换了顺序或原本就是一致的
+    // Now consider whether the elements of 'fields' and 'this.field' are the same
+    // If 'get' can be generated, the two arrays are only in different order or are the same
+    /**
+     * 用于以arr的下标来访问this.arr中对应的元素 \
+     * Access the corresponding element in 'this.arr' using the index of 'arr'
+     * @param i 元素在arr中的下标
+     */
+    const toThisIndex = {} as Record<number, number>;
+    for (let i = 0; i < fields.length; i++) {
+      const index = this.fields.findIndex((f) => f === fields[i]);
+      if (index === -1) {
+        throw new Error(
+          `[MemDB] Loaded field '${fields[i]}' is not found in '${this.fields.join()}'`
+        );
+      }
+      toThisIndex[i] = index;
+    }
+
+    // 逐个字段对比
+    // Compare each configuration
+    const types = lines[Line.TYPES].replace('TYPES: ', '').split(',');
+    const nullables = lines[Line.NULLABLES]
+      .replace('NULLABLES: ', '')
+      .split(',')
+      .map((n) => n === '1');
+    const defaults = (() => {
+      const _default = JSON.parse(`{${lines[Line.DEFAULTS].replace('DEFAULTS: ', '')}}`);
+      const _defaultGetterType = JSON.parse(
+        `{${lines[Line.DEAFULT_GETTER_TYPE].replace('DEAFULT_GETTER_TYPE: ', '')}}`
+      );
+      const result = [] as DefaultGetter[];
+      for (const i in _default) {
+        switch (_defaultGetterType[i]) {
+          case 'string':
+            result[i] = base64.decode(_default[i]);
+            break;
+          case 'number':
+            result[i] = Number(base64.decode(_default[i]));
+            break;
+          case 'boolean':
+            result[i] = base64.decode(_default[i]) === '1';
+            break;
+          case 'function':
+            result[i] = recreateFunction(base64.decode(_default[i]));
+            break;
+          case 'Date':
+            result[i] = new Date(base64.decode(_default[i]));
+            break;
+          default:
+            throw new Error(
+              `[MemDB] Invalid default value getter type: ${_defaultGetterType[i]}`
+            );
+        }
+      }
+    })();
+    const pk = Number(lines[Line.PRIMARY_KEY].replace('PRIMARY_KEY: ', ''));
+    const isAI = lines[Line.IS_AI].replace('IS_AI: ', '') === '1';
+    const autoIncrementId = Number(
+      lines[Line.AUTO_INCREMENT_ID].replace('AUTO_INCREMENT_ID: ', '')
+    );
+    const indexes = lines[Line.INDEXES].replace('INDEXES: ', '').split(',');
+    const uniques = lines[Line.UNIQUES].replace('UNIQUES: ', '').split(',');
+
+    const err = (prop: string, i: number, ti: number, ct: any, got: any) => {
+      throw new Error(
+        `[MemDB] '${prop}[${i}]->[${ti}]' mismatch, expected '${ct}', got '${got}'`
+      );
+    };
+    for (let i = 0; i < fields.length; i++) {
+      const ti = toThisIndex[i];
+      const ctType = this.types[ti];
+      if (types[i] !== ctType) {
+        err('types', i, ti, ctType, types[i]);
+      }
+
+      const ctNlb = this.nullables[ti];
+      if (nullables[i] !== ctNlb) {
+        err('nullables', i, ti, ctNlb, nullables[i]);
+      }
+
+      const ctD = this.defaults[ti];
+      if (defaults[i] !== ctD) {
+        throw new Error(
+          `[MemDB] 'defaults[${i}]->[${ti}]' mismatch, expected '${ctD}', got '${defaults[i]}'`
+        );
+      }
+    }
+
+    // 开始加载数据
+    // Start loading data from file
+
+    return this;
   }
 
   display() {
