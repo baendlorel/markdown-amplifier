@@ -10,6 +10,80 @@ export const assertValidTableName = (tableName: string) => {
 };
 
 /**
+ * 此函数的作用其实是确保defaultGetter返回值符合支持的字段类型且不报错 \
+ * 但是，如果函数每次返回值不确定，且存在不符合条件的值，此函数是无法校验的 \
+ * The purpose of this function is actually to ensure that the return value of defaultGetter meets the supported field types and does not throw an error
+ * However, if the return value varies, and some of them do not meet the supported types, this checker may not be able to detect it
+ * @param fn
+ */
+export const assertValidDefaultGetter = (fn: Function) => {
+  const s = fn.toString();
+  const r = recreateFunction(s);
+  const result = (() => {
+    try {
+      return r();
+    } catch (error) {
+      // 如果函数内部有try-catch块消灭了异常也无妨，只要返回值符合支持的字段类型即可
+      // It's okay if the try-catch block inside the function eliminates the exception
+      // As long as the return value meets the supported field types
+      if (error instanceof ReferenceError) {
+        throw new Error(
+          "[MemDB] This function uses outer variables or functions, cannot be used as 'defaultGetter'"
+        );
+      } else {
+        // 应该不会有其他情形了
+        // There should be no other cases
+        throw error;
+      }
+    }
+  })();
+
+  if (result === null) {
+    return;
+  }
+
+  switch (typeof result) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+      return;
+    case 'object':
+      if (result instanceof Date) {
+        return;
+      }
+    default:
+      throw new Error(
+        '[MemDB] Invalid default value getter, must return string, number, boolean or Date'
+      );
+  }
+};
+
+/**
+ * 从toString后的函数字符串重建函数 \
+ * Rebuild the function from the string after toString
+ * @param funcStr
+ * @returns
+ */
+export const recreateFunction = (funcStr: string): Function => {
+  funcStr = funcStr.trim();
+  // 一般函数都这么开头
+  // General functions start like this
+  if (funcStr.startsWith('(') || funcStr.startsWith('function')) {
+    return new Function('return ' + funcStr)();
+  }
+
+  // class的静态方法和class实例的方法，需要手动添加function开头
+  // The static methods of a class and the instance methods of a class need to be manually prefixed with the function keyword
+  if (funcStr.replace(/^\w+/g, '').startsWith('(')) {
+    return new Function('return function ' + funcStr)();
+  }
+
+  // 目前没有发现函数toString的其他情形，大概率构造不出来
+  console.error(`[MemDB] Might be an invalid function string: ${funcStr}`);
+  return new Function('return function ' + funcStr)();
+};
+
+/**
  * 确保字段配置数组有效 \
  * Ensure that the field configuration array is valid
  * @param fieldOptions 待检测配置
@@ -58,8 +132,16 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     }
 
     if ('default' in o) {
-      const _default = o.default;
-      const _defaultValue = typeof _default === 'function' ? _default() : _default;
+      const _getter = o.default;
+      const _defaultValue = (() => {
+        if (typeof _getter === 'function') {
+          assertValidDefaultGetter(_getter);
+          return _getter();
+        } else {
+          return _getter;
+        }
+      })();
+
       if (
         typeof _defaultValue === o.type ||
         _defaultValue instanceof Date ||
@@ -68,10 +150,10 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
         // 至此默认值已经限定为string、boolean、number、Date，在可为空时允许为null，不可能是undefined
         // '_defaultValue' has been restricted to string, boolean, number, Date
         // And it can be null when nullable, so it must not be undefined
-        defaults[i] = _default as DefaultGetter;
+        defaults[i] = _getter as DefaultGetter;
       } else {
         throw new Error(
-          `[MemDB] Invalid default value getter, index:${i} default:${_default}`
+          `[MemDB] Invalid default value getter, index:${i}, type:${o.type}, default:${_getter}`
         );
       }
     }

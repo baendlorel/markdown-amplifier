@@ -244,13 +244,31 @@ function functionToString() {
     return 'cccc\n\\';
   }
 
+  let count = 0;
+  const outer = () => {
+    uuidv4_f2();
+    return ++count;
+  };
+
+  const assertFunctionIsSimple = (fn: Function) => {
+    const s = fn.toString();
+    const r = recreateFunction(s);
+    try {
+      r();
+    } catch (error) {
+      if (error instanceof ReferenceError) {
+        throw new Error(
+          "This function uses outer variables or functions, cannot be used as 'defaultGetter'"
+        );
+      }
+    }
+  };
+
   const recreateFunction = (s: string) => {
     s = s.trim();
-
     if (s.startsWith('(') || s.startsWith('function')) {
       return new Function('return ' + s)();
     }
-
     if (s.replace(/^\w+/g, '').startsWith('(')) {
       return new Function('return function ' + s)();
     }
@@ -261,17 +279,20 @@ function functionToString() {
     uuidv4_a,
     uuidv4_f,
     uuidv4_f2,
-    'DBTable.UUIDv4': A.UUIDv4,
+    outer,
+    'A.UUIDv4': A.UUIDv4,
     'inst.vvid': inst.vvid,
     'inst.arrow': inst.vvidarrow,
   };
 
   for (const [name, func] of Object.entries(funcs)) {
+    assertFunctionIsSimple(func);
     console.log(`----[${name}]--------------`);
     console.log('origin return:', func());
     console.log('toString:', func.toString());
     const re = recreateFunction(func.toString());
-    console.log('recreated return:', re());
+    console.log('recreated return(1):', re());
+    console.log('recreated return(2):', re());
   }
 }
 
