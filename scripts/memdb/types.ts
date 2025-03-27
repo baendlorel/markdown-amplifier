@@ -50,6 +50,79 @@ export type Entity<T extends readonly FieldDefinition[]> = {
     : never]: FieldTypeMap[Extract<T[number], { name: K }>['type']];
 };
 
+export type TablePrivate = {
+  name: string;
+
+  /**
+   * 字段，本可以写成构造器里那样的配置数组，但由于要用到typeof this.fields，所以只能这样写了 \
+   * Fields, could be written as a configuration array in the constructor, but because 'typeof this.fields' is used, there is no other way
+   */
+  fields: string[];
+
+  /**
+   * 字段类型，包含string、number、boolean、Date \
+   * Field types, including string, number, boolean, Date
+   */
+  types: FieldType[];
+
+  /**
+   * 标记是否可为空 \
+   * Mark whether it can be null
+   */
+  nullables: boolean[];
+
+  /**
+   * 字段默认值或默认值获取函数 \
+   * Field default value or default value getter function
+   */
+  defaults: DefaultGetter[];
+
+  // DEAFULT_GETTER_IS_FUNCTION
+
+  /**
+   * 代表主键在fields的下标 \
+   * The index of the primary key in fields
+   */
+  pk: number;
+
+  /**
+   * 是否为自增 \
+   * Whether it is auto-increment
+   */
+  isAI: boolean;
+
+  /**
+   * 自增主键到几了 \
+   * Current auto-increment primary key
+   */
+  autoIncrementId: number;
+
+  /**
+   * Map<索引字段名,Map<索引字段值，多个数据行>> \
+   * Map<Index Field Name, Map<Index Field Value, Data Rows>>
+   */
+  indexMap: Map<string, Map<Value, Row[]>>;
+
+  /**
+   * Map<索引字段名,Map<索引字段值，数据行>> \
+   * Map<Index Field Name, Map<Index Field Value, Data Row>>
+   */
+  uniqueMap: Map<string, Map<Value, Row>>;
+
+  pkMap: Map<string, Map<Value, Row>>;
+
+  /**
+   * 获取某个字段的下标在第几位，用来根据字段获取row里对应的字段值 \
+   * Get the index of a field, used to get the value of this field from a row
+   */
+  fieldIndex: Record<string, number>;
+
+  /**
+   * 数据
+   */
+  data: Row[];
+};
+
 /**
  * 数据库文件每一行代表的含义 \
  * The meaning of each line in the database file
