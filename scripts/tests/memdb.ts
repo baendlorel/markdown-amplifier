@@ -55,7 +55,7 @@ const testFind = (times: number) => {
   console.timeEnd(`有索引${times}次`);
 };
 
-// testInsert(10);
-// a.save('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
-a.load('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
+testInsert(10);
+a.save('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
+// a.load('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
 a.display();

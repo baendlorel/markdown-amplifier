@@ -523,8 +523,18 @@ export class DBTable<T extends TableConfig> {
 
     // 开始保存数据
     for (let i = 0; i < this.data.length; i++) {
-      // 删除首尾的方括号
-      lines[i + Line.DATA_START] = JSON.stringify(this.data[i]).slice(1, -1);
+      // 删除首尾的方括号，boolean转换为0或1，以达到节省空间的目的
+      // Remove the brackets at the two sides, convert boolean to 0 or 1 to save space
+      lines[i + Line.DATA_START] = JSON.stringify(this.data[i], (key, value) => {
+        switch (this.types[key]) {
+          case 'boolean':
+            return value ? '1' : '0';
+          case 'Date':
+            return new Date(value).getTime();
+          default:
+            return value;
+        }
+      }).slice(1, -1);
     }
     fs.writeFileSync(dbFilePath, lines.join('\n'), { encoding: 'utf-8' });
   }
@@ -698,7 +708,20 @@ export class DBTable<T extends TableConfig> {
       const l = JSON.parse('[' + lines[i] + ']');
       const row = [] as Row;
       for (let j = 0; j < l.length; j++) {
-        row[toThisIndex[j]] = l[j];
+        // string、boolean、number、Date的正确处理
+        switch (types[j]) {
+          case 'string':
+          case 'number':
+            row[toThisIndex[j]] = l[j];
+            break;
+          case 'boolean':
+            row[toThisIndex[j]] = l[j] === '1';
+          case 'Date':
+            row[toThisIndex[j]] = new Date(l[j]);
+            break;
+          default:
+            throw new Error(`[MemDB DBTable.load] Invalid field type: ${types[j]}`);
+        }
       }
       this.data.push(row);
     }
