@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from './brotli';
 import {
   assureFieldOptionArray,
@@ -19,6 +19,9 @@ import { base64, createDiagnostics, isPermutated, recreateFunction } from './uti
 
 const { err, log } = createDiagnostics('<Table>');
 
+// # private functions
+
+// TODO 所有私有函数真实私有化
 export class Table<T extends TableConfig> {
   /**
    * 生成一个符合 UUID v4 标准的随机字符串 \
@@ -313,17 +316,19 @@ export class Table<T extends TableConfig> {
   }
 
   find(condition: FindCondition<T['fields']>): Entity<T['fields']>[] {
+    const e = (msg: string) => err(msg, 'find');
+
     if (!condition || typeof condition !== 'object') {
-      throw err('Condition must be an object with fields and values', 'find');
+      throw e('Condition must be an object with fields and values');
     }
     // 校验字段是否可用
     // Check if the fields are available
     const condFields = Object.keys(condition);
     if (condFields.length === 0) {
-      throw err('Condition cannot be empty', 'find');
+      throw e('Condition cannot be empty');
     }
     if (condFields.some((k) => !this.fields.includes(k))) {
-      throw err(`Invalid field detected. fields: ${condFields.join()}`, 'find');
+      throw e(`Invalid field detected. fields: ${condFields.join()}`);
     }
 
     // 校验condition字段是否符合设定的字段类型
@@ -333,17 +338,17 @@ export class Table<T extends TableConfig> {
       const v = condition[condFields[i]];
       const t = this.types[idx];
       if (!this.nullables[idx] && v === null) {
-        throw err(`'${condFields[i]}' cannot be null`, 'find');
+        throw e(`'${condFields[i]}' cannot be null`);
       }
 
       if (t === 'Date' && !(v instanceof Date)) {
         const cf = condFields[i];
         const tv = typeof v;
-        throw err(`Field ${cf} type mismatch, expected 'Date', got '${tv}'`, 'find');
+        throw e(`Field ${cf} type mismatch, expected 'Date', got '${tv}'`);
       }
 
       if (typeof v !== t) {
-        throw err(`Field type mismatch, expected '${t}', got '${typeof v}'`, 'find');
+        throw e(`Field type mismatch, expected '${t}', got '${typeof v}'`);
       }
     }
 
@@ -395,6 +400,19 @@ export class Table<T extends TableConfig> {
     for (let i = 0; i < this.fields.length; i++) {
       // 逐个字段校验
       newRow[i] = this.assureValue(row[this.fields[i]], i);
+
+      // 校验是否有重复的主键
+      // Check for duplicate primary keys
+      if (this.pkMap.has(this.fields[i])) {
+        const m = this.pkMap.get(this.fields[i]) as Map<Value, Row>;
+        if (m.has(newRow[i])) {
+          const f = this.fields[i];
+          const nri = newRow[i];
+          throw err(`Duplicate primary key! field:${f} value:${nri}`, 'insert');
+        } else {
+          m.set(newRow[i], newRow);
+        }
+      }
 
       // 校验是否有重复的唯一索引
       // Check for duplicate unique indexes
@@ -518,29 +536,30 @@ export class Table<T extends TableConfig> {
         }
       }).slice(1, -1);
     }
-    fs.writeFileSync(dbFilePath, lines.join('\n'), { encoding: 'utf-8' });
+    writeFileSync(dbFilePath, lines.join('\n'), { encoding: 'utf-8' });
   }
 
   load(dbFilePath: string) {
     // 如果不存在就不加载了，作为一个空表
-    if (!fs.existsSync(dbFilePath)) {
-      console.log(`[SylphDB] File not found: '${dbFilePath}'. Loading as empty table`);
+    if (!existsSync(dbFilePath)) {
+      log(`File not found: '${dbFilePath}'. Loading as empty table`, 'load');
       return this;
     }
 
-    const content = fs.readFileSync(dbFilePath, { encoding: 'utf-8' });
+    const e = (msg: string) => err(msg, 'load');
+    const content = readFileSync(dbFilePath, { encoding: 'utf-8' });
     const lines = content.split('\n');
     // 开始对比表结构。可能改代码时会调整字段顺序，故此处要做成映射再行对比
     // Start comparison of table structure. The field order may be adjusted when coding, so map it to an object for comparison
     const name = lines[Line.NAME].replace('NAME: ', '');
     if (name !== this.name) {
-      throw err(`Table name mismatch, expected '${this.name}', got '${name}'`, 'load');
+      throw e(`Table name mismatch, expected '${this.name}', got '${name}'`);
     }
     const fields = lines[Line.FIELDS].replace('FIELDS: ', '').split(',');
     if (this.fields.length !== fields.length) {
       const used = `[${this.fields.join()}](${this.fields.length})`;
       const loaded = `[${fields.join()}](${fields.length})`;
-      throw err(`Field count mismatch, expected '${used}', loaded '${loaded}'`, 'load');
+      throw e(`Field count mismatch, expected '${used}', loaded '${loaded}'`);
     }
 
     // 下面开始考虑fields和this.field的内容是否一致
@@ -559,7 +578,7 @@ export class Table<T extends TableConfig> {
       if (index === -1) {
         const f = fields[i];
         const flds = this.fields.join();
-        throw err(`Loaded field '${f}' is not found in '${flds}'`, 'load');
+        throw e(`Loaded field '${f}' is not found in '${flds}'`);
       }
       toThisIndex[i] = index;
       if (i !== index) {
@@ -611,7 +630,7 @@ export class Table<T extends TableConfig> {
             break;
           default:
             const di = _defaultGetterType[i];
-            throw err(`Invalid default value getter type: ${di}`, 'load');
+            throw e(`Invalid default value getter type: ${di}`);
         }
       }
       return result;
@@ -623,10 +642,7 @@ export class Table<T extends TableConfig> {
     const uniques = readArray('UNIQUES');
 
     const mismatch = (prop: string, i: number, ti: number, expected: any, got: any) =>
-      err(
-        `'${prop}[${i}]->[${ti}]' mismatch, expected '${expected}', got '${got}'`,
-        'load'
-      );
+      e(`'${prop}[${i}]->[${ti}]' mismatch, expected '${expected}', got '${got}'`);
 
     // # compare types, nullables, defaults
     for (let i = 0; i < fields.length; i++) {
@@ -646,29 +662,29 @@ export class Table<T extends TableConfig> {
 
     // # compare isAI and pk
     if (isAI !== this.isAI) {
-      throw err(`'isAI' mismatch, expected '${this.isAI}', got '${isAI}'`, 'load');
+      throw e(`'isAI' mismatch, expected '${this.isAI}', got '${isAI}'`);
     }
 
     if (toThisIndex[pk] !== this.pk) {
       const tpk = toThisIndex[pk];
-      throw err(`'pk' mismatch, expected '${this.pk}', got '${pk}->${tpk}'`, 'load');
+      throw e(`'pk' mismatch, expected '${this.pk}', got '${pk}->${tpk}'`);
     }
 
     // # compare indexes and uniques
     const thisIndexes = [...this.indexMap.keys()];
     if (!isPermutated(indexes, thisIndexes)) {
       const ti = thisIndexes;
-      throw err(`'indexes' mismatch, expected '${ti}', got '${indexes}'`, 'load');
+      throw e(`'indexes' mismatch, expected '${ti}', got '${indexes}'`);
     }
 
     const thisUniques = [...this.uniqueMap.keys()];
     if (!isPermutated(uniques, thisUniques)) {
       const tu = thisUniques;
-      throw err(`'uniques' mismatch, expected '${tu}', got '${uniques}'`, 'load');
+      throw e(`'uniques' mismatch, expected '${tu}', got '${uniques}'`);
     }
 
     if (Number.isNaN(autoIncrementId)) {
-      throw err(`Loaded 'autoIncrementId' is NaN`, 'load');
+      throw e(`Loaded 'autoIncrementId' is NaN`);
     }
 
     this.autoIncrementId = autoIncrementId;
@@ -693,7 +709,7 @@ export class Table<T extends TableConfig> {
             row[toThisIndex[j]] = new Date(l[j]);
             break;
           default:
-            throw err(`Invalid field type: ${types[j]}`, 'load');
+            throw e(`Invalid field type: ${types[j]}`);
         }
       }
       this.data.push(row);
