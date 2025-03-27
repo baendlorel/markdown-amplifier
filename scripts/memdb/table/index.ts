@@ -1,10 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from '../brotli';
-import {
-  assureFieldOptionArray,
-  assertTableName,
-  assertSameDefaultGetter,
-} from './checkers';
+import { checker } from './checkers';
 import {
   Value,
   Row,
@@ -19,7 +15,7 @@ import { normalize, filter, initIndexes, initUniques, privateHandler } from './p
 
 const { err, log } = createDiagnostics('<Table>');
 
-const { getPrivates, createPrivates } = privateHandler<Table<TableConfig>>();
+const { getPrivates, createPrivates } = privateHandler();
 
 export class Table<T extends TableConfig> {
   /**
@@ -40,7 +36,7 @@ export class Table<T extends TableConfig> {
     privates.autoIncrementId = 0;
     privates.data = [];
 
-    assertTableName(o.tableName);
+    checker.validTableName(o.tableName);
     privates.name = o.tableName;
 
     if (!Array.isArray(o.fields)) {
@@ -51,7 +47,7 @@ export class Table<T extends TableConfig> {
     }
 
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
-      assureFieldOptionArray(Array.from(o.fields));
+      checker.normalizeFieldOptions(Array.from(o.fields));
 
     privates.fields = fields;
     privates.fieldIndex = {} as Record<string, number>;
@@ -419,7 +415,7 @@ export class Table<T extends TableConfig> {
       }
 
       // defaultGetter的对比相对复杂一些
-      assertSameDefaultGetter(privates.defaults[ii], defaults[i]);
+      checker.sameDefaultGetter(privates.defaults[ii], defaults[i]);
     }
 
     // # compare isAI and pk

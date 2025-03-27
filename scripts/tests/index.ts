@@ -295,5 +295,3 @@ function functionToString() {
     console.log('recreated return(2):', re());
   }
 }
-
-functionToString();

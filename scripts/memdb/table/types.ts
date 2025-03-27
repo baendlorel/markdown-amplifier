@@ -51,11 +51,15 @@ export type Entity<T extends readonly FieldDefinition[]> = {
 };
 
 export type TablePrivate = {
+  /**
+   * 表名 \
+   * Name of this table
+   */
   name: string;
 
   /**
-   * 字段，本可以写成构造器里那样的配置数组，但由于要用到typeof this.fields，所以只能这样写了 \
-   * Fields, could be written as a configuration array in the constructor, but because 'typeof this.fields' is used, there is no other way
+   * 字段名称 \
+   * Names of the fields
    */
   fields: string[];
 
