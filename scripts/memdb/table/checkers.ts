@@ -1,5 +1,5 @@
 import { DefaultGetter, FieldDefinition, FieldType, FILED_TYPE } from './types';
-import { createDiagnostics, recreateFunction } from './utils';
+import { createDiagnostics, recreateFunction } from '../utils';
 
 const { err, log } = createDiagnostics('assert');
 
