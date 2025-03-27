@@ -530,6 +530,12 @@ export class DBTable<T extends TableConfig> {
   }
 
   load(dbFilePath: string) {
+    // 如果不存在就不加载了，作为一个空表
+    if (!fs.existsSync(dbFilePath)) {
+      console.log(`[MemDB] File not found: '${dbFilePath}'. Loading as empty table`);
+      return this;
+    }
+
     const content = fs.readFileSync(dbFilePath, { encoding: 'utf-8' });
     const lines = content.split('\n');
     // 开始对比表结构。可能改代码时会调整字段顺序，故此处要做成映射再行对比
@@ -540,7 +546,7 @@ export class DBTable<T extends TableConfig> {
         `[MemDB] Table name mismatch, expected '${this.name}', got '${name}'`
       );
     }
-    const fields = lines[Line.NAME].replace('FIELDS: ', '').split(',');
+    const fields = lines[Line.FIELDS].replace('FIELDS: ', '').split(',');
     if (this.fields.length !== fields.length) {
       const used = `[${this.fields.join()}](${this.fields.length})`;
       const loaded = `[${fields.join()}](${fields.length})`;
@@ -559,6 +565,7 @@ export class DBTable<T extends TableConfig> {
      * @param i 元素在arr中的下标
      */
     const toThisIndex = {} as Record<number, number>;
+    let permutated = false;
     for (let i = 0; i < fields.length; i++) {
       const index = this.fields.findIndex((f) => f === fields[i]);
       if (index === -1) {
@@ -567,15 +574,30 @@ export class DBTable<T extends TableConfig> {
         );
       }
       toThisIndex[i] = index;
+      if (i !== index) {
+        permutated = true;
+      }
     }
+
+    if (permutated) {
+      console.log(`[MemDB] Field order permutated`, toThisIndex);
+    } else {
+      console.log(`[MemDB] Field order preserved`);
+    }
+
+    const readArray = (lineType: keyof typeof Line) =>
+      lines[Line[lineType]]
+        .replace(lineType + ': ', '')
+        .split(',')
+        .filter(Boolean);
+
+    const read = (lineType: keyof typeof Line) =>
+      lines[Line[lineType]].replace(lineType + ': ', '');
 
     // 逐个字段对比
     // Compare each configuration
-    const types = lines[Line.TYPES].replace('TYPES: ', '').split(',');
-    const nullables = lines[Line.NULLABLES]
-      .replace('NULLABLES: ', '')
-      .split(',')
-      .map((n) => n === '1');
+    const types = readArray('TYPES');
+    const nullables = readArray('NULLABLES').map((n) => n === '1');
     const defaults = (() => {
       const _default = JSON.parse(`{${lines[Line.DEFAULTS].replace('DEFAULTS: ', '')}}`);
       const _defaultGetterType = JSON.parse(
@@ -605,14 +627,13 @@ export class DBTable<T extends TableConfig> {
             );
         }
       }
+      return result;
     })();
-    const pk = Number(lines[Line.PRIMARY_KEY].replace('PRIMARY_KEY: ', ''));
-    const isAI = lines[Line.IS_AI].replace('IS_AI: ', '') === '1';
-    const autoIncrementId = Number(
-      lines[Line.AUTO_INCREMENT_ID].replace('AUTO_INCREMENT_ID: ', '')
-    );
-    const indexes = lines[Line.INDEXES].replace('INDEXES: ', '').split(',');
-    const uniques = lines[Line.UNIQUES].replace('UNIQUES: ', '').split(',');
+    const pk = Number(read('PRIMARY_KEY'));
+    const isAI = read('IS_AI') === '1';
+    const autoIncrementId = Number(read('AUTO_INCREMENT_ID'));
+    const indexes = readArray('INDEXES');
+    const uniques = readArray('UNIQUES');
 
     const err = (prop: string, i: number, ti: number, expected: any, got: any) => {
       throw new Error(
@@ -650,15 +671,16 @@ export class DBTable<T extends TableConfig> {
     // # compare indexes and uniques
     const thisIndexes = [...this.indexMap.keys()];
     if (!isPermutated(indexes, thisIndexes)) {
+      console.log({ thisIndexes, indexes });
       throw new Error(
-        `[MemDB] 'indexes' mismatch, expected '${thisIndexes.join()}', got '${indexes.join()}'`
+        `[MemDB] 'indexes' mismatch, expected '${thisIndexes}', got '${indexes}'`
       );
     }
 
     const thisUniques = [...this.uniqueMap.keys()];
     if (!isPermutated(uniques, thisUniques)) {
       throw new Error(
-        `[MemDB] 'uniques' mismatch, expected '${thisUniques.join()}', got '${uniques.join()}'`
+        `[MemDB] 'uniques' mismatch, expected '${thisUniques}', got '${uniques}'`
       );
     }
 
@@ -667,9 +689,19 @@ export class DBTable<T extends TableConfig> {
     }
 
     this.autoIncrementId = autoIncrementId;
+
     // 开始加载数据
     // Start loading data from file
 
+    for (let i = Line.DATA_START; i < lines.length; i++) {
+      // 删除首尾的方括号
+      const l = JSON.parse('[' + lines[i] + ']');
+      const row = [] as Row;
+      for (let j = 0; j < l.length; j++) {
+        row[toThisIndex[j]] = l[j];
+      }
+      this.data.push(row);
+    }
     return this;
   }
 

@@ -8,8 +8,8 @@ const a = new DBTable({
     { name: 'uuid', type: 'string', default: DBTable.UUIDv4 },
     { name: 'name', type: 'string', isUnique: true },
     { name: 'age', type: 'number', default: () => Math.ceil(Math.random() * 20) },
-    { name: 'sex', type: 'string' },
     { name: 'rich', type: 'boolean', default: false },
+    { name: 'sex', type: 'string' },
     { name: 'createDate', type: 'Date', default: () => new Date() },
   ] as const,
 });
@@ -55,6 +55,7 @@ const testFind = (times: number) => {
   console.timeEnd(`有索引${times}次`);
 };
 
-testInsert(10);
-a.save('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
+// testInsert(10);
+// a.save('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
+a.load('/home/aldia/projects/personal/markdown-amplifier/scripts/tests/db.txt');
 a.display();

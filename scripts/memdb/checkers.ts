@@ -242,13 +242,11 @@ export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) =>
     case 'function':
       // d2类型和d1相同，这里肯定是一样的，但是ts不认识，手动标记
       // 'd2' has the same type as 'd1', so they must both be functions
-      const _d2 = d2 as Function;
-      if (
-        d1.toString().replace(/^\s+function\s+/, '') !==
-        _d2.toString().replace(/^\s+function\s+/, '')
-      ) {
+      const _d2 = (d2 as Function).toString().replace(/^[\s]{0,}function\s+/, '');
+      const _d1 = d1.toString().replace(/^[\s]{0,}function\s+/, '');
+      if (_d1 !== _d2) {
         throw new Error(
-          `[MemDB assertSameDefaultGetter] defaultGetters mismatch, d1:${d1.toString()}, d2:${_d2.toString()}`
+          `[MemDB assertSameDefaultGetter] defaultGetters mismatch, d1:${_d1}, d2:${_d2}`
         );
       }
 
