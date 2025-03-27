@@ -93,45 +93,29 @@ export const isPermutated = (
   return true;
 };
 
+const formatMessage = (category: string, message: string, functionName: string = '') => {
+  let head = '';
+  if (category && functionName) {
+    head = `[SylphDB ${category}.${functionName}]`;
+  } else if (!category && functionName) {
+    head = `[SylphDB function:${functionName}]`;
+  } else if (!category && !functionName) {
+    head = '[SylphDB]';
+  } else if (category && !functionName) {
+    head = `[SylphDB ${category}]`;
+  }
+  return `${head} ${message}`;
+};
+
 /**
- * 创造某个类型的Error对象生成器，旨在格式化报错 \
- * Create an Error object generator for a certain category, aimed at formatting error messages
+ * 创造格式化的诊断工具 \
+ * Create a formatted diagnostic tool
  * @param category
- * @returns Error message creator
+ * @returns message creator
  */
-const createErrorMessageCreator =
-  (category: string = '') =>
-  (message: string, functionName: string = '') => {
-    let head = '';
-    if (category && functionName) {
-      head = `[SylphDB ${category}.${functionName}]`;
-    } else if (!category && functionName) {
-      head = `[SylphDB function:${functionName}]`;
-    } else if (!category && !functionName) {
-      head = '[SylphDB]';
-    } else if (category && !functionName) {
-      head = `[SylphDB ${category}]`;
-    }
-    return new Error(`${head} ${message}`);
-  };
-
-const createLoggerCreator =
-  (category: string = '') =>
-  (message: string, functionName: string = '') => {
-    let head = '';
-    if (category && functionName) {
-      head = `[SylphDB ${category}.${functionName}]`;
-    } else if (!category && functionName) {
-      head = `[SylphDB function:${functionName}]`;
-    } else if (!category && !functionName) {
-      head = '[SylphDB]';
-    } else if (category && !functionName) {
-      head = `[SylphDB ${category}]`;
-    }
-    console.log(`${head} ${message}`);
-  };
-
 export const createDiagnostics = (category: string = '') => ({
-  err: createErrorMessageCreator(category),
-  log: createLoggerCreator(category),
+  err: (message: string, functionName: string = '') =>
+    new Error(formatMessage(category, message, functionName)),
+  log: (message: string, functionName: string = '') =>
+    console.log(formatMessage(category, message, functionName)),
 });

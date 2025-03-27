@@ -2,7 +2,7 @@ import fs from 'fs';
 import { decompressSync } from './brotli';
 import {
   assureFieldOptionArray,
-  assertValidTableName,
+  assertTableName,
   assertSameDefaultGetter,
 } from './checkers';
 import {
@@ -17,9 +17,8 @@ import {
 } from './types';
 import { base64, createDiagnostics, isPermutated, recreateFunction } from './utils';
 
-const { err, log } = createDiagnostics('Table');
+const { err, log } = createDiagnostics('<Table>');
 
-// TODO 给所有错误标记上函数名称
 export class Table<T extends TableConfig> {
   /**
    * 生成一个符合 UUID v4 标准的随机字符串 \
@@ -109,7 +108,7 @@ export class Table<T extends TableConfig> {
     this.autoIncrementId = 0;
     this.data = [];
 
-    assertValidTableName(o.tableName);
+    assertTableName(o.tableName);
     this.name = o.tableName;
 
     if (!Array.isArray(o.fields)) {

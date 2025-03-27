@@ -1,12 +1,13 @@
 import { DefaultGetter, FieldDefinition, FieldType, FILED_TYPE } from './types';
-import { recreateFunction } from './utils';
+import { createDiagnostics, recreateFunction } from './utils';
 
-export const assertValidTableName = (tableName: string) => {
+const { err, log } = createDiagnostics('assert');
+
+const NAME_REQ = `must contain only a-z, A-Z, 0-9 and start with a letter`;
+export const assertTableName = (tableName: string) => {
   const match = tableName.match(/^[a-zA-Z][\w]{0,}$/);
   if (match === null) {
-    throw new Error(
-      `[SylphDB] Invalid table name detected: ${tableName}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
-    );
+    throw err(`Invalid table name detected: ${tableName},${NAME_REQ} `, 'TableName');
   }
 };
 
@@ -17,7 +18,8 @@ export const assertValidTableName = (tableName: string) => {
  * However, if the return value varies, and some of them do not meet the supported types, this checker may not be able to detect it
  * @param fn
  */
-export const assertValidDefaultGetter = (fn: Function) => {
+export const assertDefaultGetter = (fn: Function) => {
+  const e = (msg: string) => err(msg, 'DefaultGetter');
   const s = fn.toString();
   const r = recreateFunction(s);
   const result = (() => {
@@ -28,9 +30,7 @@ export const assertValidDefaultGetter = (fn: Function) => {
       // It's okay if the try-catch block inside the function eliminates the exception
       // As long as the return value meets the supported field types
       if (error instanceof ReferenceError) {
-        throw new Error(
-          "[SylphDB] This function uses outer variables or functions, cannot be used as 'defaultGetter'"
-        );
+        throw e('Given getter uses outer variables or functions');
       } else {
         // 应该不会有其他情形了
         // There should be no other cases
@@ -53,9 +53,7 @@ export const assertValidDefaultGetter = (fn: Function) => {
         return;
       }
     default:
-      throw new Error(
-        '[SylphDB] Invalid default value getter, must return string, number, boolean or Date'
-      );
+      throw e(`Invalid getter, must return string, number, boolean or Date`);
   }
 };
 
@@ -65,6 +63,8 @@ export const assertValidDefaultGetter = (fn: Function) => {
  * @param fieldOptions 待检测配置
  */
 export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
+  const e = (msg: string) => err(msg, 'FieldOptionArray');
+
   const fields = [] as string[];
   const types = [] as FieldType[];
   const defaults = [] as DefaultGetter[];
@@ -84,34 +84,31 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     // 确保字段名称合法
     // Ensure that the field name is valid
     if (typeof o.name !== 'string') {
-      throw new Error(`[SylphDB] Non-string item detected, fields: ${o}(${typeof o})`);
+      throw e(`Non-string item detected, fields: ${o}(${typeof o})`);
     }
     if (!o.name.match(/^[a-zA-Z][\w]{0,}$/)) {
-      throw new Error(
-        `[SylphDB] Invalid field name detected: ${o.name}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
-      );
+      throw e(`Invalid field name detected: ${o.name}, ${NAME_REQ}`);
     }
 
     // 确保字段类型合法
     if (!FILED_TYPE.includes(o.type)) {
       const v = `${o.type}(${typeof o.type})`;
       const fieldTypes = FILED_TYPE.join(`', '`);
-      throw new Error(`[SylphDB] Invalid type '${v}', must be '${fieldTypes}'`);
+      throw e(`Invalid type '${v}', must be '${fieldTypes}'`);
     }
 
     // # 逐个检测可选配置项
     const _isNullable = o.isNullable ?? true;
     if (typeof _isNullable !== 'boolean') {
-      throw new Error(
-        `[SylphDB] Invalid option: ${o.name}${_isNullable}(${typeof _isNullable})`
-      );
+      const opt = `${o.name}${_isNullable}(${typeof _isNullable})`;
+      throw e(`Invalid option: ${opt}`);
     }
 
     if ('default' in o) {
       const _getter = o.default;
       const _defaultValue = (() => {
         if (typeof _getter === 'function') {
-          assertValidDefaultGetter(_getter);
+          assertDefaultGetter(_getter);
           return _getter();
         } else {
           return _getter;
@@ -128,68 +125,52 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
         // And it can be null when nullable, so it must not be undefined
         defaults[i] = _getter as DefaultGetter;
       } else {
-        throw new Error(
-          `[SylphDB] Invalid default value getter, index:${i}, type:${o.type}, default:${_getter}`
-        );
+        throw e(`Invalid defaultGetter, i:${i}, type:${o.type}, getter:${_getter}`);
       }
     }
 
     const _isIndex = o.isIndex ?? false;
     if (typeof _isIndex !== 'boolean') {
-      throw new Error(
-        `[SylphDB] Invalid 'isIndex': ${o.name}${_isIndex}(${typeof _isIndex})`
-      );
+      const idx = `${o.name}[${_isIndex}](${typeof _isIndex})`;
+      throw e(`Invalid 'isIndex': ${idx}`);
     }
 
     const _isUnique = o.isUnique ?? false;
     if (typeof _isUnique !== 'boolean') {
-      throw new Error(
-        `[SylphDB] Invalid 'isUnique': ${o.name}${_isUnique}(${typeof _isUnique})`
-      );
+      const u = `${o.name}[${_isUnique}](${typeof _isUnique})`;
+      throw e(`Invalid 'isUnique': ${u}`);
     }
 
     const _isPK = o.isPrimaryKey ?? false;
     if (typeof _isPK !== 'boolean') {
-      throw new Error(
-        `[SylphDB] Invalid 'isPrimaryKey': ${o.name}${_isPK}(${typeof _isPK})`
-      );
+      const p = `${o.name}[${_isPK}](${typeof _isPK})`;
+      throw e(`Invalid 'isPrimaryKey': ${p}`);
     }
     if (_isPK && pk !== undefined) {
-      throw new Error(
-        `[SylphDB] Duplicate primary key detected, current field: ${o.name}`
-      );
+      throw e(`Duplicate primary key, current field: ${o.name}`);
     }
 
     const _isAI = o.isAutoIncrement ?? false;
     if (typeof _isAI !== 'boolean') {
-      throw new Error(
-        `[SylphDB] Invalid 'isAutoIncrement': ${o.name}${_isAI}(${typeof _isAI})`
-      );
+      const a = `${o.name}[${_isAI}](${typeof _isAI})`;
+      throw e(`Invalid 'isAutoIncrement': ${a}`);
     }
     if (_isAI && !_isPK) {
-      throw new Error(
-        `[SylphDB] Only primary key can be set as auto-increment, current field: ${o.name}`
-      );
+      throw e(`Only primary key can be auto-increment, current field: ${o.name}`);
     }
 
     // 一些互斥判定
     // 不能同时为索引和唯一索引
     if (_isIndex && _isUnique) {
-      throw new Error(
-        `[SylphDB] A field cannot be both unique and index, current field: ${o.name}`
-      );
+      throw e(`A field cannot be both unique and index, current field: ${o.name}`);
     }
     // 主键不能是索引和唯一索引，因为它已经有索引了
     if (_isPK && (_isIndex || _isUnique)) {
-      throw new Error(
-        `[SylphDB] A primary key cannot be unique or index, current field: ${o.name}`
-      );
+      throw e(`A primary key cannot be unique or index, current field: ${o.name}`);
     }
     // 自增的话type必须为数字
     if (_isAI && o.type !== 'number') {
-      throw new Error(
-        `[SylphDB] Auto-increment field must be number type, current field: ${o.name}`
-      );
+      throw e(`Auto-increment field must be number type, current field: ${o.name}`);
     }
 
     // 赋值部分
@@ -204,7 +185,7 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
 
   // 确保主键不为空
   if (pk === undefined) {
-    throw new Error('[SylphDB] Primary key is required');
+    throw e('Primary key is required');
   }
 
   assertNoDuplicateFields(fields);
@@ -213,10 +194,11 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
 };
 
 export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) => {
+  const e = (msg: string) => err(msg, 'SameDefaultGetter');
+  const d = `'d1'-${String(d1)}(${typeof d1}), 'd2'-${String(d2)}(${typeof d2})`;
+
   if (typeof d1 !== typeof d2) {
-    throw new Error(
-      `[MemDB assertSameDefaultGetter] Types of defaultGetters are different. 'd1': ${typeof d1}, 'd2': ${typeof d2}`
-    );
+    throw e(`defaultGetters' type mismatch: ${d}`);
   }
 
   switch (typeof d1) {
@@ -224,22 +206,16 @@ export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) =>
     case 'number':
     case 'boolean':
       if (d1 !== d2) {
-        throw new Error(
-          `[MemDB assertSameDefaultGetter] defaultGetters mismatch,'d1': ${d1}, 'd2': ${d2}`
-        );
+        throw e(`defaultGetters mismatch: ${d}`);
       }
       break;
     case 'object':
       if (d1 instanceof Date && d2 instanceof Date) {
         if (d1.getTime() !== d2.getTime()) {
-          throw new Error(
-            `[MemDB assertSameDefaultGetter] defaultGetters mismatch,'d1': ${d1}, 'd2': ${d2}`
-          );
+          throw e(`defaultGetters mismatch: ${d}`);
         }
       } else {
-        throw new Error(
-          `[MemDB assertSameDefaultGetter] defaultGetters cannot have non-Date object,'d1': ${d1}, 'd2': ${d2}`
-        );
+        throw e(`defaultGetters cannot have non-Date object: ${d}`);
       }
     case 'function':
       // d2类型和d1相同，这里肯定是一样的，但是ts不认识，手动标记
@@ -247,12 +223,10 @@ export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) =>
       const _d2 = (d2 as Function).toString().replace(/^[\s]{0,}function\s+/, '');
       const _d1 = d1.toString().replace(/^[\s]{0,}function\s+/, '');
       if (_d1 !== _d2) {
-        throw new Error(
-          `[MemDB assertSameDefaultGetter] defaultGetters mismatch, d1:${_d1}, d2:${_d2}`
-        );
+        throw e(`defaultGetters mismatch, d1:${_d1}, d2:${_d2}`);
       }
-
     default:
+      log(`defaultGetters' type not supported: ${d}`, 'SameDefaultGetter');
       break;
   }
 };
@@ -265,32 +239,29 @@ export const assertSameDefaultGetter = (d1: DefaultGetter, d2: DefaultGetter) =>
 export const assertNoDuplicateFields = (fields: string[]) => {
   const set = new Set(fields);
   if (set.size !== fields.length) {
-    throw new Error(
-      "[SylphDB] Duplicate fields detected in 'fields' for: " + fields.join()
+    throw err(
+      "Duplicate fields detected in 'fields' for: " + fields.join(),
+      'NoDuplicateFields'
     );
   }
 };
 
 export const assertNoDuplicateIndexes = (indexes: string[], uniques: string[]) => {
+  const e = (msg: string) => err(msg, 'NoDuplicateIndexes');
+
   const indexesSet = new Set(indexes);
   const uniqueSet = new Set(uniques);
   const wholeSet = new Set([...indexesSet, ...uniqueSet]);
   if (indexesSet.size !== indexes.length) {
-    throw new Error(
-      "[SylphDB] Duplicate index detected in 'indexes' for: " + indexes.join()
-    );
+    throw e("Duplicate index detected in 'indexes' for: " + indexes.join());
   }
 
   if (uniqueSet.size !== uniques.length) {
-    throw new Error(
-      "[SylphDB] Duplicate unique index detected in 'uniques' for: " + uniques.join()
-    );
+    throw e("Duplicate unique index detected in 'uniques' for: " + uniques.join());
   }
 
   if (wholeSet.size !== indexes.length + uniques.length) {
-    throw new Error(
-      "[SylphDB] 'indexes' and 'uniques' share some same fields, for: " +
-        [...indexesSet].filter((i) => uniqueSet.has(i)).join()
-    );
+    const s = [...indexesSet].filter((i) => uniqueSet.has(i)).join();
+    throw e(`'indexes' and 'uniques' share some same fields, for: ${s}`);
   }
 };
