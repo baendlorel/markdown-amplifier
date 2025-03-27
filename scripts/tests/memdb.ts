@@ -1,11 +1,11 @@
-import { DBTable } from '../memdb/table';
+import { Table } from '../memdb/table';
 
 console.time('建表');
-const a = new DBTable({
+const a = new Table({
   tableName: 'test_table',
   fields: [
     { name: 'id', type: 'number', isPrimaryKey: true, isAutoIncrement: true },
-    { name: 'uuid', type: 'string', default: DBTable.UUIDv4 },
+    { name: 'uuid', type: 'string', default: Table.UUIDv4 },
     { name: 'name', type: 'string', isUnique: true },
     { name: 'age', type: 'number', default: () => Math.ceil(Math.random() * 20) },
     { name: 'rich', type: 'boolean', default: false },

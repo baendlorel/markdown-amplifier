@@ -15,13 +15,12 @@ import {
   FindCondition,
   Line,
 } from './types';
-import { base64, isPermutated, recreateFunction } from './utils';
+import { base64, createDiagnostics, isPermutated, recreateFunction } from './utils';
 
-const dbDataSymbol = Symbol('dbData');
+const { err, log } = createDiagnostics('Table');
 
 // TODO 给所有错误标记上函数名称
-
-export class DBTable<T extends TableConfig> {
+export class Table<T extends TableConfig> {
   /**
    * 生成一个符合 UUID v4 标准的随机字符串 \
    * Generate a random string that conforms to the UUID v4 standard
@@ -108,21 +107,18 @@ export class DBTable<T extends TableConfig> {
 
   constructor(o: T) {
     this.autoIncrementId = 0;
-    if (dbDataSymbol in o) {
-      console.log(`[MemDB] Loading DBTable from file: ${o[dbDataSymbol]}`);
-      this.data = o[dbDataSymbol] as Row[];
-    } else {
-      this.data = [];
-    }
+    this.data = [];
 
     assertValidTableName(o.tableName);
     this.name = o.tableName;
 
     if (!Array.isArray(o.fields)) {
-      throw new Error(
-        `[MemDB] Expected 'fields' to be an array, but got '${typeof o.fields}'`
+      throw err(
+        `Expected 'fields' to be an array, but got '${typeof o.fields}'`,
+        'constructor'
       );
     }
+
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
       assureFieldOptionArray(Array.from(o.fields));
 
@@ -169,7 +165,7 @@ export class DBTable<T extends TableConfig> {
   private initIndexes(map: Map<string, Map<Value, Row[]>>, fields: string[]) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
-      throw new Error('[MemDB] Index field not found in fields');
+      throw err('Index field not found in fields', 'initIndexes');
     }
 
     const iti = this.initIndexMap(map, fields);
@@ -196,7 +192,7 @@ export class DBTable<T extends TableConfig> {
   private initUniques(map: Map<string, Map<Value, Row>>, fields: string[]) {
     // 首先要校验索引组是否都在fields内
     if (fields.some((idx) => !this.fields.includes(idx))) {
-      throw new Error('[MemDB] Index field not found in fields');
+      throw err('Unique field not found in fields', 'initUniques');
     }
 
     const iti = this.initIndexMap(map, fields);
@@ -213,8 +209,9 @@ export class DBTable<T extends TableConfig> {
         // 唯一索引不能有重复数据
         // Unique indexes must not have duplicated data
         if (uniqueValueMap.has(vKey)) {
-          throw new Error(
-            `[MemDB] Duplicate unique value detected, field:${fields[j]} valueKey: ${vKey} data index: ${i}`
+          throw err(
+            `Duplicate unique value detected, field:${fields[j]} valueKey: ${vKey} data index: ${i}`,
+            'initUniques'
           );
         }
         uniqueValueMap.set(vKey, row);
@@ -293,7 +290,7 @@ export class DBTable<T extends TableConfig> {
       if (this.nullables[i]) {
         return null;
       }
-      throw new Error(`[MemDB] Field '${this.fields[i]}' is not nullable`);
+      throw err(`Field '${this.fields[i]}' is not nullable`, 'assureValue');
     }
 
     if (value === null && this.nullables[i]) {
@@ -305,10 +302,12 @@ export class DBTable<T extends TableConfig> {
       (this.types[i] === 'Date' && !(value instanceof Date)) ||
       (this.types[i] !== 'Date' && typeof value !== this.types[i])
     ) {
-      throw new Error(
-        `[MemDB] Field '${this.fields[i]}' type mismatch, expected '${
-          this.types[i]
-        }', got '${typeof value}'`
+      const f = this.fields[i];
+      const t = this.types[i];
+      const tv = typeof value;
+      throw err(
+        `Field '${f}' type mismatch, expected '${t}', got '${tv}'`,
+        'assureValue'
       );
     }
     return value;
@@ -316,16 +315,16 @@ export class DBTable<T extends TableConfig> {
 
   find(condition: FindCondition<T['fields']>): Entity<T['fields']>[] {
     if (!condition || typeof condition !== 'object') {
-      throw new Error('[MemDB] Condition must be an object with fields and values');
+      throw err('Condition must be an object with fields and values', 'find');
     }
     // 校验字段是否可用
     // Check if the fields are available
     const condFields = Object.keys(condition);
     if (condFields.length === 0) {
-      throw new Error('[MemDB] Condition cannot be empty');
+      throw err('Condition cannot be empty', 'find');
     }
     if (condFields.some((k) => !this.fields.includes(k))) {
-      throw new Error(`[MemDB] Invalid field detected. fields: ${condFields.join()}`);
+      throw err(`Invalid field detected. fields: ${condFields.join()}`, 'find');
     }
 
     // 校验condition字段是否符合设定的字段类型
@@ -335,21 +334,17 @@ export class DBTable<T extends TableConfig> {
       const v = condition[condFields[i]];
       const t = this.types[idx];
       if (!this.nullables[idx] && v === null) {
-        throw new Error(`[MemDB] '${condFields[i]}' cannot be null`);
+        throw err(`'${condFields[i]}' cannot be null`, 'find');
       }
 
       if (t === 'Date' && !(v instanceof Date)) {
-        throw new Error(
-          `[MemDB] Field ${
-            condFields[i]
-          } type mismatch, expected 'Date', got '${typeof v}'`
-        );
+        const cf = condFields[i];
+        const tv = typeof v;
+        throw err(`Field ${cf} type mismatch, expected 'Date', got '${tv}'`, 'find');
       }
 
       if (typeof v !== t) {
-        throw new Error(
-          `[MemDB] Field type mismatch, expected '${t}', got '${typeof v}'`
-        );
+        throw err(`Field type mismatch, expected '${t}', got '${typeof v}'`, 'find');
       }
     }
 
@@ -407,9 +402,9 @@ export class DBTable<T extends TableConfig> {
       if (this.uniqueMap.has(this.fields[i])) {
         const m = this.uniqueMap.get(this.fields[i]) as Map<Value, Row>;
         if (m.has(newRow[i])) {
-          throw new Error(
-            `[MemDB] Duplicate unique value detected, field:${this.fields[i]} valueKey: ${newRow[i]}`
-          );
+          const f = this.fields[i];
+          const nri = newRow[i];
+          throw err(`Duplicate unique value! field:${f} value:${nri}`, 'insert');
         } else {
           m.set(newRow[i], newRow);
         }
@@ -426,20 +421,6 @@ export class DBTable<T extends TableConfig> {
     this.data.push(newRow);
   }
 
-  static from(dbFilePath: string) {
-    try {
-      const str = decompressSync(dbFilePath);
-      const o = JSON.parse(str);
-      o[dbDataSymbol] = o.data;
-      return new DBTable(o);
-    } catch (error) {
-      console.log('Failed to load DBTable from file:', dbFilePath);
-      console.error(error);
-      return new DBTable({ fields: [] as any[], tableName: 'test' });
-    }
-  }
-
-  // TODO undefined、null、boolean的存储可以缩减为任意字符，并用对应fieldtype加载正确的值
   /**
    * 保存数据库结构、内容到文件中 \
    * 主要是内容，结构只是为了调用load的时候进行对比校验 \
@@ -484,8 +465,9 @@ export class DBTable<T extends TableConfig> {
               break;
             }
           default:
-            throw new Error(
-              '[MemDB] Invalid default value getter, must be string, number, boolean, Date or a function'
+            throw err(
+              'Invalid default value getter, must be string, number, boolean, Date or a function',
+              'save'
             );
         }
         return `${prev && prev + ','}"${i}":"${base64.encode(v)}"`;
@@ -509,8 +491,9 @@ export class DBTable<T extends TableConfig> {
               break;
             }
           default:
-            throw new Error(
-              `[MemDB] Invalid default value getter, must return string, number, boolean or Date`
+            throw err(
+              `Invalid default value getter, must return string, number, boolean or Date`,
+              'save'
             );
         }
         return `${prev && prev + ','}"${i}":"${v}"`;
@@ -542,7 +525,7 @@ export class DBTable<T extends TableConfig> {
   load(dbFilePath: string) {
     // 如果不存在就不加载了，作为一个空表
     if (!fs.existsSync(dbFilePath)) {
-      console.log(`[MemDB] File not found: '${dbFilePath}'. Loading as empty table`);
+      console.log(`[SylphDB] File not found: '${dbFilePath}'. Loading as empty table`);
       return this;
     }
 
@@ -552,17 +535,13 @@ export class DBTable<T extends TableConfig> {
     // Start comparison of table structure. The field order may be adjusted when coding, so map it to an object for comparison
     const name = lines[Line.NAME].replace('NAME: ', '');
     if (name !== this.name) {
-      throw new Error(
-        `[MemDB] Table name mismatch, expected '${this.name}', got '${name}'`
-      );
+      throw err(`Table name mismatch, expected '${this.name}', got '${name}'`, 'load');
     }
     const fields = lines[Line.FIELDS].replace('FIELDS: ', '').split(',');
     if (this.fields.length !== fields.length) {
       const used = `[${this.fields.join()}](${this.fields.length})`;
       const loaded = `[${fields.join()}](${fields.length})`;
-      throw new Error(
-        `[MemDB] Field count mismatch, expected '${used}', loaded '${loaded}'`
-      );
+      throw err(`Field count mismatch, expected '${used}', loaded '${loaded}'`, 'load');
     }
 
     // 下面开始考虑fields和this.field的内容是否一致
@@ -579,9 +558,9 @@ export class DBTable<T extends TableConfig> {
     for (let i = 0; i < fields.length; i++) {
       const index = this.fields.findIndex((f) => f === fields[i]);
       if (index === -1) {
-        throw new Error(
-          `[MemDB] Loaded field '${fields[i]}' is not found in '${this.fields.join()}'`
-        );
+        const f = fields[i];
+        const flds = this.fields.join();
+        throw err(`Loaded field '${f}' is not found in '${flds}'`, 'load');
       }
       toThisIndex[i] = index;
       if (i !== index) {
@@ -590,9 +569,9 @@ export class DBTable<T extends TableConfig> {
     }
 
     if (permutated) {
-      console.log(`[MemDB] Field order permutated`, toThisIndex);
+      log(`Field order permutated ${toThisIndex}`, 'load');
     } else {
-      console.log(`[MemDB] Field order preserved`);
+      log(`Field order preserved`, 'load');
     }
 
     const readArray = (lineType: keyof typeof Line) =>
@@ -632,9 +611,8 @@ export class DBTable<T extends TableConfig> {
             result[i] = new Date(base64.decode(_default[i]));
             break;
           default:
-            throw new Error(
-              `[MemDB] Invalid default value getter type: ${_defaultGetterType[i]}`
-            );
+            const di = _defaultGetterType[i];
+            throw err(`Invalid default value getter type: ${di}`, 'load');
         }
       }
       return result;
@@ -645,22 +623,22 @@ export class DBTable<T extends TableConfig> {
     const indexes = readArray('INDEXES');
     const uniques = readArray('UNIQUES');
 
-    const err = (prop: string, i: number, ti: number, expected: any, got: any) => {
-      throw new Error(
-        `[MemDB] '${prop}[${i}]->[${ti}]' mismatch, expected '${expected}', got '${got}'`
+    const mismatch = (prop: string, i: number, ti: number, expected: any, got: any) =>
+      err(
+        `'${prop}[${i}]->[${ti}]' mismatch, expected '${expected}', got '${got}'`,
+        'load'
       );
-    };
 
     // # compare types, nullables, defaults
     for (let i = 0; i < fields.length; i++) {
       const ii = toThisIndex[i];
 
       if (types[i] !== this.types[ii]) {
-        err('types', i, ii, this.types[ii], types[i]);
+        mismatch('types', i, ii, this.types[ii], types[i]);
       }
 
       if (nullables[i] !== this.nullables[ii]) {
-        err('nullables', i, ii, this.nullables[ii], nullables[i]);
+        mismatch('nullables', i, ii, this.nullables[ii], nullables[i]);
       }
 
       // defaultGetter的对比相对复杂一些
@@ -669,33 +647,29 @@ export class DBTable<T extends TableConfig> {
 
     // # compare isAI and pk
     if (isAI !== this.isAI) {
-      throw new Error(`[MemDB] 'isAI' mismatch, expected '${this.isAI}', got '${isAI}'`);
+      throw err(`'isAI' mismatch, expected '${this.isAI}', got '${isAI}'`, 'load');
     }
 
     if (toThisIndex[pk] !== this.pk) {
-      throw new Error(
-        `[MemDB] 'pk' mismatch, expected '${this.pk}', got '${pk}->${toThisIndex[pk]}'`
-      );
+      const tpk = toThisIndex[pk];
+      throw err(`'pk' mismatch, expected '${this.pk}', got '${pk}->${tpk}'`, 'load');
     }
 
     // # compare indexes and uniques
     const thisIndexes = [...this.indexMap.keys()];
     if (!isPermutated(indexes, thisIndexes)) {
-      console.log({ thisIndexes, indexes });
-      throw new Error(
-        `[MemDB] 'indexes' mismatch, expected '${thisIndexes}', got '${indexes}'`
-      );
+      const ti = thisIndexes;
+      throw err(`'indexes' mismatch, expected '${ti}', got '${indexes}'`, 'load');
     }
 
     const thisUniques = [...this.uniqueMap.keys()];
     if (!isPermutated(uniques, thisUniques)) {
-      throw new Error(
-        `[MemDB] 'uniques' mismatch, expected '${thisUniques}', got '${uniques}'`
-      );
+      const tu = thisUniques;
+      throw err(`'uniques' mismatch, expected '${tu}', got '${uniques}'`, 'load');
     }
 
     if (Number.isNaN(autoIncrementId)) {
-      throw new Error(`[MemDB] Loaded 'autoIncrementId' is NaN`);
+      throw err(`Loaded 'autoIncrementId' is NaN`, 'load');
     }
 
     this.autoIncrementId = autoIncrementId;
@@ -720,7 +694,7 @@ export class DBTable<T extends TableConfig> {
             row[toThisIndex[j]] = new Date(l[j]);
             break;
           default:
-            throw new Error(`[MemDB DBTable.load] Invalid field type: ${types[j]}`);
+            throw err(`Invalid field type: ${types[j]}`, 'load');
         }
       }
       this.data.push(row);

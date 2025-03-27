@@ -5,7 +5,7 @@ export const assertValidTableName = (tableName: string) => {
   const match = tableName.match(/^[a-zA-Z][\w]{0,}$/);
   if (match === null) {
     throw new Error(
-      `[MemDB] Invalid table name detected: ${tableName}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
+      `[SylphDB] Invalid table name detected: ${tableName}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
     );
   }
 };
@@ -29,7 +29,7 @@ export const assertValidDefaultGetter = (fn: Function) => {
       // As long as the return value meets the supported field types
       if (error instanceof ReferenceError) {
         throw new Error(
-          "[MemDB] This function uses outer variables or functions, cannot be used as 'defaultGetter'"
+          "[SylphDB] This function uses outer variables or functions, cannot be used as 'defaultGetter'"
         );
       } else {
         // 应该不会有其他情形了
@@ -54,7 +54,7 @@ export const assertValidDefaultGetter = (fn: Function) => {
       }
     default:
       throw new Error(
-        '[MemDB] Invalid default value getter, must return string, number, boolean or Date'
+        '[SylphDB] Invalid default value getter, must return string, number, boolean or Date'
       );
   }
 };
@@ -84,11 +84,11 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     // 确保字段名称合法
     // Ensure that the field name is valid
     if (typeof o.name !== 'string') {
-      throw new Error(`[MemDB] Non-string item detected, fields: ${o}(${typeof o})`);
+      throw new Error(`[SylphDB] Non-string item detected, fields: ${o}(${typeof o})`);
     }
     if (!o.name.match(/^[a-zA-Z][\w]{0,}$/)) {
       throw new Error(
-        `[MemDB] Invalid field name detected: ${o.name}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
+        `[SylphDB] Invalid field name detected: ${o.name}, must contain only a-z, A-Z, 0-9, _ and start with a letter`
       );
     }
 
@@ -96,14 +96,14 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     if (!FILED_TYPE.includes(o.type)) {
       const v = `${o.type}(${typeof o.type})`;
       const fieldTypes = FILED_TYPE.join(`', '`);
-      throw new Error(`[MemDB] Invalid type '${v}', must be '${fieldTypes}'`);
+      throw new Error(`[SylphDB] Invalid type '${v}', must be '${fieldTypes}'`);
     }
 
     // # 逐个检测可选配置项
     const _isNullable = o.isNullable ?? true;
     if (typeof _isNullable !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid option: ${o.name}${_isNullable}(${typeof _isNullable})`
+        `[SylphDB] Invalid option: ${o.name}${_isNullable}(${typeof _isNullable})`
       );
     }
 
@@ -129,7 +129,7 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
         defaults[i] = _getter as DefaultGetter;
       } else {
         throw new Error(
-          `[MemDB] Invalid default value getter, index:${i}, type:${o.type}, default:${_getter}`
+          `[SylphDB] Invalid default value getter, index:${i}, type:${o.type}, default:${_getter}`
         );
       }
     }
@@ -137,36 +137,38 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     const _isIndex = o.isIndex ?? false;
     if (typeof _isIndex !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isIndex': ${o.name}${_isIndex}(${typeof _isIndex})`
+        `[SylphDB] Invalid 'isIndex': ${o.name}${_isIndex}(${typeof _isIndex})`
       );
     }
 
     const _isUnique = o.isUnique ?? false;
     if (typeof _isUnique !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isUnique': ${o.name}${_isUnique}(${typeof _isUnique})`
+        `[SylphDB] Invalid 'isUnique': ${o.name}${_isUnique}(${typeof _isUnique})`
       );
     }
 
     const _isPK = o.isPrimaryKey ?? false;
     if (typeof _isPK !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isPrimaryKey': ${o.name}${_isPK}(${typeof _isPK})`
+        `[SylphDB] Invalid 'isPrimaryKey': ${o.name}${_isPK}(${typeof _isPK})`
       );
     }
     if (_isPK && pk !== undefined) {
-      throw new Error(`[MemDB] Duplicate primary key detected, current field: ${o.name}`);
+      throw new Error(
+        `[SylphDB] Duplicate primary key detected, current field: ${o.name}`
+      );
     }
 
     const _isAI = o.isAutoIncrement ?? false;
     if (typeof _isAI !== 'boolean') {
       throw new Error(
-        `[MemDB] Invalid 'isAutoIncrement': ${o.name}${_isAI}(${typeof _isAI})`
+        `[SylphDB] Invalid 'isAutoIncrement': ${o.name}${_isAI}(${typeof _isAI})`
       );
     }
     if (_isAI && !_isPK) {
       throw new Error(
-        `[MemDB] Only primary key can be set as auto-increment, current field: ${o.name}`
+        `[SylphDB] Only primary key can be set as auto-increment, current field: ${o.name}`
       );
     }
 
@@ -174,19 +176,19 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
     // 不能同时为索引和唯一索引
     if (_isIndex && _isUnique) {
       throw new Error(
-        `[MemDB] A field cannot be both unique and index, current field: ${o.name}`
+        `[SylphDB] A field cannot be both unique and index, current field: ${o.name}`
       );
     }
     // 主键不能是索引和唯一索引，因为它已经有索引了
     if (_isPK && (_isIndex || _isUnique)) {
       throw new Error(
-        `[MemDB] A primary key cannot be unique or index, current field: ${o.name}`
+        `[SylphDB] A primary key cannot be unique or index, current field: ${o.name}`
       );
     }
     // 自增的话type必须为数字
     if (_isAI && o.type !== 'number') {
       throw new Error(
-        `[MemDB] Auto-increment field must be number type, current field: ${o.name}`
+        `[SylphDB] Auto-increment field must be number type, current field: ${o.name}`
       );
     }
 
@@ -202,7 +204,7 @@ export const assureFieldOptionArray = (fieldOptions: FieldDefinition[]) => {
 
   // 确保主键不为空
   if (pk === undefined) {
-    throw new Error('[MemDB] Primary key is required');
+    throw new Error('[SylphDB] Primary key is required');
   }
 
   assertNoDuplicateFields(fields);
@@ -264,7 +266,7 @@ export const assertNoDuplicateFields = (fields: string[]) => {
   const set = new Set(fields);
   if (set.size !== fields.length) {
     throw new Error(
-      "[MemDB] Duplicate fields detected in 'fields' for: " + fields.join()
+      "[SylphDB] Duplicate fields detected in 'fields' for: " + fields.join()
     );
   }
 };
@@ -275,19 +277,19 @@ export const assertNoDuplicateIndexes = (indexes: string[], uniques: string[]) =
   const wholeSet = new Set([...indexesSet, ...uniqueSet]);
   if (indexesSet.size !== indexes.length) {
     throw new Error(
-      "[MemDB] Duplicate index detected in 'indexes' for: " + indexes.join()
+      "[SylphDB] Duplicate index detected in 'indexes' for: " + indexes.join()
     );
   }
 
   if (uniqueSet.size !== uniques.length) {
     throw new Error(
-      "[MemDB] Duplicate unique index detected in 'uniques' for: " + uniques.join()
+      "[SylphDB] Duplicate unique index detected in 'uniques' for: " + uniques.join()
     );
   }
 
   if (wholeSet.size !== indexes.length + uniques.length) {
     throw new Error(
-      "[MemDB] 'indexes' and 'uniques' share some same fields, for: " +
+      "[SylphDB] 'indexes' and 'uniques' share some same fields, for: " +
         [...indexesSet].filter((i) => uniqueSet.has(i)).join()
     );
   }
