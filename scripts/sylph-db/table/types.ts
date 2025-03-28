@@ -206,6 +206,22 @@ export namespace Query {
     >['type']];
   };
 
+  export type RawCondition<T extends readonly Table.FieldDefinition[]> = {
+    [K in T[number]['name']]?:
+      | Table.FieldTypeMap[Extract<T[number], { name: K }>['type']]
+      | {
+          type: Operator;
+          value: Table.FieldTypeMap[Extract<T[number], { name: K }>['type']];
+        };
+  };
+
+  export type OperatorCondition<T extends readonly Table.FieldDefinition[]> = {
+    [K in T[number]['name']]?: {
+      type: Operator;
+      value: Table.FieldTypeMap[Extract<T[number], { name: K }>['type']];
+    };
+  };
+
   export enum Operator {
     EQUAL,
     NOT_EQUAL,
@@ -220,10 +236,6 @@ export namespace Query {
     NOT_IN,
   }
 
-  // export type FindOperator<T extends Table.Value | Table.Value[]> = {
-  //   type: Operator;
-  //   value: T;
-  // };
   export type FindOperator<T extends Operator> = {
     type: T;
     value: T extends Operator.IN | Operator.NOT_IN

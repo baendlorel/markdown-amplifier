@@ -1,24 +1,31 @@
+import { diagnostics } from '../utils';
 import { ensure } from './checkers';
 import { Query, Table } from './types';
 
-export const ensureFindOperator = (o: any): o is Query.FindOperator<Query.Operator> => {
+const { err } = diagnostics('conditions');
+
+export const ensureFindOperator = (o: any): Query.FindOperator<Query.Operator> => {
+  const e = (msg: string) => err(msg, 'ensureFindOperator');
+
+  if (ensure.isValue(o)) {
+    return Equal(o);
+  }
+
   if (!o || typeof o !== 'object') {
-    return false;
+    throw e(`Invalid find operator: ${o}`);
   }
 
   if (Query.Operator[o.type] === undefined) {
-    return false;
+    throw e(`Invalid find operator type: ${o.type}`);
   }
 
-  if (Table.FILED_TYPE.includes(typeof o.value as Table.FieldType)) {
-    return true;
+  if (!ensure.isValue(o.value)) {
+    throw e(
+      `Invalid find operator value: ${o.value}, must be string, number, boolean, null or Date`
+    );
   }
 
-  if (typeof o.value === 'object' && (o.value instanceof Date || o.value === null)) {
-    return true;
-  }
-
-  return false;
+  return o as Query.FindOperator<Query.Operator>;
 };
 
 /** 等于（=）*/
