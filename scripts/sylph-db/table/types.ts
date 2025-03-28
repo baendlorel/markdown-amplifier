@@ -1,3 +1,5 @@
+import { diagnostics } from '../utils';
+
 export namespace Table {
   // # used for creating
 
@@ -224,15 +226,16 @@ export namespace Query {
 
   export enum Operator {
     EQUAL,
-    NOT_EQUAL,
-    GREATER_THAN,
-    LESS_THAN,
-    GREATER_THAN_OR_EQUAL,
-    LESS_THAN_OR_EQUAL,
-    BETWEEN,
-    NOT_BETWEEN,
     LIKE,
     IN,
+    GREATER_THAN,
+    GREATER_THAN_OR_EQUAL,
+    LESS_THAN,
+    LESS_THAN_OR_EQUAL,
+    BETWEEN,
+    NOT_EQUAL,
+    NOT_LIKE,
+    NOT_BETWEEN,
     NOT_IN,
   }
 
@@ -251,3 +254,34 @@ export namespace Query {
       : Table.Value;
   };
 }
+
+const { err } = diagnostics('Table.Type');
+
+/**
+ * 支持的值有string、boolean、number、null、Date，返回对应的类型 \
+ * Supported values are string, boolean, number, null, Date, return the corresponding type
+ * @param value
+ * @returns  'string' | 'boolean' | 'number' | 'null' | 'Date'
+ */
+export const getType = (
+  value: Table.Value | Table.Value[]
+): 'string' | 'boolean' | 'number' | 'null' | 'Date' => {
+  if (value === null) {
+    return 'null';
+  }
+
+  // TODO 这里要考虑到是数组的情形，如果数组每个类型不一致，要报错
+  const t = typeof value;
+  switch (t) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+      return t;
+    case 'object':
+      if (value instanceof Date) {
+        return 'Date';
+      }
+    default:
+      throw err(`Invalid value type: ${value}[${t}]`, 'getType');
+  }
+};

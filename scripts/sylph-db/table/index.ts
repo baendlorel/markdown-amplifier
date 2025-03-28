@@ -1,9 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from '../brotli';
 import { ensure } from './checkers';
-import { Query, Table } from './types';
+import { getType, Query, Table } from './types';
 import { base64, diagnostics, isPermutated, recreateFn } from '../utils';
 import { normalize, filter, initializer, privatar } from './privates';
+import { ensureFindOperator } from './conditions';
 
 const { err, log } = diagnostics('<Table>');
 
@@ -59,7 +60,7 @@ export class SylphTable<T extends Table.Config> {
     initializer.pk(priv, fields[pk]);
   }
 
-  find(condition: Query.Condition<T['fields']>): Table.Entity<T['fields']>[] {
+  find2(condition: Query.Condition<T['fields']>): Table.Entity<T['fields']>[] {
     const priv = getPrivates(this);
     const e = (msg: string) => err(msg, 'find');
 
@@ -95,6 +96,93 @@ export class SylphTable<T extends Table.Config> {
       if (typeof v !== t) {
         throw e(`Field type mismatch, expected '${t}', got '${typeof v}'`);
       }
+    }
+
+    // 先试试唯一索引，能找到就轻松了
+    // Try unique indexes first, if found, return directly
+    const uniques = condFields.filter((k) => priv.uniqueMap.has(k));
+    if (uniques.length > 0) {
+      for (let i = 0; i < uniques.length; i++) {
+        const m = priv.uniqueMap.get(uniques[i])!;
+        const vkey = condition[uniques[i]];
+        const row = m.get(vkey);
+        if (row) {
+          return filter(priv, [row], condition);
+        }
+      }
+      // 走完了说明没找到，其实说明就没有了
+      return [];
+    }
+
+    // 再试普通索引
+    // Try the normal indexes
+    const indexes = condFields.filter((k) => priv.indexMap.has(k));
+    if (indexes.length > 0) {
+      let shortestRows = [] as Table.Row[];
+      for (let i = 0; i < indexes.length; i++) {
+        // 根据字段indexValueMaps[i]找到了此字段索引映射，看看有没有符合的数据行
+        // Found the index map of by field indexValueMaps[i], see if there are any matching data rows
+        const m = priv.indexMap.get(indexes[i])!;
+        const rows = m.get(condition[indexes[i]]);
+        if (!rows || rows.length === 0) {
+          return [];
+        }
+        if (rows.length < shortestRows.length || shortestRows.length === 0) {
+          shortestRows = rows;
+        }
+      }
+      // 从最小行数组开始找，以求最快速度
+      // Searching from the shortest rows array for the fastest speed
+      return filter(priv, shortestRows, condition);
+    }
+
+    // 只能硬来了
+    // Have to try it the hard way
+    return filter(priv, priv.data, condition);
+  }
+
+  find(condition: Query.RawCondition<T['fields']>): Table.Entity<T['fields']>[] {
+    const priv = getPrivates(this);
+    const e = (msg: string) => err(msg, 'find');
+
+    if (!condition || typeof condition !== 'object') {
+      throw e('Condition must be an object with fields and values');
+    }
+
+    // 校验字段是否可用
+    // Check if the fields are available
+    const condFields = Object.keys(condition);
+    if (condFields.length === 0) {
+      throw e('Condition cannot be empty');
+    }
+    if (condFields.some((k) => !priv.fields.includes(k))) {
+      throw e(`Invalid field detected. fields: ${condFields.join()}`);
+    }
+
+    // 校验condition字段是否符合设定的字段类型
+    // Check if the condition fields are of the correct type
+    const cond = {} as Record<string, Query.FindOperator<Query.Operator>>;
+    for (let i = 0; i < condFields.length; i++) {
+      const idx = priv.fieldIndex[condFields[i]];
+      // TODO 这里很复杂，慢慢写
+      const fo = ensureFindOperator(condition[condFields[i]]);
+      const t = priv.types[idx];
+      const vt = getType(fo.value);
+      if (!priv.nullables[idx] && fo.value === null) {
+        throw e(`'${condFields[i]}' cannot be null`);
+      }
+
+      if (t === 'Date' && !(fo.value instanceof Date)) {
+        const cf = condFields[i];
+        const tv = typeof fo.value;
+        throw e(`Field ${cf} type mismatch, expected 'Date', got '${tv}'`);
+      }
+
+      if (typeof fo.value !== t) {
+        throw e(`Field type mismatch, expected '${t}', got '${typeof fo.value}'`);
+      }
+
+      cond[condFields[i]] = fo;
     }
 
     // 先试试唯一索引，能找到就轻松了

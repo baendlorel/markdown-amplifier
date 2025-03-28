@@ -1,6 +1,6 @@
 import { diagnostics } from '../utils';
 import { ensure } from './checkers';
-import { Query, Table } from './types';
+import { getType, Query, Table } from './types';
 
 const { err } = diagnostics('conditions');
 
@@ -19,6 +19,29 @@ export const ensureFindOperator = (o: any): Query.FindOperator<Query.Operator> =
     throw e(`Invalid find operator type: ${o.type}`);
   }
 
+  // 不同的operator有不同的value，此处需要分类讨论
+  const t = o.type as Query.Operator;
+  switch (t) {
+    case Query.Operator.EQUAL:
+    case Query.Operator.NOT_EQUAL:
+      break;
+    case Query.Operator.GREATER_THAN:
+    case Query.Operator.GREATER_THAN_OR_EQUAL:
+    case Query.Operator.LESS_THAN:
+    case Query.Operator.LESS_THAN_OR_EQUAL:
+      ensure.comparable(o.value);
+      break;
+    case Query.Operator.LIKE:
+    case Query.Operator.NOT_LIKE:
+      // TODO 要考虑value是数组的情况，因为可能是between或者in
+      const t = getType(o.value);
+      if (t !== 'string') {
+        throw e(`Invalid 'Like' value: ${o.value}, must be string`);
+      }
+      break;
+    default:
+      break;
+  }
   if (!ensure.isValue(o.value)) {
     throw e(
       `Invalid find operator value: ${o.value}, must be string, number, boolean, null or Date`
