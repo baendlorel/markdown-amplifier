@@ -1,7 +1,7 @@
 import { Table } from './types';
-import { createDiagnostics, recreateFunction } from '../utils';
+import { diagnostics, recreateFn } from '../utils';
 
-const { err, log } = createDiagnostics('checker');
+const { err, log } = diagnostics('checker');
 
 export const checker = {
   validTableName(tableName: string) {
@@ -24,7 +24,7 @@ export const checker = {
   validDefaultGetter(fn: Function) {
     const e = (msg: string) => err(msg, 'validDefaultGetter');
     const s = fn.toString();
-    const r = recreateFunction(s);
+    const r = recreateFn(s);
     const result = (() => {
       try {
         return r();

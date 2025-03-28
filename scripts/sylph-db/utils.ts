@@ -1,3 +1,32 @@
+const formatMessage = (category: string, message: string, functionName: string = '') => {
+  let head = '';
+  if (category && functionName) {
+    head = `[SylphDB ${category}.${functionName}]`;
+  } else if (!category && functionName) {
+    head = `[SylphDB function:${functionName}]`;
+  } else if (!category && !functionName) {
+    head = '[SylphDB]';
+  } else if (category && !functionName) {
+    head = `[SylphDB ${category}]`;
+  }
+  return `${head} ${message}`;
+};
+
+/**
+ * 创造格式化的诊断工具 \
+ * Create a formatted diagnostic tool
+ * @param category
+ * @returns message creator
+ */
+export const diagnostics = (category: string = '') => ({
+  err: (message: string, functionName: string = '') =>
+    new Error(formatMessage(category, message, functionName)),
+  log: (message: string, functionName: string = '') =>
+    console.log(formatMessage(category, message, functionName)),
+});
+
+const { err, log } = diagnostics('util');
+
 export const base64 =
   typeof Buffer !== 'undefined'
     ? {
@@ -15,7 +44,7 @@ export const base64 =
  * @param funcStr
  * @returns
  */
-export const recreateFunction = (funcStr: string): Function => {
+export const recreateFn = (funcStr: string): Function => {
   funcStr = funcStr.trim();
   // 一般函数都这么开头
   // General functions start like this
@@ -30,9 +59,7 @@ export const recreateFunction = (funcStr: string): Function => {
   }
 
   // 目前没有发现函数toString的其他情形，大概率构造不出来
-  console.error(
-    `[MemDB recreateFunction] Might be an invalid function string: ${funcStr}`
-  );
+  log(`Invalid function string: ${funcStr}`, 'recreateFunction');
   return new Function('return function ' + funcStr)();
 };
 
@@ -65,14 +92,10 @@ export const isPermutated = (
   for (let i = 0; i < length; i++) {
     for (let j = i; j < length; j++) {
       if (equals(arr1[i], arr1[j])) {
-        throw new Error(
-          `[MemDB isPermutated] Duplicate elements of 'arr1' found! [${i}] === [${j}]`
-        );
+        throw err(`Duplicate elements of 'arr1' found! [${i}] = [${j}]`, 'isPermutated');
       }
       if (equals(arr2[i], arr2[j])) {
-        throw new Error(
-          `[MemDB isPermutated] Duplicate elements of 'arr2' found! [${i}] === [${j}]`
-        );
+        throw err(`Duplicate elements of 'arr2' found! [${i}] = [${j}]`, 'isPermutated');
       }
     }
   }
@@ -92,30 +115,3 @@ export const isPermutated = (
 
   return true;
 };
-
-const formatMessage = (category: string, message: string, functionName: string = '') => {
-  let head = '';
-  if (category && functionName) {
-    head = `[SylphDB ${category}.${functionName}]`;
-  } else if (!category && functionName) {
-    head = `[SylphDB function:${functionName}]`;
-  } else if (!category && !functionName) {
-    head = '[SylphDB]';
-  } else if (category && !functionName) {
-    head = `[SylphDB ${category}]`;
-  }
-  return `${head} ${message}`;
-};
-
-/**
- * 创造格式化的诊断工具 \
- * Create a formatted diagnostic tool
- * @param category
- * @returns message creator
- */
-export const createDiagnostics = (category: string = '') => ({
-  err: (message: string, functionName: string = '') =>
-    new Error(formatMessage(category, message, functionName)),
-  log: (message: string, functionName: string = '') =>
-    console.log(formatMessage(category, message, functionName)),
-});

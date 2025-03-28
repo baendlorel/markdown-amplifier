@@ -2,10 +2,10 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from '../brotli';
 import { checker } from './checkers';
 import { Table } from './types';
-import { base64, createDiagnostics, isPermutated, recreateFunction } from '../utils';
-import { normalize, filter, initIndexes, initUniques, privatar } from './privates';
+import { base64, diagnostics, isPermutated, recreateFn } from '../utils';
+import { normalize, filter, initializer, privatar } from './privates';
 
-const { err, log } = createDiagnostics('<Table>');
+const { err, log } = diagnostics('<Table>');
 
 const { getPrivates, createPrivates } = privatar();
 
@@ -24,12 +24,12 @@ export class SylphTable<T extends Table.Config> {
   }
 
   constructor(o: T) {
-    const privates = createPrivates(this);
-    privates.autoIncrementId = 0;
-    privates.data = [];
+    const priv = createPrivates(this);
+    priv.autoIncrementId = 0;
+    priv.data = [];
 
     checker.validTableName(o.tableName);
-    privates.name = o.tableName;
+    priv.name = o.tableName;
 
     if (!Array.isArray(o.fields)) {
       throw err(
@@ -41,26 +41,26 @@ export class SylphTable<T extends Table.Config> {
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
       checker.normalizeFieldOptions(Array.from(o.fields));
 
-    privates.fields = fields;
-    privates.fieldIndex = {} as Record<string, number>;
+    priv.fields = fields;
+    priv.fieldIndex = {} as Record<string, number>;
     for (let i = 0; i < fields.length; i++) {
-      privates.fieldIndex[fields[i]] = i;
+      priv.fieldIndex[fields[i]] = i;
     }
-    privates.types = types;
-    privates.defaults = defaults;
-    privates.nullables = nullables;
-    privates.pk = pk;
-    privates.isAI = isAI;
-    privates.indexMap = new Map();
-    privates.uniqueMap = new Map();
-    privates.pkMap = new Map();
-    initIndexes(privates, indexes);
-    initUniques(privates, uniques);
-    initUniques(privates, [fields[pk]]);
+    priv.types = types;
+    priv.defaults = defaults;
+    priv.nullables = nullables;
+    priv.pk = pk;
+    priv.isAI = isAI;
+    priv.indexMap = new Map();
+    priv.uniqueMap = new Map();
+    priv.pkMap = new Map();
+    initializer.indexes(priv, indexes);
+    initializer.uniques(priv, uniques);
+    initializer.pk(priv, fields[pk]);
   }
 
   find(condition: Table.FindCondition<T['fields']>): Table.Entity<T['fields']>[] {
-    const privates = getPrivates(this);
+    const priv = getPrivates(this);
     const e = (msg: string) => err(msg, 'find');
 
     if (!condition || typeof condition !== 'object') {
@@ -72,17 +72,17 @@ export class SylphTable<T extends Table.Config> {
     if (condFields.length === 0) {
       throw e('Condition cannot be empty');
     }
-    if (condFields.some((k) => !privates.fields.includes(k))) {
+    if (condFields.some((k) => !priv.fields.includes(k))) {
       throw e(`Invalid field detected. fields: ${condFields.join()}`);
     }
 
     // 校验condition字段是否符合设定的字段类型
     // Check if the condition fields are of the correct type
     for (let i = 0; i < condFields.length; i++) {
-      const idx = privates.fieldIndex[condFields[i]];
+      const idx = priv.fieldIndex[condFields[i]];
       const v = condition[condFields[i]];
-      const t = privates.types[idx];
-      if (!privates.nullables[idx] && v === null) {
+      const t = priv.types[idx];
+      if (!priv.nullables[idx] && v === null) {
         throw e(`'${condFields[i]}' cannot be null`);
       }
 
@@ -99,14 +99,14 @@ export class SylphTable<T extends Table.Config> {
 
     // 先试试唯一索引，能找到就轻松了
     // Try unique indexes first, if found, return directly
-    const uniques = condFields.filter((k) => privates.uniqueMap.has(k));
+    const uniques = condFields.filter((k) => priv.uniqueMap.has(k));
     if (uniques.length > 0) {
       for (let i = 0; i < uniques.length; i++) {
-        const m = privates.uniqueMap.get(uniques[i])!;
+        const m = priv.uniqueMap.get(uniques[i])!;
         const vkey = condition[uniques[i]];
         const row = m.get(vkey);
         if (row) {
-          return filter(privates, [row], condition);
+          return filter(priv, [row], condition);
         }
       }
       // 走完了说明没找到，其实说明就没有了
@@ -115,13 +115,13 @@ export class SylphTable<T extends Table.Config> {
 
     // 再试普通索引
     // Try the normal indexes
-    const indexes = condFields.filter((k) => privates.indexMap.has(k));
+    const indexes = condFields.filter((k) => priv.indexMap.has(k));
     if (indexes.length > 0) {
       let shortestRows = [] as Table.Row[];
       for (let i = 0; i < indexes.length; i++) {
         // 根据字段indexValueMaps[i]找到了此字段索引映射，看看有没有符合的数据行
         // Found the index map of by field indexValueMaps[i], see if there are any matching data rows
-        const m = privates.indexMap.get(indexes[i])!;
+        const m = priv.indexMap.get(indexes[i])!;
         const rows = m.get(condition[indexes[i]]);
         if (!rows || rows.length === 0) {
           return [];
@@ -132,27 +132,27 @@ export class SylphTable<T extends Table.Config> {
       }
       // 从最小行数组开始找，以求最快速度
       // Searching from the shortest rows array for the fastest speed
-      return filter(privates, shortestRows, condition);
+      return filter(priv, shortestRows, condition);
     }
 
     // 只能硬来了
     // Have to try it the hard way
-    return filter(privates, privates.data, condition);
+    return filter(priv, priv.data, condition);
   }
 
   insert(row: Table.Entity<T['fields']>) {
-    const privates = getPrivates(this);
+    const priv = getPrivates(this);
     const newRow = [] as Table.Row;
-    for (let i = 0; i < privates.fields.length; i++) {
+    for (let i = 0; i < priv.fields.length; i++) {
       // 逐个字段校验
-      newRow[i] = normalize(privates, row[privates.fields[i]], i);
+      newRow[i] = normalize(priv, row[priv.fields[i]], i);
 
       // 校验是否有重复的主键
       // Check for duplicate primary keys
-      if (privates.pkMap.has(privates.fields[i])) {
-        const m = privates.pkMap.get(privates.fields[i])!;
+      if (priv.pkMap.has(priv.fields[i])) {
+        const m = priv.pkMap.get(priv.fields[i])!;
         if (m.has(newRow[i])) {
-          const f = privates.fields[i];
+          const f = priv.fields[i];
           const nri = newRow[i];
           throw err(`Duplicate primary key! field:${f} value:${nri}`, 'insert');
         } else {
@@ -162,10 +162,10 @@ export class SylphTable<T extends Table.Config> {
 
       // 校验是否有重复的唯一索引
       // Check for duplicate unique indexes
-      if (privates.uniqueMap.has(privates.fields[i])) {
-        const m = privates.uniqueMap.get(privates.fields[i])!;
+      if (priv.uniqueMap.has(priv.fields[i])) {
+        const m = priv.uniqueMap.get(priv.fields[i])!;
         if (m.has(newRow[i])) {
-          const f = privates.fields[i];
+          const f = priv.fields[i];
           const nri = newRow[i];
           throw err(`Duplicate unique value! field:${f} value:${nri}`, 'insert');
         } else {
@@ -175,13 +175,13 @@ export class SylphTable<T extends Table.Config> {
 
       // 添加索引
       // Add indexes
-      if (privates.indexMap.has(privates.fields[i])) {
-        const m = privates.indexMap.get(privates.fields[i])!;
+      if (priv.indexMap.has(priv.fields[i])) {
+        const m = priv.indexMap.get(priv.fields[i])!;
         let rows = m.get(newRow[i]);
         rows ? rows.push(newRow) : m.set(newRow[i], [newRow]);
       }
     }
-    privates.data.push(newRow);
+    priv.data.push(newRow);
   }
 
   /**
@@ -192,15 +192,15 @@ export class SylphTable<T extends Table.Config> {
    * @param dbFilePath
    */
   save(dbFilePath: string) {
-    const privates = getPrivates(this);
+    const priv = getPrivates(this);
     // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值Line排列每一行的内容
     // * Most of the time, adding string is faster than array join, but here we need to accurately arrange the content of each line according to 'DBTableFile'
     const lines = [] as string[];
-    lines[Table.Line.NAME] = 'NAME: ' + privates.name;
-    lines[Table.Line.FIELDS] = 'FIELDS: ' + privates.fields.join(',');
-    lines[Table.Line.TYPES] = 'TYPES: ' + privates.types.join(',');
+    lines[Table.Line.NAME] = 'NAME: ' + priv.name;
+    lines[Table.Line.FIELDS] = 'FIELDS: ' + priv.fields.join(',');
+    lines[Table.Line.TYPES] = 'TYPES: ' + priv.types.join(',');
     lines[Table.Line.NULLABLES] =
-      'NULLABLES: ' + privates.nullables.map((n) => (n ? '1' : '0')).join(',');
+      'NULLABLES: ' + priv.nullables.map((n) => (n ? '1' : '0')).join(',');
 
     // * 全部字符串化并转换为base64编码，防止出现换行符影响split
     // * Convert all defaultGetters to string and encode with base64 to prevent line breaks from affecting 'split'
@@ -208,7 +208,7 @@ export class SylphTable<T extends Table.Config> {
     // Add braces at the beginning and end to make it an object
     lines[Table.Line.DEFAULTS] =
       'DEFAULTS: ' +
-      privates.defaults.reduce((prev, getter, i) => {
+      priv.defaults.reduce((prev, getter, i) => {
         let v = '';
         switch (typeof getter) {
           case 'string':
@@ -240,7 +240,7 @@ export class SylphTable<T extends Table.Config> {
     // Add braces at the beginning and end to make it an object
     lines[Table.Line.DEAFULT_GETTER_TYPE] =
       'DEAFULT_GETTER_TYPE: ' +
-      privates.defaults.reduce((prev, getter, i) => {
+      priv.defaults.reduce((prev, getter, i) => {
         let v = '';
         switch (typeof getter) {
           case 'string':
@@ -262,20 +262,20 @@ export class SylphTable<T extends Table.Config> {
         }
         return `${prev && prev + ','}"${i}":"${v}"`;
       }, '');
-    lines[Table.Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(privates.pk);
-    lines[Table.Line.IS_AI] = 'IS_AI: ' + (privates.isAI ? '1' : '0');
+    lines[Table.Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(priv.pk);
+    lines[Table.Line.IS_AI] = 'IS_AI: ' + (priv.isAI ? '1' : '0');
     lines[Table.Line.AUTO_INCREMENT_ID] =
-      'AUTO_INCREMENT_ID: ' + String(privates.autoIncrementId);
-    lines[Table.Line.INDEXES] = 'INDEXES: ' + [...privates.indexMap.keys()].join();
-    lines[Table.Line.UNIQUES] = 'UNIQUES: ' + [...privates.uniqueMap.keys()].join();
+      'AUTO_INCREMENT_ID: ' + String(priv.autoIncrementId);
+    lines[Table.Line.INDEXES] = 'INDEXES: ' + [...priv.indexMap.keys()].join();
+    lines[Table.Line.UNIQUES] = 'UNIQUES: ' + [...priv.uniqueMap.keys()].join();
 
     // 开始保存数据
     const DATA_START = Table.Line.DATA_START;
-    for (let i = 0; i < privates.data.length; i++) {
+    for (let i = 0; i < priv.data.length; i++) {
       // 删除首尾的方括号，boolean转换为0或1，以达到节省空间的目的
       // Remove the brackets at the two sides, convert boolean to 0 or 1 to save space
-      lines[i + DATA_START] = JSON.stringify(privates.data[i], (key, value) => {
-        switch (privates.types[key]) {
+      lines[i + DATA_START] = JSON.stringify(priv.data[i], (key, value) => {
+        switch (priv.types[key]) {
           case 'boolean':
             return value ? '1' : '0';
           case 'Date':
@@ -289,7 +289,7 @@ export class SylphTable<T extends Table.Config> {
   }
 
   load(dbFilePath: string) {
-    const privates = getPrivates(this);
+    const priv = getPrivates(this);
 
     // 如果不存在就不加载了，作为一个空表
     if (!existsSync(dbFilePath)) {
@@ -303,12 +303,12 @@ export class SylphTable<T extends Table.Config> {
     // 开始对比表结构。可能改代码时会调整字段顺序，故此处要做成映射再行对比
     // Start comparison of table structure. The field order may be adjusted when coding, so map it to an object for comparison
     const name = lines[Table.Line.NAME].replace('NAME: ', '');
-    if (name !== privates.name) {
-      throw e(`Table name mismatch, expected '${privates.name}', got '${name}'`);
+    if (name !== priv.name) {
+      throw e(`Table name mismatch, expected '${priv.name}', got '${name}'`);
     }
     const fields = lines[Table.Line.FIELDS].replace('FIELDS: ', '').split(',');
-    if (privates.fields.length !== fields.length) {
-      const used = `[${privates.fields.join()}](${privates.fields.length})`;
+    if (priv.fields.length !== fields.length) {
+      const used = `[${priv.fields.join()}](${priv.fields.length})`;
       const loaded = `[${fields.join()}](${fields.length})`;
       throw e(`Field count mismatch, expected '${used}', loaded '${loaded}'`);
     }
@@ -325,10 +325,10 @@ export class SylphTable<T extends Table.Config> {
     const toThisIndex = {} as Record<number, number>;
     let permutated = false;
     for (let i = 0; i < fields.length; i++) {
-      const index = privates.fields.findIndex((f) => f === fields[i]);
+      const index = priv.fields.findIndex((f) => f === fields[i]);
       if (index === -1) {
         const f = fields[i];
-        const flds = privates.fields.join();
+        const flds = priv.fields.join();
         throw e(`Loaded field '${f}' is not found in '${flds}'`);
       }
       toThisIndex[i] = index;
@@ -376,7 +376,7 @@ export class SylphTable<T extends Table.Config> {
             result[i] = base64.decode(_default[i]) === '1';
             break;
           case 'function':
-            result[i] = recreateFunction(base64.decode(_default[i]));
+            result[i] = recreateFn(base64.decode(_default[i]));
             break;
           case 'Date':
             result[i] = new Date(base64.decode(_default[i]));
@@ -401,36 +401,36 @@ export class SylphTable<T extends Table.Config> {
     for (let i = 0; i < fields.length; i++) {
       const ii = toThisIndex[i];
 
-      if (types[i] !== privates.types[ii]) {
-        mismatch('types', i, ii, privates.types[ii], types[i]);
+      if (types[i] !== priv.types[ii]) {
+        mismatch('types', i, ii, priv.types[ii], types[i]);
       }
 
-      if (nullables[i] !== privates.nullables[ii]) {
-        mismatch('nullables', i, ii, privates.nullables[ii], nullables[i]);
+      if (nullables[i] !== priv.nullables[ii]) {
+        mismatch('nullables', i, ii, priv.nullables[ii], nullables[i]);
       }
 
       // defaultGetter的对比相对复杂一些
-      checker.sameDefaultGetter(privates.defaults[ii], defaults[i]);
+      checker.sameDefaultGetter(priv.defaults[ii], defaults[i]);
     }
 
     // # compare isAI and pk
-    if (isAI !== privates.isAI) {
-      throw e(`'isAI' mismatch, expected '${privates.isAI}', got '${isAI}'`);
+    if (isAI !== priv.isAI) {
+      throw e(`'isAI' mismatch, expected '${priv.isAI}', got '${isAI}'`);
     }
 
-    if (toThisIndex[pk] !== privates.pk) {
+    if (toThisIndex[pk] !== priv.pk) {
       const tpk = toThisIndex[pk];
-      throw e(`'pk' mismatch, expected '${privates.pk}', got '${pk}->${tpk}'`);
+      throw e(`'pk' mismatch, expected '${priv.pk}', got '${pk}->${tpk}'`);
     }
 
     // # compare indexes and uniques
-    const thisIndexes = [...privates.indexMap.keys()];
+    const thisIndexes = [...priv.indexMap.keys()];
     if (!isPermutated(indexes, thisIndexes)) {
       const ti = thisIndexes;
       throw e(`'indexes' mismatch, expected '${ti}', got '${indexes}'`);
     }
 
-    const thisUniques = [...privates.uniqueMap.keys()];
+    const thisUniques = [...priv.uniqueMap.keys()];
     if (!isPermutated(uniques, thisUniques)) {
       const tu = thisUniques;
       throw e(`'uniques' mismatch, expected '${tu}', got '${uniques}'`);
@@ -440,7 +440,7 @@ export class SylphTable<T extends Table.Config> {
       throw e(`Loaded 'autoIncrementId' is NaN`);
     }
 
-    privates.autoIncrementId = autoIncrementId;
+    priv.autoIncrementId = autoIncrementId;
 
     // 开始加载数据
     // Start loading data from file
@@ -465,34 +465,30 @@ export class SylphTable<T extends Table.Config> {
             throw e(`Invalid field type: ${types[j]}`);
         }
       }
-      privates.data.push(row);
+      priv.data.push(row);
     }
     return this;
   }
 
   display() {
-    const privates = getPrivates(this);
-    console.log('tableName', privates.name);
-    console.log({ pk: privates.pk, isAI: privates.isAI });
-    console.log('fields  ', privates.fields);
-    console.log('types   ', privates.types);
-    console.log('defaults', privates.defaults);
-    for (const f of privates.indexMap.keys()) {
-      console.log(`indexes ${f}: ${privates.indexMap.get(f)?.size}`);
+    const priv = getPrivates(this);
+    console.log('tableName', priv.name);
+    console.log({ pk: priv.pk, isAI: priv.isAI });
+    console.log('fields  ', priv.fields);
+    console.log('types   ', priv.types);
+    console.log('defaults', priv.defaults);
+    for (const f of priv.indexMap.keys()) {
+      console.log(`indexes ${f}: ${priv.indexMap.get(f)?.size}`);
     }
 
-    for (const f of privates.uniqueMap.keys()) {
-      console.log(`uniques ${f}: ${privates.uniqueMap.get(f)?.size}`);
+    for (const f of priv.uniqueMap.keys()) {
+      console.log(`uniques ${f}: ${priv.uniqueMap.get(f)?.size}`);
     }
 
-    if (privates.data.length > 15) {
-      console.log(
-        'data    ',
-        privates.data.slice(0, 5),
-        `...${privates.data.length - 5} more`
-      );
+    if (priv.data.length > 15) {
+      console.log('data    ', priv.data.slice(0, 5), `...${priv.data.length - 5} more`);
     } else {
-      console.log('data    ', privates.data);
+      console.log('data    ', priv.data);
     }
   }
 }
