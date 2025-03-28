@@ -74,6 +74,7 @@ function countLines(dir: string) {
   console.log('lines            : ' + linesCount);
   console.log('none blank lines : ' + (linesCount - blankLinesCount));
   console.log('blank lines      : ' + blankLinesCount);
+  console.log('letters          : ' + width);
   console.log(
     'Avg line width   : ' + (width / (linesCount - blankLinesCount)).toFixed(2)
   );
@@ -82,4 +83,4 @@ function countLines(dir: string) {
 
 countLines(path.join(__dirname, '../'));
 console.log('----------------');
-countLines(path.join(__dirname, '../memdb'));
+countLines(path.join(__dirname, '../sylph-db'));

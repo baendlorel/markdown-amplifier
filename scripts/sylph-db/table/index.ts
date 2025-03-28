@@ -1,23 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from '../brotli';
 import { checker } from './checkers';
-import {
-  Value,
-  Row,
-  TableConfig,
-  DefaultGetter,
-  Entity,
-  FindCondition,
-  Line,
-} from './types';
+import { Table } from './types';
 import { base64, createDiagnostics, isPermutated, recreateFunction } from '../utils';
-import { normalize, filter, initIndexes, initUniques, privateHandler } from './privates';
+import { normalize, filter, initIndexes, initUniques, privatar } from './privates';
 
 const { err, log } = createDiagnostics('<Table>');
 
-const { getPrivates, createPrivates } = privateHandler();
+const { getPrivates, createPrivates } = privatar();
 
-export class Table<T extends TableConfig> {
+export class SylphTable<T extends Table.Config> {
   /**
    * 生成一个符合 UUID v4 标准的随机字符串 \
    * Generate a random string that conforms to the UUID v4 standard
@@ -67,7 +59,7 @@ export class Table<T extends TableConfig> {
     initUniques(privates, [fields[pk]]);
   }
 
-  find(condition: FindCondition<T['fields']>): Entity<T['fields']>[] {
+  find(condition: Table.FindCondition<T['fields']>): Table.Entity<T['fields']>[] {
     const privates = getPrivates(this);
     const e = (msg: string) => err(msg, 'find');
 
@@ -110,8 +102,8 @@ export class Table<T extends TableConfig> {
     const uniques = condFields.filter((k) => privates.uniqueMap.has(k));
     if (uniques.length > 0) {
       for (let i = 0; i < uniques.length; i++) {
-        const m = privates.uniqueMap.get(uniques[i]) as Map<Value, Row>;
-        const vkey = condition[uniques[i]] as Value;
+        const m = privates.uniqueMap.get(uniques[i])!;
+        const vkey = condition[uniques[i]];
         const row = m.get(vkey);
         if (row) {
           return filter(privates, [row], condition);
@@ -125,12 +117,12 @@ export class Table<T extends TableConfig> {
     // Try the normal indexes
     const indexes = condFields.filter((k) => privates.indexMap.has(k));
     if (indexes.length > 0) {
-      let shortestRows = [] as Row[];
+      let shortestRows = [] as Table.Row[];
       for (let i = 0; i < indexes.length; i++) {
         // 根据字段indexValueMaps[i]找到了此字段索引映射，看看有没有符合的数据行
         // Found the index map of by field indexValueMaps[i], see if there are any matching data rows
-        const m = privates.indexMap.get(indexes[i]) as Map<Value, Row[]>;
-        const rows = m.get(condition[indexes[i]] as Value);
+        const m = privates.indexMap.get(indexes[i])!;
+        const rows = m.get(condition[indexes[i]]);
         if (!rows || rows.length === 0) {
           return [];
         }
@@ -148,9 +140,9 @@ export class Table<T extends TableConfig> {
     return filter(privates, privates.data, condition);
   }
 
-  insert(row: Entity<T['fields']>) {
+  insert(row: Table.Entity<T['fields']>) {
     const privates = getPrivates(this);
-    const newRow = [] as Row;
+    const newRow = [] as Table.Row;
     for (let i = 0; i < privates.fields.length; i++) {
       // 逐个字段校验
       newRow[i] = normalize(privates, row[privates.fields[i]], i);
@@ -158,7 +150,7 @@ export class Table<T extends TableConfig> {
       // 校验是否有重复的主键
       // Check for duplicate primary keys
       if (privates.pkMap.has(privates.fields[i])) {
-        const m = privates.pkMap.get(privates.fields[i]) as Map<Value, Row>;
+        const m = privates.pkMap.get(privates.fields[i])!;
         if (m.has(newRow[i])) {
           const f = privates.fields[i];
           const nri = newRow[i];
@@ -171,7 +163,7 @@ export class Table<T extends TableConfig> {
       // 校验是否有重复的唯一索引
       // Check for duplicate unique indexes
       if (privates.uniqueMap.has(privates.fields[i])) {
-        const m = privates.uniqueMap.get(privates.fields[i]) as Map<Value, Row>;
+        const m = privates.uniqueMap.get(privates.fields[i])!;
         if (m.has(newRow[i])) {
           const f = privates.fields[i];
           const nri = newRow[i];
@@ -184,7 +176,7 @@ export class Table<T extends TableConfig> {
       // 添加索引
       // Add indexes
       if (privates.indexMap.has(privates.fields[i])) {
-        const m = privates.indexMap.get(privates.fields[i]) as Map<Value, Row[]>;
+        const m = privates.indexMap.get(privates.fields[i])!;
         let rows = m.get(newRow[i]);
         rows ? rows.push(newRow) : m.set(newRow[i], [newRow]);
       }
@@ -204,17 +196,17 @@ export class Table<T extends TableConfig> {
     // * 大部分时候字符串相加快于数组join，但此处需要精准按照枚举值Line排列每一行的内容
     // * Most of the time, adding string is faster than array join, but here we need to accurately arrange the content of each line according to 'DBTableFile'
     const lines = [] as string[];
-    lines[Line.NAME] = 'NAME: ' + privates.name;
-    lines[Line.FIELDS] = 'FIELDS: ' + privates.fields.join(',');
-    lines[Line.TYPES] = 'TYPES: ' + privates.types.join(',');
-    lines[Line.NULLABLES] =
+    lines[Table.Line.NAME] = 'NAME: ' + privates.name;
+    lines[Table.Line.FIELDS] = 'FIELDS: ' + privates.fields.join(',');
+    lines[Table.Line.TYPES] = 'TYPES: ' + privates.types.join(',');
+    lines[Table.Line.NULLABLES] =
       'NULLABLES: ' + privates.nullables.map((n) => (n ? '1' : '0')).join(',');
 
     // * 全部字符串化并转换为base64编码，防止出现换行符影响split
     // * Convert all defaultGetters to string and encode with base64 to prevent line breaks from affecting 'split'
     // 首尾加上大括号可以变成对象
     // Add braces at the beginning and end to make it an object
-    lines[Line.DEFAULTS] =
+    lines[Table.Line.DEFAULTS] =
       'DEFAULTS: ' +
       privates.defaults.reduce((prev, getter, i) => {
         let v = '';
@@ -246,7 +238,7 @@ export class Table<T extends TableConfig> {
       }, '');
     // 首尾加上大括号可以变成对象
     // Add braces at the beginning and end to make it an object
-    lines[Line.DEAFULT_GETTER_TYPE] =
+    lines[Table.Line.DEAFULT_GETTER_TYPE] =
       'DEAFULT_GETTER_TYPE: ' +
       privates.defaults.reduce((prev, getter, i) => {
         let v = '';
@@ -270,18 +262,19 @@ export class Table<T extends TableConfig> {
         }
         return `${prev && prev + ','}"${i}":"${v}"`;
       }, '');
-    lines[Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(privates.pk);
-    lines[Line.IS_AI] = 'IS_AI: ' + (privates.isAI ? '1' : '0');
-    lines[Line.AUTO_INCREMENT_ID] =
+    lines[Table.Line.PRIMARY_KEY] = 'PRIMARY_KEY: ' + String(privates.pk);
+    lines[Table.Line.IS_AI] = 'IS_AI: ' + (privates.isAI ? '1' : '0');
+    lines[Table.Line.AUTO_INCREMENT_ID] =
       'AUTO_INCREMENT_ID: ' + String(privates.autoIncrementId);
-    lines[Line.INDEXES] = 'INDEXES: ' + [...privates.indexMap.keys()].join();
-    lines[Line.UNIQUES] = 'UNIQUES: ' + [...privates.uniqueMap.keys()].join();
+    lines[Table.Line.INDEXES] = 'INDEXES: ' + [...privates.indexMap.keys()].join();
+    lines[Table.Line.UNIQUES] = 'UNIQUES: ' + [...privates.uniqueMap.keys()].join();
 
     // 开始保存数据
+    const DATA_START = Table.Line.DATA_START;
     for (let i = 0; i < privates.data.length; i++) {
       // 删除首尾的方括号，boolean转换为0或1，以达到节省空间的目的
       // Remove the brackets at the two sides, convert boolean to 0 or 1 to save space
-      lines[i + Line.DATA_START] = JSON.stringify(privates.data[i], (key, value) => {
+      lines[i + DATA_START] = JSON.stringify(privates.data[i], (key, value) => {
         switch (privates.types[key]) {
           case 'boolean':
             return value ? '1' : '0';
@@ -309,11 +302,11 @@ export class Table<T extends TableConfig> {
     const lines = content.split('\n');
     // 开始对比表结构。可能改代码时会调整字段顺序，故此处要做成映射再行对比
     // Start comparison of table structure. The field order may be adjusted when coding, so map it to an object for comparison
-    const name = lines[Line.NAME].replace('NAME: ', '');
+    const name = lines[Table.Line.NAME].replace('NAME: ', '');
     if (name !== privates.name) {
       throw e(`Table name mismatch, expected '${privates.name}', got '${name}'`);
     }
-    const fields = lines[Line.FIELDS].replace('FIELDS: ', '').split(',');
+    const fields = lines[Table.Line.FIELDS].replace('FIELDS: ', '').split(',');
     if (privates.fields.length !== fields.length) {
       const used = `[${privates.fields.join()}](${privates.fields.length})`;
       const loaded = `[${fields.join()}](${fields.length})`;
@@ -350,25 +343,27 @@ export class Table<T extends TableConfig> {
       log(`Field order preserved`, 'load');
     }
 
-    const readArray = (lineType: keyof typeof Line) =>
-      lines[Line[lineType]]
+    const readArray = (lineType: keyof typeof Table.Line) =>
+      lines[Table.Line[lineType]]
         .replace(lineType + ': ', '')
         .split(',')
         .filter(Boolean);
 
-    const read = (lineType: keyof typeof Line) =>
-      lines[Line[lineType]].replace(lineType + ': ', '');
+    const read = (lineType: keyof typeof Table.Line) =>
+      lines[Table.Line[lineType]].replace(lineType + ': ', '');
 
     // 逐个字段对比
     // Compare each configuration
     const types = readArray('TYPES');
     const nullables = readArray('NULLABLES').map((n) => n === '1');
     const defaults = (() => {
-      const _default = JSON.parse(`{${lines[Line.DEFAULTS].replace('DEFAULTS: ', '')}}`);
-      const _defaultGetterType = JSON.parse(
-        `{${lines[Line.DEAFULT_GETTER_TYPE].replace('DEAFULT_GETTER_TYPE: ', '')}}`
+      const _default = JSON.parse(
+        `{${lines[Table.Line.DEFAULTS].replace('DEFAULTS: ', '')}}`
       );
-      const result = [] as DefaultGetter[];
+      const _defaultGetterType = JSON.parse(
+        `{${lines[Table.Line.DEAFULT_GETTER_TYPE].replace('DEAFULT_GETTER_TYPE: ', '')}}`
+      );
+      const result = [] as Table.DefaultGetter[];
       for (const i in _default) {
         switch (_defaultGetterType[i]) {
           case 'string':
@@ -450,10 +445,10 @@ export class Table<T extends TableConfig> {
     // 开始加载数据
     // Start loading data from file
 
-    for (let i = Line.DATA_START; i < lines.length; i++) {
+    for (let i = Table.Line.DATA_START; i < lines.length; i++) {
       // 删除首尾的方括号
       const l = JSON.parse('[' + lines[i] + ']');
-      const row = [] as Row;
+      const row = [] as Table.Row;
       for (let j = 0; j < l.length; j++) {
         // string、boolean、number、Date的正确处理
         switch (types[j]) {
@@ -499,7 +494,5 @@ export class Table<T extends TableConfig> {
     } else {
       console.log('data    ', privates.data);
     }
-
-    // console.table([this.fields, this.types, this.defaults, this.indexes, this.uniques]);
   }
 }

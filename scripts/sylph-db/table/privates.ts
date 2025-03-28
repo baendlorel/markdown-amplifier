@@ -1,5 +1,5 @@
 import { createDiagnostics } from '../utils';
-import { TablePrivate, Value, Row, TableConfig, FindCondition, Entity } from './types';
+import { Table } from './types';
 
 const { err } = createDiagnostics('<Table.private>');
 
@@ -13,8 +13,8 @@ const { err } = createDiagnostics('<Table.private>');
  * @returns 从字段名到字段在fields中的位置的映射
  */
 export const initIndexMap = (
-  privates: TablePrivate,
-  map: Map<string, Map<Value, Row[]>> | Map<string, Map<Value, Row>>,
+  privates: Table.Private,
+  map: Table.IndexMap | Table.UniqueMap,
   fields: string[]
 ) => {
   const iti = {} as Record<string, number>;
@@ -26,7 +26,7 @@ export const initIndexMap = (
   return iti;
 };
 
-export const initIndexes = (privates: TablePrivate, fields: string[]) => {
+export const initIndexes = (privates: Table.Private, fields: string[]) => {
   // 首先要校验索引组是否都在fields内
   if (fields.some((idx) => !privates.fields.includes(idx))) {
     throw err('Index field not found in fields', 'initIndexes');
@@ -43,11 +43,11 @@ export const initIndexes = (privates: TablePrivate, fields: string[]) => {
     for (let j = 0; j < fields.length; j++) {
       // 上面已经初始化过，这里一定是有的
       // As initialized above, 'get' must return a no undefined value here
-      const indexValueMap = map.get(fields[j]) as Map<Value, Row[]>;
+      const indexValueMap = map.get(fields[j])!;
       const vKey = row[iti[fields[j]]];
       let rows = indexValueMap.get(vKey);
       if (!rows) {
-        rows = [] as Row[];
+        rows = [] as Table.Row[];
         indexValueMap.set(vKey, []);
       }
       rows.push(row);
@@ -55,7 +55,7 @@ export const initIndexes = (privates: TablePrivate, fields: string[]) => {
   }
 };
 
-export const initUniques = (privates: TablePrivate, fields: string[]) => {
+export const initUniques = (privates: Table.Private, fields: string[]) => {
   // 首先要校验索引组是否都在fields内
   if (fields.some((idx) => !privates.fields.includes(idx))) {
     throw err('Unique field not found in fields', 'initUniques');
@@ -72,7 +72,7 @@ export const initUniques = (privates: TablePrivate, fields: string[]) => {
     for (let j = 0; j < fields.length; j++) {
       // 上面已经初始化过，这里一定是有的
       // As initialized above, 'get' must return a no undefined value here
-      const uniqueValueMap = map.get(fields[j]) as Map<Value, Row>;
+      const uniqueValueMap = map.get(fields[j])!;
       const vKey = row[iti[fields[j]]];
       // 唯一索引不能有重复数据
       // Unique indexes must not have duplicated data
@@ -93,10 +93,10 @@ export const initUniques = (privates: TablePrivate, fields: string[]) => {
  * @param data 局部数据
  * @param condition 条件（已校验）
  */
-export const filter = <T extends TableConfig>(
-  privates: TablePrivate,
-  data: Row[],
-  condition: FindCondition<T['fields']>
+export const filter = <T extends Table.Config>(
+  privates: Table.Private,
+  data: Table.Row[],
+  condition: Table.FindCondition<T['fields']>
 ) => {
   // 能快一点是一点
   // The faster, the better
@@ -105,7 +105,7 @@ export const filter = <T extends TableConfig>(
   }
 
   const fields = Object.keys(condition);
-  const result = [] as Entity<T['fields']>[];
+  const result = [] as Table.Entity<T['fields']>[];
   for (let i = 0; i < data.length; i++) {
     const d = data[i];
     let match = true;
@@ -120,7 +120,7 @@ export const filter = <T extends TableConfig>(
     if (match) {
       // 这里要把数据组合成对象数组
       // Here, the data must be combined into an array of objects
-      const row = {} as Entity<T['fields']>;
+      const row = {} as Table.Entity<T['fields']>;
       for (let k = 0; k < privates.fields.length; k++) {
         row[privates.fields[k]] = d[k];
       }
@@ -142,8 +142,8 @@ export const filter = <T extends TableConfig>(
  * @returns
  */
 export const normalize = (
-  privates: TablePrivate,
-  value: Value | undefined,
+  privates: Table.Private,
+  value: Table.Value | undefined,
   i: number
 ) => {
   // 如果是自增主键，那么不管value给的是多少，都以自增值覆盖
@@ -186,12 +186,12 @@ export const normalize = (
   return value;
 };
 
-export const privateHandler = <T extends object>() => {
-  const p = new WeakMap<T, TablePrivate>();
+export const privatar = <T extends object>() => {
+  const p = new WeakMap<T, Table.Private>();
   return {
     getPrivates: (table: T) => p.get(table)!,
     createPrivates: (table: T) => {
-      const privates = {} as TablePrivate;
+      const privates = {} as Table.Private;
       p.set(table, privates);
       return privates;
     },

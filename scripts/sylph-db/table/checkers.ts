@@ -1,4 +1,4 @@
-import { DefaultGetter, FieldDefinition, FieldType, FILED_TYPE } from './types';
+import { Table } from './types';
 import { createDiagnostics, recreateFunction } from '../utils';
 
 const { err, log } = createDiagnostics('checker');
@@ -65,12 +65,12 @@ export const checker = {
    * Ensure that the field configuration array is valid
    * @param fieldOptions 待检测配置
    */
-  normalizeFieldOptions(fieldOptions: FieldDefinition[]) {
+  normalizeFieldOptions(fieldOptions: Table.FieldDefinition[]) {
     const e = (msg: string) => err(msg, 'normalizeFieldOptions');
 
     const fields = [] as string[];
-    const types = [] as FieldType[];
-    const defaults = [] as DefaultGetter[];
+    const types = [] as Table.FieldType[];
+    const defaults = [] as Table.DefaultGetter[];
     const nullables = [] as boolean[];
     const indexes = [] as string[];
     const uniques = [] as string[];
@@ -96,9 +96,9 @@ export const checker = {
       }
 
       // 确保字段类型合法
-      if (!FILED_TYPE.includes(o.type)) {
+      if (!Table.FILED_TYPE.includes(o.type)) {
         const v = `${o.type}(${typeof o.type})`;
-        const fieldTypes = FILED_TYPE.join(`', '`);
+        const fieldTypes = Table.FILED_TYPE.join(`', '`);
         throw e(`Invalid type '${v}', must be '${fieldTypes}'`);
       }
 
@@ -128,7 +128,7 @@ export const checker = {
           // 至此默认值已经限定为string、boolean、number、Date，在可为空时允许为null，不可能是undefined
           // '_defaultValue' has been restricted to string, boolean, number, Date
           // And it can be null when nullable, so it must not be undefined
-          defaults[i] = _getter as DefaultGetter;
+          defaults[i] = _getter as Table.DefaultGetter;
         } else {
           throw e(`Invalid defaultGetter, i:${i}, type:${o.type}, getter:${_getter}`);
         }
@@ -198,7 +198,7 @@ export const checker = {
     return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
   },
 
-  sameDefaultGetter(d1: DefaultGetter, d2: DefaultGetter) {
+  sameDefaultGetter(d1: Table.DefaultGetter, d2: Table.DefaultGetter) {
     const e = (msg: string) => err(msg, 'sameDefaultGetter');
     const d = `'d1'-${String(d1)}(${typeof d1}), 'd2'-${String(d2)}(${typeof d2})`;
 

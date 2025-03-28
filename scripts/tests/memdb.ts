@@ -1,11 +1,11 @@
-import { Table } from '../memdb/table';
+import { SylphTable } from '../sylph-db/table';
 
 console.time('建表');
-const a = new Table({
+const a = new SylphTable({
   tableName: 'test_table',
   fields: [
     { name: 'id', type: 'number', isPrimaryKey: true, isAutoIncrement: true },
-    { name: 'uuid', type: 'string', default: Table.UUIDv4 },
+    { name: 'uuid', type: 'string', default: SylphTable.UUIDv4 },
     { name: 'name', type: 'string', isUnique: true },
     { name: 'age', type: 'number', default: () => Math.ceil(Math.random() * 20) },
     { name: 'rich', type: 'boolean', default: false },
