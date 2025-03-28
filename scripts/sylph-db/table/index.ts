@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { decompressSync } from '../brotli';
-import { checker } from './checkers';
-import { Table } from './types';
+import { ensure } from './checkers';
+import { Query, Table } from './types';
 import { base64, diagnostics, isPermutated, recreateFn } from '../utils';
 import { normalize, filter, initializer, privatar } from './privates';
 
@@ -28,7 +28,7 @@ export class SylphTable<T extends Table.Config> {
     priv.autoIncrementId = 0;
     priv.data = [];
 
-    checker.validTableName(o.tableName);
+    ensure.validTableName(o.tableName);
     priv.name = o.tableName;
 
     if (!Array.isArray(o.fields)) {
@@ -39,7 +39,7 @@ export class SylphTable<T extends Table.Config> {
     }
 
     const { fields, types, defaults, nullables, indexes, uniques, pk, isAI } =
-      checker.normalizeFieldOptions(Array.from(o.fields));
+      ensure.normalizeFieldOptions(Array.from(o.fields));
 
     priv.fields = fields;
     priv.fieldIndex = {} as Record<string, number>;
@@ -59,7 +59,7 @@ export class SylphTable<T extends Table.Config> {
     initializer.pk(priv, fields[pk]);
   }
 
-  find(condition: Table.FindCondition<T['fields']>): Table.Entity<T['fields']>[] {
+  find(condition: Query.Condition<T['fields']>): Table.Entity<T['fields']>[] {
     const priv = getPrivates(this);
     const e = (msg: string) => err(msg, 'find');
 
@@ -410,7 +410,7 @@ export class SylphTable<T extends Table.Config> {
       }
 
       // defaultGetter的对比相对复杂一些
-      checker.sameDefaultGetter(priv.defaults[ii], defaults[i]);
+      ensure.sameDefaultGetter(priv.defaults[ii], defaults[i]);
     }
 
     // # compare isAI and pk

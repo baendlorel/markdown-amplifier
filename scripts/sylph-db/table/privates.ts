@@ -1,5 +1,5 @@
 import { diagnostics } from '../utils';
-import { Table } from './types';
+import { Query, Table } from './types';
 
 const { err } = diagnostics('<Table.private>');
 
@@ -98,7 +98,7 @@ export const initializer = {
 export const filter = <T extends Table.Config>(
   priv: Table.Private,
   data: Table.Row[],
-  condition: Table.FindCondition<T['fields']>
+  condition: Query.Condition<T['fields']>
 ) => {
   // 能快一点是一点
   // The faster, the better

@@ -1,9 +1,9 @@
 import { Table } from './types';
 import { diagnostics, recreateFn } from '../utils';
 
-const { err, log } = diagnostics('checker');
+const { err, log } = diagnostics('ensure');
 
-export const checker = {
+export const ensure = {
   validTableName(tableName: string) {
     const match = tableName.match(/^[a-zA-Z][\w]{0,}$/);
     if (match === null) {
@@ -113,7 +113,7 @@ export const checker = {
         const _getter = o.default;
         const _defaultValue = (() => {
           if (typeof _getter === 'function') {
-            checker.validDefaultGetter(_getter);
+            ensure.validDefaultGetter(_getter);
             return _getter();
           } else {
             return _getter;
@@ -193,8 +193,8 @@ export const checker = {
       throw e('Primary key is required');
     }
 
-    checker.noDuplicateFields(fields);
-    checker.noDuplicateIndexes(indexes, uniques);
+    ensure.noDuplicateFields(fields);
+    ensure.noDuplicateIndexes(indexes, uniques);
     return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
   },
 
@@ -269,5 +269,78 @@ export const checker = {
       const s = [...indexesSet].filter((i) => uniqueSet.has(i)).join();
       throw e(`'indexes' and 'uniques' share some same fields, for: ${s}`);
     }
+  },
+
+  comparable(a: Table.Value): a is Date | number {
+    if (typeof a === 'number' || a instanceof Date) {
+      return true;
+    }
+    throw err(
+      `Value is not comparable: ${a}(${typeof a}). Consider 'number' and 'Date' as comparable types.`,
+      'comparable'
+    );
+  },
+
+  validInterval(a: Table.Value, b: Table.Value) {
+    if (!ensure.comparable(a) || !ensure.comparable(b)) {
+      return;
+    }
+
+    if (typeof a !== typeof b) {
+      throw err(
+        `Two types are different, cannot form an interval: ${a}(${typeof a}), ${b}(${typeof b})`,
+        'validInterval'
+      );
+    }
+
+    if (a > b) {
+      throw err(
+        `Left is greater than right: ${a}(${typeof a}), ${b}(${typeof b})`,
+        'validInterval'
+      );
+    }
+  },
+
+  isString(a: Table.Value) {
+    if (typeof a !== 'string') {
+      throw err(`Value is not string: ${a}(${typeof a})`, 'isString');
+    }
+  },
+
+  /**
+   * 确保值是数组，并返回副本 \
+   * Ensure that the value is an array and return a copy
+   * @param a 待检测值
+   * @param options [可选] 进一步精确的选项
+   */
+  isArray(
+    a: Table.Value[],
+    options?: { length?: number; notEmpty?: boolean; sameType?: boolean }
+  ) {
+    if (!Array.isArray(a)) {
+      throw err(`Value is not array: ${a}(${typeof a})`, 'isArray');
+    }
+
+    const aa = Array.from(a);
+
+    const { length, notEmpty, sameType } = options ?? {};
+
+    if (length !== undefined && aa.length !== length) {
+      throw err(`Array length mismatch: ${a.length} != ${length}`, 'isArray');
+    }
+
+    if (notEmpty && aa.length === 0) {
+      throw err(`Array is not expected to be empty`, 'isArray');
+    }
+
+    if (sameType) {
+      const types = new Set(aa.map((i) => typeof i));
+      // 也可能空数组，为0
+      if (types.size > 1) {
+        throw err(`Array contains different types: ${types}`, 'isArray');
+      }
+    }
+
+    return aa;
   },
 };

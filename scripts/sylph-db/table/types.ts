@@ -40,10 +40,6 @@ export namespace Table {
   export type IndexMap = Map<string, IndexValueMap>;
   export type UniqueMap = Map<string, UniqueValueMap>;
 
-  export type FindCondition<T extends readonly FieldDefinition[]> = {
-    [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
-  };
-
   export type Entity<T extends readonly FieldDefinition[]> = {
     // 可选项
     [K in T[number]['name']]?: FieldTypeMap[Extract<T[number], { name: K }>['type']];
@@ -200,4 +196,46 @@ export namespace Table {
      */
     DATA_START,
   }
+}
+
+export namespace Query {
+  export type Condition<T extends readonly Table.FieldDefinition[]> = {
+    [K in T[number]['name']]?: Table.FieldTypeMap[Extract<
+      T[number],
+      { name: K }
+    >['type']];
+  };
+
+  export enum Operator {
+    EQUAL,
+    NOT_EQUAL,
+    GREATER_THAN,
+    LESS_THAN,
+    GREATER_THAN_OR_EQUAL,
+    LESS_THAN_OR_EQUAL,
+    BETWEEN,
+    NOT_BETWEEN,
+    LIKE,
+    IN,
+    NOT_IN,
+  }
+
+  // export type FindOperator<T extends Table.Value | Table.Value[]> = {
+  //   type: Operator;
+  //   value: T;
+  // };
+  export type FindOperator<T extends Operator> = {
+    type: T;
+    value: T extends Operator.IN | Operator.NOT_IN
+      ? Table.Value[]
+      : T extends
+          | Operator.GREATER_THAN
+          | Operator.LESS_THAN
+          | Operator.GREATER_THAN_OR_EQUAL
+          | Operator.LESS_THAN_OR_EQUAL
+      ? number | Date
+      : T extends Operator.BETWEEN | Operator.NOT_BETWEEN
+      ? [Date, Date] | [number, number]
+      : Table.Value;
+  };
 }
