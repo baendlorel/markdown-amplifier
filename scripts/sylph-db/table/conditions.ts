@@ -1,6 +1,26 @@
 import { ensure } from './checkers';
 import { Query, Table } from './types';
 
+export const ensureFindOperator = (o: any): o is Query.FindOperator<Query.Operator> => {
+  if (!o || typeof o !== 'object') {
+    return false;
+  }
+
+  if (Query.Operator[o.type] === undefined) {
+    return false;
+  }
+
+  if (Table.FILED_TYPE.includes(typeof o.value as Table.FieldType)) {
+    return true;
+  }
+
+  if (typeof o.value === 'object' && (o.value instanceof Date || o.value === null)) {
+    return true;
+  }
+
+  return false;
+};
+
 /** 等于（=）*/
 export const Equal = (value: Table.Value) =>
   ({ type: Query.Operator.EQUAL, value } as Query.FindOperator<Query.Operator.EQUAL>);

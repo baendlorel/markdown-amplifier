@@ -42,22 +42,11 @@ export const ensure = {
       }
     })();
 
-    if (result === null) {
+    if (ensure.isValue(result)) {
       return;
     }
 
-    switch (typeof result) {
-      case 'string':
-      case 'number':
-      case 'boolean':
-        return;
-      case 'object':
-        if (result instanceof Date) {
-          return;
-        }
-      default:
-        throw e(`Invalid getter, must return string, number, boolean or Date`);
-    }
+    throw e(`Invalid getter, must return string, number, boolean or Date`);
   },
 
   /**
@@ -198,6 +187,12 @@ export const ensure = {
     return { fields, types, defaults, nullables, indexes, uniques, pk, isAI };
   },
 
+  /**
+   * 对比两个defaultGetter，在它俩不同的任何情况下都报错 \
+   * Compare two defaultGetters, and throw an error in any case where they are different
+   * @param d1
+   * @param d2
+   */
   sameDefaultGetter(d1: Table.DefaultGetter, d2: Table.DefaultGetter) {
     const e = (msg: string) => err(msg, 'sameDefaultGetter');
     const d = `'d1'-${String(d1)}(${typeof d1}), 'd2'-${String(d2)}(${typeof d2})`;
@@ -206,6 +201,7 @@ export const ensure = {
       throw e(`defaultGetters' type mismatch: ${d}`);
     }
 
+    // string、number、boolean、null可以直接对比，Date可以getTime后对比
     switch (typeof d1) {
       case 'string':
       case 'number':
@@ -215,15 +211,18 @@ export const ensure = {
         }
         break;
       case 'object':
-        if (d1 instanceof Date && d2 instanceof Date) {
+        if (d1 === null && d2 === null) {
+          break;
+        } else if (d1 instanceof Date && d2 instanceof Date) {
           if (d1.getTime() !== d2.getTime()) {
             throw e(`defaultGetters mismatch: ${d}`);
           }
         } else {
           throw e(`defaultGetters cannot have non-Date object: ${d}`);
         }
+        break;
       case 'function':
-        // d2类型和d1相同，这里肯定是一样的，但是ts不认识，手动标记
+        // d2类型和d1相同，这里肯定是一样的，但是ts不认识，手动断言
         // 'd2' has the same type as 'd1', so they must both be functions
         const _d2 = (d2 as Function).toString().replace(/^[\s]{0,}function\s+/, '');
         const _d1 = d1.toString().replace(/^[\s]{0,}function\s+/, '');
@@ -298,6 +297,26 @@ export const ensure = {
         `Left is greater than right: ${a}(${typeof a}), ${b}(${typeof b})`,
         'validInterval'
       );
+    }
+  },
+
+  /**
+   * 检测是否是支持的值类型 \
+   * Check if it is a supported field type
+   * @param value
+   */
+  isValue(value: Table.Value) {
+    switch (typeof value) {
+      case 'string':
+      case 'number':
+      case 'boolean':
+        return true;
+      case 'object':
+        if (value === null || value instanceof Date) {
+          return true;
+        }
+      default:
+        return false;
     }
   },
 
