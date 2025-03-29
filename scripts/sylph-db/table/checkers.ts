@@ -100,7 +100,7 @@ export const ensure = {
 
       if ('default' in o) {
         const _getter = o.default;
-        const _defaultValue = (() => {
+        const _dv = (() => {
           if (typeof _getter === 'function') {
             ensure.validDefaultGetter(_getter);
             return _getter();
@@ -109,11 +109,13 @@ export const ensure = {
           }
         })();
 
-        if (
-          typeof _defaultValue === o.type ||
-          _defaultValue instanceof Date ||
-          (_isNullable && _defaultValue === null)
-        ) {
+        if (!_isNullable && _dv === null) {
+          throw e(`Default value cannot be null when 'isNullable' is false`);
+        }
+
+        // 只在type相同，或为Date时再保存defaultGetter
+        // Only save defaultGetter when the type is the same or it is Date
+        if (typeof _dv === o.type || (o.type === 'Date' && _dv instanceof Date)) {
           // 至此默认值已经限定为string、boolean、number、Date，在可为空时允许为null，不可能是undefined
           // '_defaultValue' has been restricted to string, boolean, number, Date
           // And it can be null when nullable, so it must not be undefined

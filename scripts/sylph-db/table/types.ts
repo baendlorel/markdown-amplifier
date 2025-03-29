@@ -270,6 +270,7 @@ export const getType = (
     return 'null';
   }
 
+  // TODO 梳理所有需要判定类型的位置，最好能够统一处理方式
   // TODO 这里要考虑到是数组的情形，如果数组每个类型不一致，要报错
   const t = typeof value;
   switch (t) {

@@ -167,7 +167,6 @@ export class SylphTable<T extends Table.Config> {
       // TODO 这里很复杂，慢慢写
       const fo = ensureFindOperator(condition[condFields[i]]);
       const t = priv.types[idx];
-      const vt = getType(fo.value);
       if (!priv.nullables[idx] && fo.value === null) {
         throw e(`'${condFields[i]}' cannot be null`);
       }
