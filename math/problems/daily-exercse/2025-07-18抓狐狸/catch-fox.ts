@@ -1,9 +1,4 @@
-const check = (n: number, pattern: number[]) => {
-  if (!Number.isSafeInteger(n) || n < 1) {
-    throw new Error('n must be a positive integer');
-  }
-
-  const maxJumpCount = pattern.length;
+const getPaths = (holeCount: number, maxJumpCount: number) => {
   const path: number[] = [];
   const paths: number[][] = [];
   const jump = (i: number) => {
@@ -16,10 +11,10 @@ const check = (n: number, pattern: number[]) => {
       paths.push([...path]);
     }
 
-    if (i === 1) {
-      jump(2);
-    } else if (i === n) {
-      jump(n - 1);
+    if (i === 0) {
+      jump(1);
+    } else if (i === holeCount - 1) {
+      jump(holeCount - 2);
     } else {
       jump(i + 1);
       jump(i - 1);
@@ -27,34 +22,94 @@ const check = (n: number, pattern: number[]) => {
     path.pop();
   };
 
-  for (let i = 1; i <= n; i++) {
+  for (let i = 0; i < holeCount; i++) {
     jump(i);
   }
 
-  const match = (pattern: number[]) => {
-    const mismatch: number[][] = [];
-    paths.forEach((path) => {
-      for (let i = 0; i < path.length; i++) {
-        if (path[i] === pattern[i]) {
-          return true;
-        }
-      }
-      mismatch.push([...path]);
-    });
-    return mismatch;
-  };
+  return paths;
+};
 
-  const mismatch = match(pattern);
+const check = (holeCount: number, pattern: number[]) => {
+  if (!Number.isSafeInteger(holeCount) || holeCount < 1) {
+    throw new Error('n must be a positive integer');
+  }
+
+  const paths = getPaths(holeCount, pattern.length);
+
+  const mismatch: number[][] = [];
+  paths.forEach((path) => {
+    for (let i = 0; i < path.length; i++) {
+      if (path[i] + 1 === pattern[i]) {
+        return true;
+      }
+    }
+    mismatch.push([...path]);
+  });
+
   if (mismatch.length > 0) {
-    console.log(`${n}->${pattern}. Mismatch found:`);
-    mismatch.forEach((m) => console.log(m.join(' ')));
+    console.log(`${holeCount}->${pattern}. Mismatch found:`);
+    mismatch.forEach((m) => console.log(m.map((i) => i + 1).join(' ')));
   } else {
-    console.log(`${n}->${pattern}. All paths match the pattern.`);
+    console.log(`${holeCount}->${pattern}. All paths match the pattern.`);
   }
 };
 
-check(2, [2, 2]);
-check(3, [2, 2]);
-check(4, [2, 2, 3, 3, 2]);
-check(5, [2, 2, 3, 3, 2, 2, 3, 3, 4]);
-check(5, [2, 2, 3, 3, 4, 4, 4, 3, 2]);
+// check(2, [2, 2]);
+// check(3, [2, 2]);
+// check(4, [2, 2, 3, 3, 2]);
+// check(5, [2, 2, 3, 3, 2, 2, 3, 3, 4]);
+// check(5, [2, 2, 3, 3, 4, 4, 4, 3, 2]);
+const find = (holeCount: number, maxJumpCount: number) => {
+  const paths = getPaths(holeCount, maxJumpCount);
+  const found: number[][] = [];
+  const max = parseInt(
+    Array.from({ length: maxJumpCount }, () => holeCount - 1).join(''),
+    holeCount
+  );
+  console.log(`Searching for patterns up to ${max}, loop time: ${max * paths.length}...`);
+  let count = 0;
+  for (let i = 0; i <= max; i++) {
+    const pat = i
+      .toString(holeCount)
+      .padStart(maxJumpCount, '0')
+      .split('')
+      .map((c) => parseInt(c, holeCount));
+
+    let valid = false;
+    for (let j = 0; j < paths.length; j++) {
+      const p = paths[j];
+      valid = false;
+      for (let k = 0; k < maxJumpCount; k++) {
+        if (p[k] === pat[k]) {
+          valid = true;
+          break;
+        }
+
+        count++;
+        if (count % 1000000 === 0) {
+          console.log(`Checked ${count / 1000000}e6 patterns...`);
+        }
+      }
+      // 如果这一条p不满足，剩下的也不用看了
+      if (!valid) {
+        break;
+      }
+    }
+
+    if (valid) {
+      found.push(pat.map((t) => t + 1));
+    }
+  }
+  return found;
+};
+
+const found = find(5, 6);
+if (found.length === 0) {
+  console.log('No valid patterns found.');
+} else {
+  check(5, found[0]);
+  console.log(
+    `Found pattern!: \n${found.map((a) => a.join(' ')).join('\n')}\nTotal: ${found.length}`
+  );
+}
+// tsx ./math/problems/daily-exercse/2025-07-18抓狐狸/catch-fox.ts
