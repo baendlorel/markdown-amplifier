@@ -103,13 +103,31 @@ const find = (holeCount: number, maxJumpCount: number) => {
   return found;
 };
 
-const found = find(5, 6);
-if (found.length === 0) {
-  console.log('No valid patterns found.');
-} else {
-  check(5, found[0]);
-  console.log(
-    `Found pattern!: \n${found.map((a) => a.join(' ')).join('\n')}\nTotal: ${found.length}`
-  );
-}
+() => {
+  const found = find(7, 10);
+  if (found.length === 0) {
+    console.log('No valid patterns found.');
+  } else {
+    check(7, found[0]);
+    console.log(
+      `Found pattern!: \n${found.map((a) => a.join(' ')).join('\n')}\nTotal: ${found.length}`
+    );
+  }
+};
+
+check(8, [2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2]);
+check(9, [2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2]);
+check(9, [2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 5, 6, 7, 8]);
+check(10, [2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2]);
+
+// 洞数量和天数只比
+// 1 - 1
+// 2-2
+// 3-2
+// 4-4
+// 5-6
+// 6-8
+// 7-？
+// 218 9500 0000
+
 // tsx ./math/problems/daily-exercse/2025-07-18抓狐狸/catch-fox.ts
