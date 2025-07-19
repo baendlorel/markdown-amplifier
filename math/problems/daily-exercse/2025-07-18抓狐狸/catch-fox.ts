@@ -86,8 +86,8 @@ const find = (holeCount: number, maxJumpCount: number) => {
         }
 
         count++;
-        if (count % 1000000 === 0) {
-          console.log(`Checked ${count / 1000000}e6 patterns...`);
+        if (count % 1e8 === 0) {
+          console.log(`Checked ${count / 1e8}e8 patterns...`);
         }
       }
       // 如果这一条p不满足，剩下的也不用看了
@@ -103,37 +103,39 @@ const find = (holeCount: number, maxJumpCount: number) => {
   return found;
 };
 
-() => {
-  const found = find(7, 10);
-  if (found.length === 0) {
-    console.log('No valid patterns found.');
-  } else {
-    check(7, found[0]);
-    console.log(
-      `Found pattern!: \n${found.map((a) => a.join(' ')).join('\n')}\nTotal: ${found.length}`
-    );
+{
+  for (let n = 4; n <= 6; n++) {
+    const found = find(n, 2 * (n - 2));
+    if (found.length === 0) {
+      console.log('No valid patterns found.');
+    } else {
+      console.log(
+        `Found pattern for ${n} holes!: \n${found.map((a) => a.join(' ')).join('\n')}\nTotal: ${
+          found.length
+        }`
+      );
+    }
   }
-};
+}
 
 // check(8, [2, 3, 4, 5, 6, 7, 7, 6, 5, 4, 3, 2]);
 // check(9, [2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2]);
 // check(9, [2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 5, 6, 7, 8]);
 // check(10, [2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5, 4, 3, 2]);
-for (let i = 4; i < 20; i++) {
-  (i - 1) * 2;
-  const a = Array.from({ length: i - 1 }, (_, j) => j + 2);
-  const pat = a.concat(a.slice().reverse());
-  check(i, pat);
-}
+// for (let i = 4; i < 20; i++) {
+//   (i - 1) * 2;
+//   const a = Array.from({ length: i - 1 }, (_, j) => j + 2);
+//   const pat = a.concat(a.slice().reverse());
+//   check(i, pat);
+// }
 
 // 洞数量和天数只比
 // 1 - 1
-// 2-2
-// 3-2
-// 4-4
-// 5-6
-// 6-8
-// 7-？
-// 218 9500 0000
+// 2 - 2
+// 3 - 2
+// 4 - 4
+// 5 - 6
+// 6 - 8
+// n - 2(n-2)
 
 // tsx ./math/problems/daily-exercse/2025-07-18抓狐狸/catch-fox.ts
