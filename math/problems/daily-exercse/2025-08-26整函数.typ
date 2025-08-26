@@ -4,43 +4,36 @@ $f(z)$是整函数，$f(z)=f(z-z^2)$，求证$f(z)$必为常数。
 
 
 == 解答
-利用柯西-黎曼方程，记$u$和$v$是实的二元函数，记$z=x+y i$，我们有
+我们对从$g:z -> z-z^2$的映射进行分析。设$z=x+y i$，则映射可写为
 
-$ f(z)=u(x,y)+v(x,y)i $
-
-$f(z-z^2)$显然也是解析的，有
 $
-  f(z-z^2) & =f((x+y i)-(x+y i)^2) \
-           & = f((x - x^2 + y^2) + (y - 2 x y)i) \
-           & = u(x - x^2 + y^2, y - 2 x y) + v(x - x^2 + y^2, y - 2 x y)i
+  g(x+y i) & = (x+y i)-(x+y i)^2 \
+           & =x+y i-(x^2-y^2+2 x y i) \
+           & =(x-x^2+y^2)+(y-2 x y) i \
 $
-
-简化记号令$s=x - x^2 + y^2, t= y - 2 x y$，我们有
-
-$ f(z-z^2) = u(s,t) + v(s,t)i $
-
-由柯西-黎曼方程可得
+我们考察$z$到$g(z)$的模长变化比例
 $
-       frac(partial u, partial x) & = frac(partial v, partial y) #numbering("(1)", 1) \
-       frac(partial u, partial y) & = -frac(partial v, partial x) #numbering("(1)", 2) \
-  frac(partial u(s,t), partial x) & = frac(partial v(s,t), partial y) #numbering("(1)", 3) \
-  frac(partial u(s,t), partial y) & = -frac(partial v(s,t), partial x) #numbering("(1)", 4) \
+  k^2 & = frac(|g(z)|^2, |z|^2) \
+      & = frac((x-x^2+y^2)^2+(y-2 x y)^2, x^2+y^2) \
+      & = frac(x^2+x^4+y^4-2x^3+2x y^2-2x^2 y^2+y^2+4x^2y^2-4x y^2, x^2+y^2) \
+      & = frac(x^4+y^4+2x^2 y^2-2x^3+x^2+y^2-2x y^2, x^2+y^2) \
+      & =x^2+y^2+1+ frac(-2x^3-2x y^2, x^2+y^2) \
+      & =x^2-2x+y^2+1 \
+      & =(x-1)^2+y^2 \
 $
+显然只要$x$和$y$的绝对值足够大，$k>1$，即映射会使得模长变大。
 
-$(3)(4)$由链式法则可得
+现在考察$g$的逆映射$h$。
+
 $
-  frac(partial u(s,t), partial x) & = frac(partial u(s,t), partial s) frac(partial s, partial x) + frac(partial u(s,t), partial t) frac(partial t, partial x) \
-  frac(partial v(s,t), partial y) & = frac(partial v(s,t), partial s) frac(partial s, partial y) + frac(partial v(s,t), partial t) frac(partial t, partial y) \
-  frac(partial u(s,t), partial s) frac(partial s, partial x) + frac(partial u(s,t), partial t) frac(partial t, partial x) & = frac(partial v(s,t), partial s) frac(partial s, partial y) + frac(partial v(s,t), partial t) frac(partial t, partial y) #numbering("(1)", 5)
+              z & =h(z)-h(z)^2 \
+  h(z)^2-h(z)+z & =0 \
+           h(z) & = frac(1 plus.minus sqrt(1-4 z), 2) \
+           h(z) & = 1/2 plus.minus sqrt(1/4- z) \
 $
 
-用$(1)(2)$代入$(5)$中对$s,t$的情形，可得
-$
-  p frac(partial s, partial x) + q frac(partial t, partial x) & = -q frac(partial s, partial y) + p frac(partial t, partial y) \
-  p (1-2x) + q(-2y) & = -q (2y) + p (1-2x) #numbering("(1)", 6) \
-$
+此处$h$因二次函数而有两个解，但我们的讨论实际上并不是两个都要。为方便后续计算，我们取$h(z) & = 1/2 + sqrt(1/4-z)$。可见$h$是由$sqrt(z)$平移后得到的。
 
+显然当$z$模长足够大的时候，$h$的作用会让模长几乎以2倍缩小，即存在$r epsilon.alt ℝ_+$，使得当$|z|>r$时，$|h(z)|<|z|$。
 
-
-
-
+在$|z|<=r$的区域内，$f(z)$有界。对于$|z|>r$，一定可以通过有限次的$h$映射将$z$映射到$|z|<=r$的区域内。故对于整个复平面上所有的$z$，都有$f(z)$有界。由刘维尔定理的有界整函数必为常数的结论可知，$f(z)$为常数。
