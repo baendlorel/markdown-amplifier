@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>模2加法小游戏</title>
+  <title>抓巫师小游戏</title>
   <style>
     body {
       font-family: sans-serif;
@@ -12,13 +12,59 @@
     }
 
     #controls {
-      flex: 0 0 200px;
+      flex: 0 0 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #controls label {
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    #controls input[type="number"],
+    #controls input[type="text"] {
+      padding: 6px 10px;
+      border: 1px solid #bbb;
+      border-radius: 6px;
+      font-size: 1em;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+
+    #controls input:focus {
+      border-color: #0078d7;
+      outline: none;
+    }
+
+    #controls button {
+      padding: 7px 18px;
+      border: none;
+      border-radius: 6px;
+      background: #0078d7;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 4px;
+      transition: all 0.2s;
+    }
+
+    #controls button:hover {
+      background: #005fa3;
     }
 
     #tableContainer table {
       border-collapse: collapse;
+      margin-top: 8px;
     }
 
+    #tableContainer th,
     #tableContainer td {
       border: 1px solid #ccc;
       padding: 4px 8px;
@@ -33,6 +79,17 @@
       background: #f9f9f9;
       overflow-y: auto;
       max-height: 400px;
+      margin-bottom: 12px;
+    }
+
+    #stepsView {
+      flex: 1;
+      border: 1px solid #999;
+      padding: 10px;
+      background: #eef6fa;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.95em;
     }
   </style>
 </head>
@@ -40,68 +97,138 @@
 <body>
   <div id="controls">
     <div>
-      <label>列数 n: <input type="number" id="inputN" min="2" value="3"></label>
+      <label for="inputN">列数 n:</label>
+      <input type="number" id="inputN" min="2" value="3">
       <button id="btnGenerate">生成表格</button>
     </div>
-    <div style="margin-top:10px;">
-      <label>操作: <input type="text" id="inputOps" placeholder="例如: 1,2;2,3"></label>
+    <div>
+      <label for="inputOps">操作:</label>
+      <input type="text" id="inputOps" placeholder="例如: 1,2;2,3">
       <button id="btnExecute">执行</button>
+      <button id="btnClearHistory" style="background:#e74c3c;">清空历史</button>
+    </div>
+    <div style="margin-top:8px;">
+      <label><input type="checkbox" id="displayRole"> 显示为“骗子/巫师”</label>
     </div>
   </div>
 
   <div id="tableContainer"></div>
   <div id="history"><b>操作历史</b><br></div>
+  <div id="stepsView"><b>LocalStorage 步骤表</b><br></div>
 
   <script>
     let table, data = [];
+    let stepHistory = [];
 
     // 生成 n! 行，每行是 n-1 个 0 和 1 个 1 的全排列
     function generateTable(n) {
-      data = [];
-      // 所有排列: 把 1 放在每个位置，然后生成 n! 排列
-      // 实际上等价于 n! 个排列，每行只有一个 1
-      const indices = [];
-      for (let i = 0; i < n; i++) indices.push(i);
-
-      // 生成 n! 个排列
-      const perms = permute(indices);
-
-      for (let perm of perms) {
-        const row = new Array(n).fill(0);
-        row[perm[0]] = 1; // 把1放在 perm 的第一个位置
-        data.push(row);
+      if (!Number.isSafeInteger(n) || n < 2) {
+        alert('n得是大于或等于2的正整数');
+        return;
       }
 
-      renderTable();
+      // 生成 n! 个排列
+      data = permute(n);
+
+      renderTable(n);
+      saveStepToLocalStorage(n, []); // 生成新表格时记录步骤
+    }
+
+    function generatePermutations(n) {
+      // 初始化数组
+      const nums = [];
+      for (let i = 0; i < n; i++) {
+        nums.push(i);
+      }
+
+      // 存储结果
+      const result = [];
+
+      // 辅助函数，用于递归生成全排列
+      function backtrack(path, options) {
+        if (path.length === n) {
+          result.push([...path]);
+          return;
+        }
+
+        for (let i = 0; i < options.length; i++) {
+          path.push(options[i]);
+          const newOptions = [...options.slice(0, i), ...options.slice(i + 1)];
+          backtrack(path, newOptions);
+          path.pop();
+        }
+      }
+
+      // 开始递归
+      backtrack([], nums);
+
+      return result;
     }
 
     // 全排列
-    function permute(arr) {
-      if (arr.length === 0) return [[]];
+    function permute(n) {
+      // 所有排列: 把 1 放在每个位置，然后生成 n! 排列
+      // 实际上等价于 n! 个排列，每行只有一个 1
+      const firstPerm = [];
+      for (let i = 0; i < n; i++) {
+        const indices = new Array(n);
+        indices.fill(0);
+        indices[i] = 1;
+        firstPerm.push(indices);
+      }
+
+      const indexPerm = generatePermutations(n);
       const result = [];
-      for (let i = 0; i < arr.length; i++) {
-        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
-        for (let p of permute(rest)) {
-          result.push([arr[i]].concat(p));
+      for (const indexes of indexPerm) {
+        for (const index of indexes) {
+          result.push(firstPerm[index]);
         }
       }
       return result;
     }
 
-    function renderTable() {
+    function renderTable(n) {
       const container = document.getElementById("tableContainer");
       container.innerHTML = "";
       table = document.createElement("table");
+      // 表头
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      for (let i = 1; i <= n; i++) {
+        const th = document.createElement("th");
+        th.textContent = i;
+        trh.appendChild(th);
+      }
+      thead.appendChild(trh);
+      table.appendChild(thead);
+      // 表体
+      const showRole = getDisplayRole();
       for (let row of data) {
         const tr = document.createElement("tr");
         for (let cell of row) {
           const td = document.createElement("td");
-          td.textContent = cell;
+          if (showRole) {
+            td.textContent = cell === 1 ? "巫师" : "骗子";
+            td.style.color = cell === 1 ? "#0078d7" : "#DC143C";
+            td.style.fontWeight = "bold";
+          } else {
+            td.textContent = cell;
+            td.style.color = "#222";
+            td.style.fontWeight = "normal";
+          }
           tr.appendChild(td);
         }
         table.appendChild(tr);
       }
       container.appendChild(table);
+    }
+
+    function getDisplayRole() {
+      return localStorage.getItem("mod2_displayRole") === "true";
+    }
+
+    function setDisplayRole(val) {
+      localStorage.setItem("mod2_displayRole", val ? "true" : "false");
     }
 
     // 执行操作
@@ -121,8 +248,10 @@
         }
       }
 
-      renderTable();
+      renderTable(data[0].length);
       logHistory(ops);
+      saveStepToLocalStorage(data[0].length, ops);
+      updateStepsView();
     }
 
     function logHistory(ops) {
@@ -131,9 +260,40 @@
       div.innerHTML += msg + "<br>";
     }
 
+    // localStorage 相关
+    function saveStepToLocalStorage(n, ops) {
+      // 读取已有
+      let steps = JSON.parse(localStorage.getItem("mod2_steps") || "[]");
+      steps.push({ n, ops });
+      localStorage.setItem("mod2_steps", JSON.stringify(steps));
+    }
+
+    function clearHistory() {
+      document.getElementById("history").innerHTML = "<b>操作历史</b><br>";
+      localStorage.removeItem("mod2_steps");
+      updateStepsView();
+    }
+
+    function updateStepsView() {
+      const div = document.getElementById("stepsView");
+      let steps = JSON.parse(localStorage.getItem("mod2_steps") || "[]");
+      let html = "<b>LocalStorage 步骤表</b><br>";
+      steps.forEach((step, idx) => {
+        html += `第${idx + 1}步：n=${step.n}，`;
+        if (step.ops.length === 0) {
+          html += "生成表格";
+        } else {
+          html += step.ops.map(([a, b]) => `col${a + 1}→col${b + 1}`).join(", ");
+        }
+        html += "<br>";
+      });
+      div.innerHTML = html;
+    }
+
     document.getElementById("btnGenerate").addEventListener("click", () => {
       const n = parseInt(document.getElementById("inputN").value, 10);
       generateTable(n);
+      updateStepsView();
     });
 
     document.getElementById("btnExecute").addEventListener("click", () => {
@@ -141,8 +301,23 @@
       executeOps(opsStr);
     });
 
-    // 初始生成
-    generateTable(3);
+    document.getElementById("btnClearHistory").addEventListener("click", () => {
+      clearHistory();
+    });
+
+    document.getElementById("displayRole").addEventListener("change", (e) => {
+      setDisplayRole(e.target.checked);
+      renderTable(data[0].length);
+    });
+
+    // 页面加载时初始化checkbox状态
+    window.addEventListener("DOMContentLoaded", () => {
+      const checked = getDisplayRole();
+      document.getElementById("displayRole").checked = checked;
+      generateTable(parseInt(document.getElementById("inputN").value, 10));
+      updateStepsView();
+      renderTable(data[0].length);
+    });
   </script>
 </body>
 
