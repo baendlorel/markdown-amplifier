@@ -91,6 +91,54 @@
       overflow-y: auto;
       font-size: 0.95em;
     }
+
+    #numberButtons {
+      margin: 8px 0;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .number-btn {
+      padding: 6px 12px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      background: #f5f5f5;
+      color: #333;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .number-btn:hover {
+      background: #e0e0e0;
+      border-color: #999;
+    }
+
+    .number-btn.selected {
+      background: #0078d7;
+      color: white;
+      border-color: #005fa3;
+    }
+
+    .backspace-btn {
+      padding: 6px 12px;
+      border: 1px solid #e74c3c;
+      border-radius: 4px;
+      background: #e74c3c;
+      color: white;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 8px;
+    }
+
+    .backspace-btn:hover {
+      background: #c0392b;
+      border-color: #a93226;
+    }
   </style>
 </head>
 
@@ -104,6 +152,7 @@
     <div>
       <label for="inputOps">操作:</label>
       <input type="text" id="inputOps" placeholder="例如: 1,2;2,3">
+      <div id="numberButtons"></div>
       <button id="btnExecute">执行</button>
       <button id="btnClearHistory" style="background:#e74c3c;">清空历史</button>
     </div>
@@ -120,6 +169,18 @@
     let table, data = [];
     let currentSteps = []; // 当前轮次的步骤
     let gameStarted = false; // 游戏是否开始
+    let selectedNumber = null; // 当前选择的第一个数字
+    let currentN = 3; // 当前列数
+    const idMap = new Map();
+    const $id = (id) => {
+      const exist = idMap.get(id);
+      if (exist) { return exist; }
+      const el = document.getElementById(id);
+      if (el) {
+        idMap.set(id, el);
+      }
+      return el;
+    };
 
     // 生成 n 行，每行是 n-1 个 0 和 1 个 1 的排列
     function generateTable(n) {
@@ -128,6 +189,7 @@
         return;
       }
 
+      currentN = n; // 保存当前列数
       data = permute(n);
 
       // 重置当前轮次
@@ -135,6 +197,88 @@
       gameStarted = true;
 
       renderTable(n);
+      createNumberButtons(n); // 创建数字按钮
+    }
+
+    // 创建数字按钮
+    function createNumberButtons(n) {
+      const container = $id("numberButtons");
+      container.innerHTML = "";
+
+      // 创建数字按钮 1 到 n
+      for (let i = 1; i <= n; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = "number-btn";
+        btn.onclick = () => handleNumberClick(i);
+        container.appendChild(btn);
+      }
+
+      // 创建退格按钮
+      const backspaceBtn = document.createElement("button");
+      backspaceBtn.textContent = "退格";
+      backspaceBtn.className = "backspace-btn";
+      backspaceBtn.onclick = handleBackspace;
+      container.appendChild(backspaceBtn);
+    }
+
+    // 处理数字按钮点击
+    function handleNumberClick(number) {
+      const buttons = document.querySelectorAll('.number-btn');
+
+      if (selectedNumber === null) {
+        // 第一次点击，选择第一个数字
+        selectedNumber = number;
+        buttons.forEach(btn => {
+          if (btn.textContent == number) {
+            btn.classList.add('selected');
+          } else {
+            btn.classList.remove('selected');
+          }
+        });
+      } else {
+        // 第二次点击，完成操作输入
+        const opsInput = $id("inputOps");
+        const currentValue = opsInput.value.trim();
+
+        // 构造新的操作字符串
+        const newOp = `${selectedNumber},${number}`;
+        if (currentValue === "") {
+          opsInput.value = newOp;
+        } else {
+          opsInput.value = currentValue + ";" + newOp;
+        }
+
+        // 重置选择状态
+        selectedNumber = null;
+        buttons.forEach(btn => btn.classList.remove('selected'));
+      }
+    }
+
+    // 处理退格操作
+    function handleBackspace() {
+      const opsInput = $id("inputOps");
+      let currentValue = opsInput.value.trim();
+
+      if (currentValue === "") {
+        return; // 没有内容可删除
+      }
+
+      // 如果有选中的数字，先清除选择状态
+      if (selectedNumber !== null) {
+        selectedNumber = null;
+        document.querySelectorAll('.number-btn').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        return;
+      }
+
+      // 删除最后一个操作
+      const parts = currentValue.split(';').map(s => s.trim()).filter(Boolean);
+      if (parts.length > 0) {
+        parts.pop(); // 删除最后一个操作
+        opsInput.value = parts.join(';');
+      }
     }
 
 
@@ -180,14 +324,14 @@
         indices[i] = 1;
         firstPerm.push(indices);
       }
-
-      const indexPerm = generatePermutations(n);
-      const result = [];
-      for (const indexes of indexPerm) {
-        for (const index of indexes) {
-          result.push(firstPerm[index]);
-        }
-      }
+      const result = firstPerm;
+      // const indexPerm = generatePermutations(n);
+      // const result = [];
+      // for (const indexes of indexPerm) {
+      //   for (const index of indexes) {
+      //     result.push(firstPerm[index]);
+      //   }
+      // }
       return result;
     }
 
@@ -216,7 +360,7 @@
     }
 
     function renderTable(n) {
-      const container = document.getElementById("tableContainer");
+      const container = $id("tableContainer");
       container.innerHTML = "";
       table = document.createElement("table");
 
@@ -306,7 +450,7 @@
     }
 
     function logHistory(ops) {
-      const div = document.getElementById("history");
+      const div = $id("history");
       const msg = ops.map(([a, b]) => `col${a + 1} → col${b + 1}`).join(", ");
       div.innerHTML += msg + "<br>";
     }
@@ -334,7 +478,7 @@
       // 保存当前游戏到历史
       saveGameToHistory();
 
-      document.getElementById("history").innerHTML = "<b>操作历史</b><br>";
+      $id("history").innerHTML = "<b>操作历史</b><br>";
 
       // 重置当前游戏状态
       currentSteps = [];
@@ -344,7 +488,7 @@
     }
 
     function updateGameHistoryView() {
-      const div = document.getElementById("stepsView");
+      const div = $id("stepsView");
       let gameHistory = JSON.parse(localStorage.getItem("mod2_gameHistory") || "[]");
 
       let html = "<b>游戏历史记录</b><br>";
@@ -375,27 +519,28 @@
       div.innerHTML = html;
     }
 
-    document.getElementById("btnGenerate").addEventListener("click", () => {
+    $id("btnGenerate").addEventListener("click", () => {
       // 如果当前有游戏进行中，先保存
       if (gameStarted && currentSteps.length > 1) {
         saveGameToHistory();
       }
 
-      const n = parseInt(document.getElementById("inputN").value, 10);
+      const n = parseInt($id("inputN").value, 10);
       generateTable(n);
       updateGameHistoryView();
     });
 
-    document.getElementById("btnExecute").addEventListener("click", () => {
-      const opsStr = document.getElementById("inputOps").value;
+    $id("btnExecute").addEventListener("click", () => {
+      const opsStr = $id("inputOps").value;
       executeOps(opsStr);
+      $id("inputOps").value = ""; // 清空输入框
     });
 
-    document.getElementById("btnClearHistory").addEventListener("click", () => {
+    $id("btnClearHistory").addEventListener("click", () => {
       clearHistory();
     });
 
-    document.getElementById("displayRole").addEventListener("change", (e) => {
+    $id("displayRole").addEventListener("change", (e) => {
       setDisplayRole(e.target.checked);
       renderTable(data[0].length);
     });
@@ -403,8 +548,9 @@
     // 页面加载和刷新前的处理
     window.addEventListener("DOMContentLoaded", () => {
       const checked = getDisplayRole();
-      document.getElementById("displayRole").checked = checked;
-      generateTable(parseInt(document.getElementById("inputN").value, 10));
+      $id("displayRole").checked = checked;
+      const n = parseInt($id("inputN").value, 10);
+      generateTable(n);
       updateGameHistoryView();
     });
 
