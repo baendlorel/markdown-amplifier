@@ -118,21 +118,25 @@
 
   <script>
     let table, data = [];
-    let stepHistory = [];
+    let currentSteps = []; // 当前轮次的步骤
+    let gameStarted = false; // 游戏是否开始
 
-    // 生成 n! 行，每行是 n-1 个 0 和 1 个 1 的全排列
+    // 生成 n 行，每行是 n-1 个 0 和 1 个 1 的排列
     function generateTable(n) {
       if (!Number.isSafeInteger(n) || n < 2) {
         alert('n得是大于或等于2的正整数');
         return;
       }
 
-      // 生成 n! 个排列
       data = permute(n);
 
+      // 重置当前轮次
+      currentSteps = [{ type: 'generate', n, ops: [] }];
+      gameStarted = true;
+
       renderTable(n);
-      saveStepToLocalStorage(n, []); // 生成新表格时记录步骤
     }
+
 
     function generatePermutations(n) {
       // 初始化数组
@@ -187,25 +191,57 @@
       return result;
     }
 
+
+    // 检查是否有列全为1
+    function checkSuccess() {
+      if (!data.length) return { success: false, successColumns: [] };
+
+      const n = data[0].length;
+      const successColumns = [];
+
+      for (let col = 0; col < n; col++) {
+        let allOnes = true;
+        for (let row = 0; row < data.length; row++) {
+          if (data[row][col] !== 1) {
+            allOnes = false;
+            break;
+          }
+        }
+        if (allOnes) {
+          successColumns.push(col);
+        }
+      }
+
+      return { success: successColumns.length > 0, successColumns };
+    }
+
     function renderTable(n) {
       const container = document.getElementById("tableContainer");
       container.innerHTML = "";
       table = document.createElement("table");
+
+      const { success, successColumns } = checkSuccess();
+
       // 表头
       const thead = document.createElement("thead");
       const trh = document.createElement("tr");
       for (let i = 1; i <= n; i++) {
         const th = document.createElement("th");
         th.textContent = i;
+        if (successColumns.includes(i - 1)) {
+          th.style.backgroundColor = "#caffbf";
+        }
         trh.appendChild(th);
       }
       thead.appendChild(trh);
       table.appendChild(thead);
+
       // 表体
       const showRole = getDisplayRole();
       for (let row of data) {
         const tr = document.createElement("tr");
-        for (let cell of row) {
+        for (let colIndex = 0; colIndex < row.length; colIndex++) {
+          const cell = row[colIndex];
           const td = document.createElement("td");
           if (showRole) {
             td.textContent = cell === 1 ? "巫师" : "骗子";
@@ -216,11 +252,25 @@
             td.style.color = "#222";
             td.style.fontWeight = "normal";
           }
+
+          // 成功列的背景色
+          if (successColumns.includes(colIndex)) {
+            td.style.backgroundColor = "#caffbf";
+          }
+
           tr.appendChild(td);
         }
         table.appendChild(tr);
       }
       container.appendChild(table);
+
+      // 显示成功信息
+      if (success) {
+        const successMsg = document.createElement("div");
+        successMsg.style.cssText = "margin-top: 10px; padding: 8px; background: #caffbf; border-radius: 4px; font-weight: bold;";
+        successMsg.textContent = `成功！第 ${successColumns.map(c => c + 1).join(', ')} 列全为巫师！`;
+        container.appendChild(successMsg);
+      }
     }
 
     function getDisplayRole() {
@@ -248,10 +298,11 @@
         }
       }
 
+      // 记录步骤
+      currentSteps.push({ type: 'operation', ops });
+
       renderTable(data[0].length);
       logHistory(ops);
-      saveStepToLocalStorage(data[0].length, ops);
-      updateStepsView();
     }
 
     function logHistory(ops) {
@@ -261,39 +312,78 @@
     }
 
     // localStorage 相关
-    function saveStepToLocalStorage(n, ops) {
-      // 读取已有
-      let steps = JSON.parse(localStorage.getItem("mod2_steps") || "[]");
-      steps.push({ n, ops });
-      localStorage.setItem("mod2_steps", JSON.stringify(steps));
+    function saveGameToHistory() {
+      if (!gameStarted || currentSteps.length <= 1) {
+        // 如果没开始游戏或者只有生成表格步骤，不保存
+        return;
+      }
+
+      const { success } = checkSuccess();
+      const gameRecord = {
+        timestamp: new Date().toISOString(),
+        steps: currentSteps,
+        success: success
+      };
+
+      let gameHistory = JSON.parse(localStorage.getItem("mod2_gameHistory") || "[]");
+      gameHistory.push(gameRecord);
+      localStorage.setItem("mod2_gameHistory", JSON.stringify(gameHistory));
     }
 
     function clearHistory() {
+      // 保存当前游戏到历史
+      saveGameToHistory();
+
       document.getElementById("history").innerHTML = "<b>操作历史</b><br>";
-      localStorage.removeItem("mod2_steps");
-      updateStepsView();
+
+      // 重置当前游戏状态
+      currentSteps = [];
+      gameStarted = false;
+
+      updateGameHistoryView();
     }
 
-    function updateStepsView() {
+    function updateGameHistoryView() {
       const div = document.getElementById("stepsView");
-      let steps = JSON.parse(localStorage.getItem("mod2_steps") || "[]");
-      let html = "<b>LocalStorage 步骤表</b><br>";
-      steps.forEach((step, idx) => {
-        html += `第${idx + 1}步：n=${step.n}，`;
-        if (step.ops.length === 0) {
-          html += "生成表格";
-        } else {
-          html += step.ops.map(([a, b]) => `col${a + 1}→col${b + 1}`).join(", ");
-        }
-        html += "<br>";
-      });
+      let gameHistory = JSON.parse(localStorage.getItem("mod2_gameHistory") || "[]");
+
+      let html = "<b>游戏历史记录</b><br>";
+
+      if (gameHistory.length === 0) {
+        html += "暂无历史记录";
+      } else {
+        gameHistory.forEach((game, idx) => {
+          const date = new Date(game.timestamp).toLocaleString();
+          const successText = game.success ? "✅ 成功" : "❌ 未成功";
+
+          html += `<details style="margin-bottom: 8px;">`;
+          html += `<summary style="cursor: pointer; font-weight: bold;">游戏 ${idx + 1} - ${successText} (${date})</summary>`;
+          html += `<div style="margin-left: 16px; margin-top: 4px;">`;
+
+          game.steps.forEach((step, stepIdx) => {
+            if (step.type === 'generate') {
+              html += `步骤${stepIdx + 1}: 生成${step.n}×${step.n}表格<br>`;
+            } else if (step.type === 'operation') {
+              html += `步骤${stepIdx + 1}: ${step.ops.map(([a, b]) => `col${a + 1}→col${b + 1}`).join(", ")}<br>`;
+            }
+          });
+
+          html += `</div></details>`;
+        });
+      }
+
       div.innerHTML = html;
     }
 
     document.getElementById("btnGenerate").addEventListener("click", () => {
+      // 如果当前有游戏进行中，先保存
+      if (gameStarted && currentSteps.length > 1) {
+        saveGameToHistory();
+      }
+
       const n = parseInt(document.getElementById("inputN").value, 10);
       generateTable(n);
-      updateStepsView();
+      updateGameHistoryView();
     });
 
     document.getElementById("btnExecute").addEventListener("click", () => {
@@ -310,13 +400,17 @@
       renderTable(data[0].length);
     });
 
-    // 页面加载时初始化checkbox状态
+    // 页面加载和刷新前的处理
     window.addEventListener("DOMContentLoaded", () => {
       const checked = getDisplayRole();
       document.getElementById("displayRole").checked = checked;
       generateTable(parseInt(document.getElementById("inputN").value, 10));
-      updateStepsView();
-      renderTable(data[0].length);
+      updateGameHistoryView();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      // 页面刷新前保存当前游戏
+      saveGameToHistory();
     });
   </script>
 </body>
