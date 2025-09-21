@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>模2加法小游戏</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      gap: 20px;
+    }
+
+    #controls {
+      flex: 0 0 200px;
+    }
+
+    #tableContainer table {
+      border-collapse: collapse;
+    }
+
+    #tableContainer td {
+      border: 1px solid #ccc;
+      padding: 4px 8px;
+      text-align: center;
+      width: 30px;
+    }
+
+    #history {
+      flex: 1;
+      border: 1px solid #999;
+      padding: 10px;
+      background: #f9f9f9;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="controls">
+    <div>
+      <label>列数 n: <input type="number" id="inputN" min="2" value="3"></label>
+      <button id="btnGenerate">生成表格</button>
+    </div>
+    <div style="margin-top:10px;">
+      <label>操作: <input type="text" id="inputOps" placeholder="例如: 1,2;2,3"></label>
+      <button id="btnExecute">执行</button>
+    </div>
+  </div>
+
+  <div id="tableContainer"></div>
+  <div id="history"><b>操作历史</b><br></div>
+
+  <script>
+    let table, data = [];
+
+    // 生成 n! 行，每行是 n-1 个 0 和 1 个 1 的全排列
+    function generateTable(n) {
+      data = [];
+      // 所有排列: 把 1 放在每个位置，然后生成 n! 排列
+      // 实际上等价于 n! 个排列，每行只有一个 1
+      const indices = [];
+      for (let i = 0; i < n; i++) indices.push(i);
+
+      // 生成 n! 个排列
+      const perms = permute(indices);
+
+      for (let perm of perms) {
+        const row = new Array(n).fill(0);
+        row[perm[0]] = 1; // 把1放在 perm 的第一个位置
+        data.push(row);
+      }
+
+      renderTable();
+    }
+
+    // 全排列
+    function permute(arr) {
+      if (arr.length === 0) return [[]];
+      const result = [];
+      for (let i = 0; i < arr.length; i++) {
+        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+        for (let p of permute(rest)) {
+          result.push([arr[i]].concat(p));
+        }
+      }
+      return result;
+    }
+
+    function renderTable() {
+      const container = document.getElementById("tableContainer");
+      container.innerHTML = "";
+      table = document.createElement("table");
+      for (let row of data) {
+        const tr = document.createElement("tr");
+        for (let cell of row) {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+      container.appendChild(table);
+    }
+
+    // 执行操作
+    function executeOps(opsStr) {
+      const ops = opsStr.split(";").map(x => x.trim()).filter(Boolean).map(x => {
+        const [a, b] = x.split(",").map(Number);
+        return [a - 1, b - 1]; // 转换为 0-based
+      });
+
+      // 克隆旧数据用于并发计算
+      const oldData = data.map(r => r.slice());
+
+      // 执行所有操作
+      for (let [from, to] of ops) {
+        for (let i = 0; i < data.length; i++) {
+          data[i][to] = (oldData[i][to] + oldData[i][from]) % 2;
+        }
+      }
+
+      renderTable();
+      logHistory(ops);
+    }
+
+    function logHistory(ops) {
+      const div = document.getElementById("history");
+      const msg = ops.map(([a, b]) => `col${a + 1} → col${b + 1}`).join(", ");
+      div.innerHTML += msg + "<br>";
+    }
+
+    document.getElementById("btnGenerate").addEventListener("click", () => {
+      const n = parseInt(document.getElementById("inputN").value, 10);
+      generateTable(n);
+    });
+
+    document.getElementById("btnExecute").addEventListener("click", () => {
+      const opsStr = document.getElementById("inputOps").value;
+      executeOps(opsStr);
+    });
+
+    // 初始生成
+    generateTable(3);
+  </script>
+</body>
+
+</html>
