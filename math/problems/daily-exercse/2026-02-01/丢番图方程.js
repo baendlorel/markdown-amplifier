@@ -8,18 +8,26 @@ const rangee = [-32, 32];
 const rangef = [-64, 64];
 const rangeg = [-128, 128];
 
-for (let a = rangea[0]; a <= rangea[1]; a++) {
-  for (let b = rangeb[0]; b <= rangeb[1]; b++) {
-    for (let c = rangec[0]; c <= rangec[1]; c++) {
-      for (let d = ranged[0]; d <= ranged[1]; d++) {
-        for (let e = rangee[0]; e <= rangee[1]; e++) {
-          for (let f = rangef[0]; f <= rangef[1]; f++) {
-            for (let g = rangeg[0]; g <= rangeg[1]; g++) {
-              const sum = 5888 * a + 4888 * b + 2888 * c + 648 * d + 328 * e + 198 * f + 98 * g;
-              if (sum === 10000) {
-                console.log('找到了!!!!', { a, b, c, d, e, f, g });
-              } else if (Math.abs(sum - 10000) < 10) {
-                console.log('接近了', { a, b, c, d, e, f, g, sum });
+window.running = true;
+
+function run({ a, b, c, d, e, f, g }) {
+  for (a = rangea[0]; a <= rangea[1]; a++) {
+    for (b = rangeb[0]; b <= rangeb[1]; b++) {
+      for (c = rangec[0]; c <= rangec[1]; c++) {
+        for (d = ranged[0]; d <= ranged[1]; d++) {
+          for (e = rangee[0]; e <= rangee[1]; e++) {
+            for (f = rangef[0]; f <= rangef[1]; f++) {
+              for (g = rangeg[0]; g <= rangeg[1]; g++) {
+                if (window.running) {
+                  console.log('终止', JSON.stringify({ a, b, c, d, e, f, g }));
+                  return;
+                }
+                const sum = 5888 * a + 4888 * b + 2888 * c + 648 * d + 328 * e + 198 * f + 98 * g;
+                if (sum === 10000) {
+                  console.log('找到了!!!!', { a, b, c, d, e, f, g });
+                } else if (Math.abs(sum - 10000) < 10) {
+                  console.log('接近了', { a, b, c, d, e, f, g, sum });
+                }
               }
             }
           }
@@ -28,3 +36,13 @@ for (let a = rangea[0]; a <= rangea[1]; a++) {
     }
   }
 }
+
+run({
+  a: rangea[0],
+  b: rangeb[0],
+  c: rangec[0],
+  d: ranged[0],
+  e: rangee[0],
+  f: rangef[0],
+  g: rangeg[0],
+});
