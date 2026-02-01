@@ -18,15 +18,13 @@ function run({ a, b, c, d, e, f, g }) {
           for (e = rangee[0]; e <= rangee[1]; e++) {
             for (f = rangef[0]; f <= rangef[1]; f++) {
               for (g = rangeg[0]; g <= rangeg[1]; g++) {
-                if (window.running) {
+                if (!window.running) {
                   console.log('终止', JSON.stringify({ a, b, c, d, e, f, g }));
                   return;
                 }
                 const sum = 5888 * a + 4888 * b + 2888 * c + 648 * d + 328 * e + 198 * f + 98 * g;
                 if (sum === 10000) {
                   console.log('找到了!!!!', { a, b, c, d, e, f, g });
-                } else if (Math.abs(sum - 10000) < 10) {
-                  console.log('接近了', { a, b, c, d, e, f, g, sum });
                 }
               }
             }
