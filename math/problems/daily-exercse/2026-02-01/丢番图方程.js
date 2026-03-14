@@ -8,17 +8,17 @@ const rangee = [-32, 32];
 const rangef = [-64, 64];
 const rangeg = [-128, 128];
 
-window.running = true;
+globalThis.running = true;
 
-function run({ a, b, c, d, e, f, g }) {
-  for (a = rangea[0]; a <= rangea[1]; a++) {
-    for (b = rangeb[0]; b <= rangeb[1]; b++) {
-      for (c = rangec[0]; c <= rangec[1]; c++) {
-        for (d = ranged[0]; d <= ranged[1]; d++) {
-          for (e = rangee[0]; e <= rangee[1]; e++) {
-            for (f = rangef[0]; f <= rangef[1]; f++) {
-              for (g = rangeg[0]; g <= rangeg[1]; g++) {
-                if (!window.running) {
+function run({ a: sa, b: sb, c: sc, d: sd, e: se, f: sf, g: sg }) {
+  for (a = sa; a <= rangea[1]; a++) {
+    for (b = sb; b <= rangeb[1]; b++) {
+      for (c = sc; c <= rangec[1]; c++) {
+        for (d = sd; d <= ranged[1]; d++) {
+          for (e = se; e <= rangee[1]; e++) {
+            for (f = sf; f <= rangef[1]; f++) {
+              for (g = sg; g <= rangeg[1]; g++) {
+                if (!globalThis.running) {
                   console.log('终止', JSON.stringify({ a, b, c, d, e, f, g }));
                   return;
                 }
@@ -35,12 +35,22 @@ function run({ a, b, c, d, e, f, g }) {
   }
 }
 
+// run({
+//   a: rangea[0],
+//   b: rangeb[0],
+//   c: rangec[0],
+//   d: ranged[0],
+//   e: rangee[0],
+//   f: rangef[0],
+//   g: rangeg[0],
+// });
+
 run({
-  a: rangea[0],
-  b: rangeb[0],
-  c: rangec[0],
-  d: ranged[0],
-  e: rangee[0],
-  f: rangef[0],
-  g: rangeg[0],
+  a: 0,
+  b: 0,
+  c: 0,
+  d: 0,
+  e: 0,
+  f: 0,
+  g: 0,
 });
