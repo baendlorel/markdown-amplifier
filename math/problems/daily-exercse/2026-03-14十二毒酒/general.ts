@@ -65,19 +65,26 @@ function createTissuePosibilities(tissueCount: number, cupCount: number): number
  * 毒酒只有一杯
  * 试纸只能用一次
  */
-function solve(tissueCount: number, cupCount: number) {
+export function solve(tissueCount: number, cupCount: number) {
   const a = 0;
   const b = 0;
   const c = 0;
   const d = 0;
 }
 
-function test() {
-  const a = 0b10101010;
-  const b = 0b11001100;
-  const c = 0b11110000;
+declare global {
+  let a: number;
+  let b: number;
+  let c: number;
+  let bitRev: (n: number) => number;
+}
 
-  const bitRev = (n: number) =>
+function test() {
+  a = 0b10101010;
+  b = 0b11001100;
+  c = 0b11110000;
+
+  bitRev = (n: number) =>
     parseInt(
       n
         .toString(2)
@@ -91,16 +98,7 @@ function test() {
   const equals = (expr: string, expected: number) => {
     const originalExpr = expr;
     expr = originalExpr.replace(/\~([a-z])/g, (_, v) => `bitRev(${v})`);
-    const result = new Function(`  const bitRev = (n) =>
-    parseInt(
-      n
-        .toString(2)
-        .padStart(8, '0')
-        .split('')
-        .map((x) => (x === '0' ? '1' : '0'))
-        .join(''),
-      2,
-    );a = 0b10101010;b = 0b11001100;c = 0b11110000;return ${expr}`)();
+    const result = new Function(`return ${expr}`)();
     console.log(`${originalExpr} = ${result} (${result === expected ? 'OK' : 'FAIL, expected ' + expected})`);
   };
   equals('a & b & c', 0b10000000);
@@ -111,9 +109,5 @@ function test() {
   equals('~a & b & ~c', 0b00000100);
   equals('a & ~b & ~c', 0b00000010);
   equals('~a & ~b & ~c', 0b00000001);
-  console.log('~a', bitRev(a).toString(2).padStart(8, '0'));
-  console.log('~b', bitRev(b).toString(2).padStart(8, '0'));
-  console.log('~c', bitRev(c).toString(2).padStart(8, '0'));
-  console.log(bitRev(a) & bitRev(b) & bitRev(c));
 }
 test();
